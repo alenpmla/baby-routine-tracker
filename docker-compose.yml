@@ -1,0 +1,12 @@
+services:
+  baby-tracker:
+    build: .
+    container_name: baby-tracker
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      DATA_FILE: /data/bt.json
+    volumes:
+      - ./data:/data
+    restart: unless-stopped
