@@ -4,6 +4,8 @@ interface ModalProps {
   title: string
   onClose: () => void
   children: ReactNode
+  /** 'sheet' = bottom sheet (default), 'dialog' = centered M3 dialog */
+  variant?: 'sheet' | 'dialog'
 }
 
 function scrollIntoView(el: HTMLElement | null) {
@@ -14,7 +16,7 @@ function scrollIntoView(el: HTMLElement | null) {
   }
 }
 
-export default function Modal({ title, onClose, children }: ModalProps) {
+export default function Modal({ title, onClose, children, variant = 'sheet' }: ModalProps) {
   // Keep the focused field in view as the browser resizes for the keyboard,
   // without adding any artificial offset (which caused a gap above the keyboard).
   useEffect(() => {
@@ -40,9 +42,9 @@ export default function Modal({ title, onClose, children }: ModalProps) {
   }, [])
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className={`modal-overlay${variant === 'dialog' ? ' modal-overlay-dialog' : ''}`} onClick={onClose}>
       <div
-        className="modal"
+        className={`modal${variant === 'dialog' ? ' modal-dialog' : ''}`}
         role="dialog"
         aria-modal="true"
         aria-label={title}

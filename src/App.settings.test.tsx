@@ -186,6 +186,19 @@ describe('Food suggestions', () => {
     expect(snackbar).toHaveAttribute('role', 'status')
   })
 
+  it('lets you choose the daily averages window in Settings', async () => {
+    const user = userEvent.setup()
+    await onboard(user)
+    await user.click(screen.getByRole('button', { name: /settings/i }))
+
+    const group = screen.getByRole('group', { name: /averages window/i })
+    await user.click(within(group).getByRole('button', { name: '7 days' }))
+    expect(window.localStorage.getItem('bt.averagesDays')).toBe('7')
+
+    await user.click(within(group).getByRole('button', { name: '60 days' }))
+    expect(window.localStorage.getItem('bt.averagesDays')).toBe('60')
+  })
+
   it('shows seeded suggestions in the Food suggestions sub-screen, lets you add/remove, and suggests in the Food field', async () => {
     const user = userEvent.setup()
     await onboard(user)

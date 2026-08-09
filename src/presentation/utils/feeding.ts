@@ -69,6 +69,14 @@ export function describeSolidsTotal(feedings: FeedingSession[], unit: SolidsUnit
   return `${formatAmount(oz + gram / OZ_TO_GRAM)}oz`
 }
 
+/** Average solid-food amount (given in grams) per day, shown in the preferred unit. */
+export function describeSolidsAverage(gram: number, unit: SolidsUnit): string {
+  if (unit === 'g') {
+    return `${Math.round(gram)}g`
+  }
+  return `${formatAmount(gram / OZ_TO_GRAM)}oz`
+}
+
 /** Total bottle amount across the day's feeds, shown in the preferred unit. */
 export function describeBottleTotal(feedings: FeedingSession[], unit: BottleUnit): string {
   let ml = 0

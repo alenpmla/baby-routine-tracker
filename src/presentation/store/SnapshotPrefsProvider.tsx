@@ -1,9 +1,14 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import type { BottleUnit, SnapshotUnits, SolidsUnit } from '../utils/feeding'
 
 const KEY = 'snapshotUnits'
 const REPORT_KEY = 'reportUnits'
+const AVERAGES_KEY = 'averagesDays'
 const DEFAULTS: SnapshotUnits = { bottle: 'ml', solids: 'g' }
+
+export type AveragesDays = 7 | 15 | 30 | 60
+const AVERAGES_DAYS: AveragesDays[] = [7, 15, 30, 60]
+const DEFAULT_AVERAGES_DAYS: AveragesDays = 30
 
 interface SnapshotPrefsValue {
   units: SnapshotUnits
@@ -12,6 +17,8 @@ interface SnapshotPrefsValue {
   reportUnits: SnapshotUnits
   setReportBottleUnit: (unit: BottleUnit) => void
   setReportSolidsUnit: (unit: SolidsUnit) => void
+  averagesDays: AveragesDays
+  setAveragesDays: (days: AveragesDays) => void
 }
 
 const SnapshotPrefsContext = createContext<SnapshotPrefsValue | null>(null)
@@ -39,9 +46,25 @@ function writeStored(key: string, units: SnapshotUnits) {
   }
 }
 
+function readAveragesDays(): AveragesDays {
+  try {
+    const raw = window.localStorage.getItem(`bt.${AVERAGES_KEY}`)
+    if (raw !== null) {
+      const n = Number(raw)
+      if (AVERAGES_DAYS.includes(n as AveragesDays)) {
+        return n as AveragesDays
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  return DEFAULT_AVERAGES_DAYS
+}
+
 export function SnapshotPrefsProvider({ children }: { children: ReactNode }) {
   const [units, setUnits] = useState<SnapshotUnits>(() => readStored(KEY))
   const [reportUnits, setReportUnits] = useState<SnapshotUnits>(() => readStored(REPORT_KEY))
+  const [averagesDays, setAveragesDaysState] = useState<AveragesDays>(readAveragesDays)
 
   useEffect(() => {
     writeStored(KEY, units)
@@ -51,6 +74,16 @@ export function SnapshotPrefsProvider({ children }: { children: ReactNode }) {
     writeStored(REPORT_KEY, reportUnits)
   }, [reportUnits])
 
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(`bt.${AVERAGES_KEY}`, String(averagesDays))
+    } catch {
+      /* ignore */
+    }
+  }, [averagesDays])
+
+  const setAveragesDays = useCallback((days: AveragesDays) => setAveragesDaysState(days), [])
+
   const value = useMemo<SnapshotPrefsValue>(
     () => ({
       units,
@@ -59,8 +92,10 @@ export function SnapshotPrefsProvider({ children }: { children: ReactNode }) {
       reportUnits,
       setReportBottleUnit: (bottle) => setReportUnits((u) => ({ ...u, bottle })),
       setReportSolidsUnit: (solids) => setReportUnits((u) => ({ ...u, solids })),
+      averagesDays,
+      setAveragesDays,
     }),
-    [units, reportUnits],
+    [units, reportUnits, averagesDays, setAveragesDays],
   )
 
   return <SnapshotPrefsContext.Provider value={value}>{children}</SnapshotPrefsContext.Provider>

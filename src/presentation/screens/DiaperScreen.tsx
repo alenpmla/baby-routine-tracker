@@ -17,7 +17,7 @@ const TYPES: { id: DiaperType; label: string }[] = [
 type DiaperModal = { mode: 'add' } | { mode: 'edit'; record: DiaperChange }
 
 export default function DiaperScreen() {
-  const { addDiaper, updateDiaperRecord, day, dayCounts, removeDiaper, selectedDay, now } = useTracker()
+  const { addDiaper, updateDiaperRecord, day, dayCounts, removeDiaper, selectedDay, now, dailyAverages } = useTracker()
   const [error, setError] = useState<string | null>(null)
   const [diaperModal, setDiaperModal] = useState<DiaperModal | null>(null)
   const [backfillError, setBackfillError] = useState<string | null>(null)
@@ -55,6 +55,9 @@ export default function DiaperScreen() {
 
       <div className="stat-row">
         <StatTile accent="diaper" Icon={DiaperIcon} label="Changes" value={String(dayCounts.diapers)} />
+        {dailyAverages.avgDiapers > 0 && (
+          <StatTile accent="diaper" Icon={DiaperIcon} label="Avg/day" value={dailyAverages.avgDiapers.toFixed(1)} />
+        )}
       </div>
 
       <div className="card diaper-card">

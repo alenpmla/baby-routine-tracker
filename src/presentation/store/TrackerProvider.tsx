@@ -34,6 +34,8 @@ import { getDayTimeline } from '../../domain/usecase/timeline'
 import { saveBabyProfile } from '../../domain/usecase/baby'
 import type { SaveBabyInput } from '../../domain/usecase/baby'
 import { addFoodSuggestion, removeFoodSuggestion } from '../../domain/usecase/settings'
+import { getDailyAverages, type DailyAverages } from '../../domain/usecase/averages'
+import { useSnapshotPrefs } from './SnapshotPrefsProvider'
 import { createSyncRepositories, type SyncRepositories } from '../../data/repositories'
 import type { BackupData } from '../../data/repositories/RemoteRepositories'
 import { getDayRange, shiftDays, startOfDay } from '../utils/time'
@@ -48,6 +50,8 @@ export interface TrackerState {
   day: DayTimeline
   dayCounts: { sleeps: number; feeds: number; diapers: number }
   foodSuggestions: string[]
+  dailyAverages: DailyAverages
+  lastWakeEndMs: number | null
   now: Date
 }
 
@@ -86,6 +90,7 @@ const TrackerContext = createContext<UseTracker | null>(null)
 
 export function TrackerProvider({ children }: { children: ReactNode }) {
   const repos = useRef<SyncRepositories>(createSyncRepositories())
+  const { averagesDays } = useSnapshotPrefs()
   const [baby, setBaby] = useState<Baby | null>(null)
   const [ready, setReady] = useState(false)
   const [offline, setOffline] = useState(false)
@@ -174,6 +179,24 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
       ),
     [version, selectedDay, start, end],
   )
+
+  const dailyAverages = useMemo(
+    () => getDailyAverages(repos.current.sleep, repos.current.feeding, repos.current.diaper, averagesDays),
+    [version, averagesDays],
+  )
+
+  const lastWakeEndMs = useMemo(() => {
+    let last: number | null = null
+    for (const s of repos.current.sleep.getAll()) {
+      if (s.endTime) {
+        const t = new Date(s.endTime).getTime()
+        if (last === null || t > last) {
+          last = t
+        }
+      }
+    }
+    return last
+  }, [version])
 
   const activeSleep = useMemo(() => getActiveSleep(repos.current.sleep), [version, now])
 
@@ -347,6 +370,8 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
     },
     foodSuggestions,
     now,
+    dailyAverages,
+    lastWakeEndMs,
     saveProfile,
     startSleepTimer,
     stopSleepTimer,

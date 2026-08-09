@@ -5,7 +5,7 @@ import type { FeedingDetails, SolidsFieldErrors } from '../../domain/usecase/fee
 import { validateSolidsDetails } from '../../domain/usecase/feeding'
 import { useTracker } from '../store/TrackerProvider'
 import { formatClock, formatDayLabel, startOfDay } from '../utils/time'
-import { describeBottleTotal, describeFeedingMeta, describeFeedingTitle, describeSolidsTotal } from '../utils/feeding'
+import { describeBottleTotal, describeFeedingMeta, describeFeedingTitle, describeSolidsAverage, describeSolidsTotal } from '../utils/feeding'
 import { useSnapshotPrefs } from '../store/SnapshotPrefsProvider'
 import { BottleIcon, BowlIcon, EditIcon, TrashIcon } from '../components/icons'
 import DayNav from '../components/DayNav'
@@ -37,6 +37,7 @@ export default function FeedingScreen() {
     selectedDay,
     now,
     foodSuggestions,
+    dailyAverages,
   } = useTracker()
   const [feedModal, setFeedModal] = useState<FeedModal | null>(null)
   const [backfillError, setBackfillError] = useState<string | null>(null)
@@ -94,6 +95,14 @@ export default function FeedingScreen() {
         <StatTile accent="feed" Icon={BottleIcon} label="Feeds" value={String(day.feedings.length)} />
         {bottleTotal && <StatTile accent="feed" Icon={BottleIcon} label="Bottle" value={bottleTotal} />}
         {solidsTotal && <StatTile accent="feed" Icon={BowlIcon} label="Solids" value={solidsTotal} />}
+        {dailyAverages.avgSolidsGram > 0 && (
+          <StatTile
+            accent="feed"
+            Icon={BowlIcon}
+            label="Avg/day"
+            value={describeSolidsAverage(dailyAverages.avgSolidsGram, units.solids)}
+          />
+        )}
       </div>
 
       <div className="card feed-card">

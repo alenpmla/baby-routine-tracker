@@ -1,8 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { TrackerProvider, useTracker } from './presentation/store/TrackerProvider'
 import { ThemeProvider } from './presentation/store/ThemeProvider'
 import { SnapshotPrefsProvider } from './presentation/store/SnapshotPrefsProvider'
 import { SnackbarProvider } from './presentation/store/SnackbarProvider'
+import { NotificationPrefsProvider } from './presentation/store/NotificationPrefsProvider'
+import { useWakeWindowReminder } from './presentation/store/useWakeWindowReminder'
+import { useBackNav, type SettingsView } from './presentation/store/useBackNav'
 import ProfileScreen from './presentation/screens/ProfileScreen'
 import DashboardScreen from './presentation/screens/DashboardScreen'
 import SleepScreen from './presentation/screens/SleepScreen'
@@ -12,12 +15,12 @@ import WeightScreen from './presentation/screens/WeightScreen'
 import SettingsScreen from './presentation/screens/SettingsScreen'
 import TabBar from './presentation/components/TabBar'
 import OfflineBanner from './presentation/components/OfflineBanner'
-import type { Tab } from './presentation/navigation'
 
 function Shell() {
   const { ready, offline, syncNow, baby, saveProfile } = useTracker()
-  const [tab, setTab] = useState<Tab>('home')
-  const [showSettings, setShowSettings] = useState(false)
+  const { current, navigate, goToTab, goBack } = useBackNav()
+  const { tab, settings, settingsView } = current
+  useWakeWindowReminder()
 
   useEffect(() => {
     function onScroll() {
@@ -51,12 +54,18 @@ function Shell() {
     )
   }
 
-  if (showSettings) {
+  if (settings) {
     return (
       <div className="shell">
         {banner}
         <main className="screen">
-          <SettingsScreen onClose={() => setShowSettings(false)} />
+          <SettingsScreen
+            view={settingsView ?? 'main'}
+            onOpenView={(v: SettingsView) =>
+              navigate({ tab, settings: true, settingsView: v === 'main' ? undefined : v })
+            }
+            onGoBack={goBack}
+          />
         </main>
       </div>
     )
@@ -68,8 +77,8 @@ function Shell() {
       <main className="screen">
         {tab === 'home' && (
           <DashboardScreen
-            onOpenSettings={() => setShowSettings(true)}
-            onNavigate={setTab}
+            onOpenSettings={() => navigate({ tab, settings: true })}
+            onNavigate={goToTab}
           />
         )}
         {tab === 'sleep' && <SleepScreen />}
@@ -77,21 +86,23 @@ function Shell() {
         {tab === 'diaper' && <DiaperScreen />}
         {tab === 'weight' && <WeightScreen />}
       </main>
-      <TabBar active={tab} onChange={setTab} />
+      <TabBar active={tab} onChange={goToTab} />
     </div>
   )
 }
 
 export default function App() {
   return (
-    <TrackerProvider>
-      <ThemeProvider>
-        <SnapshotPrefsProvider>
-          <SnackbarProvider>
-            <Shell />
-          </SnackbarProvider>
-        </SnapshotPrefsProvider>
-      </ThemeProvider>
-    </TrackerProvider>
+    <NotificationPrefsProvider>
+      <SnapshotPrefsProvider>
+        <TrackerProvider>
+          <ThemeProvider>
+            <SnackbarProvider>
+              <Shell />
+            </SnackbarProvider>
+          </ThemeProvider>
+        </TrackerProvider>
+      </SnapshotPrefsProvider>
+    </NotificationPrefsProvider>
   )
 }

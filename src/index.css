@@ -791,6 +791,138 @@ body.appbar-scrolled .screen-header {
   line-height: 1;
 }
 
+.notification-enable {
+  flex: none;
+  margin-top: 0;
+  min-height: 40px;
+  padding: 0 16px;
+}
+
+.event .switch {
+  margin-left: auto;
+  flex: none;
+}
+
+.settings-trailing {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+}
+
+.settings-trailing .duration-value {
+  font-weight: 600;
+  color: var(--md-primary);
+  font-size: var(--type-body);
+  white-space: nowrap;
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 52px;
+  height: 32px;
+  flex: none;
+}
+
+.switch input {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  cursor: pointer;
+}
+
+.switch-track {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: var(--md-surface-container-highest);
+  border: 2px solid var(--md-outline);
+  transition: background 180ms, border-color 180ms;
+}
+
+.switch-track::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--md-outline);
+  transition: transform 180ms, background 180ms;
+}
+
+.switch input:checked + .switch-track {
+  background: var(--md-primary);
+  border-color: var(--md-primary);
+}
+
+.switch input:checked + .switch-track::after {
+  transform: translateX(20px);
+  background: var(--md-on-primary);
+}
+
+.switch input:focus-visible + .switch-track {
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--md-primary) 25%, transparent);
+}
+
+/* ---------- Duration picker ---------- */
+
+.duration-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.duration-display {
+  text-align: center;
+  font-size: var(--type-headline);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--md-on-surface);
+  font-variant-numeric: tabular-nums;
+}
+
+.duration-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.stepper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stepper-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.stepper-row input {
+  flex: 1;
+  text-align: center;
+  min-width: 0;
+}
+
+.stepper-btn {
+  border: 1px solid var(--md-outline-variant);
+  background: var(--md-surface-container);
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.duration-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .settings-btn {
   color: var(--md-on-surface-variant);
 }
@@ -1279,6 +1411,60 @@ button.event-link:active {
   gap: 14px;
 }
 
+/* M3 dialog variant — centered, surface-container-high, shape-large, elevation 3 */
+.modal-overlay-dialog {
+  align-items: center;
+  padding: 24px;
+}
+
+.modal-dialog {
+  max-width: 560px;
+  width: 100%;
+  border-radius: var(--shape-lg);
+  background: var(--md-surface-container-high);
+  box-shadow: var(--elevation-3);
+  padding: 24px;
+  max-height: calc(100dvh - 48px);
+}
+
+.modal-dialog::before {
+  display: none;
+}
+
+.modal-dialog .modal-header h2 {
+  font-size: var(--type-title);
+}
+
+.modal-dialog .modal-header {
+  margin-bottom: 8px;
+}
+
+/* M3 dialog actions — right-aligned text buttons */
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.dialog-actions .btn {
+  background: none;
+  box-shadow: none;
+  color: var(--md-primary);
+  min-height: 40px;
+  padding: 0 16px;
+}
+
+.dialog-actions .btn:active {
+  background: color-mix(in srgb, var(--md-primary) 12%, transparent);
+}
+
+@media (min-width: 640px) {
+  .modal-dialog {
+    max-width: 448px;
+  }
+}
+
 /* ---------- Backfill forms ---------- */
 
 .backfill-datetime {
@@ -1312,6 +1498,10 @@ button.event-link:active {
 
 .segmented-3 {
   grid-template-columns: repeat(3, 1fr);
+}
+
+.segmented-4 {
+  grid-template-columns: repeat(4, 1fr);
 }
 
 .settings-theme {
@@ -1378,10 +1568,10 @@ button.event-link:active {
   align-items: center;
   gap: 12px;
   min-height: 48px;
-  padding: 12px 16px;
+  padding: 14px 16px;
   background: var(--md-inverse-surface);
   color: var(--md-inverse-on-surface);
-  border-radius: var(--shape-sm);
+  border-radius: var(--shape-xs);
   box-shadow: var(--elevation-3);
   font-size: var(--type-body);
   line-height: 1.4;

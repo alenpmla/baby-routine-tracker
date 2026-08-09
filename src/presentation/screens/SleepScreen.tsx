@@ -21,6 +21,7 @@ export default function SleepScreen() {
     removeSleep,
     logPastSleep,
     updateSleepRecord,
+    dailyAverages,
   } = useTracker()
   const [error, setError] = useState<string | null>(null)
   const [sleepModal, setSleepModal] = useState<SleepModal | null>(null)
@@ -77,6 +78,14 @@ export default function SleepScreen() {
 
       <div className="stat-row">
         <StatTile accent="sleep" Icon={MoonIcon} label="Total slept" value={formatDuration(totalSlept)} />
+        {dailyAverages.avgSleepMs > 0 && (
+          <StatTile
+            accent="sleep"
+            Icon={MoonIcon}
+            label="Avg/day"
+            value={formatDuration(Math.round(dailyAverages.avgSleepMs))}
+          />
+        )}
       </div>
 
       <div className="card sleep-card">
