@@ -14,8 +14,11 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 COPY --from=build /app/dist ./dist
 COPY server ./server
+COPY scripts/gen-certs.sh ./scripts/gen-certs.sh
 ENV PORT=3000
+ENV HTTPS_PORT=3443
 ENV DATA_FILE=/data/bt.json
-EXPOSE 3000
+ENV CERT_DIR=/data/certs
+EXPOSE 3000 3443
 VOLUME ["/data"]
-CMD ["node", "server/index.js"]
+CMD ["sh", "-c", "sh scripts/gen-certs.sh && node server/index.js"]

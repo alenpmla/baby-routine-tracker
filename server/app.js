@@ -3,9 +3,15 @@ import path from 'node:path'
 
 const KEYS = ['sleeps', 'feedings', 'diapers', 'weights']
 
-export function createApp(store, staticDir) {
+export function createApp(store, staticDir, caFile) {
   const app = express()
   app.use(express.json({ limit: '1mb' }))
+
+  if (caFile) {
+    app.get('/ca.pem', (req, res) => {
+      res.type('application/x-pem-file').sendFile(caFile)
+    })
+  }
 
   app.get('/api/health', (req, res) => {
     res.json({ ok: true })

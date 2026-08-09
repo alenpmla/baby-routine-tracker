@@ -14,7 +14,8 @@ const STATIC_DIR = process.env.STATIC_DIR || path.join(__dirname, '..', 'dist')
 const CERT_DIR = process.env.CERT_DIR || path.join(__dirname, 'certs')
 
 const store = createStore(DATA_FILE)
-const app = createApp(store, STATIC_DIR)
+const caFile = path.join(CERT_DIR, 'ca.pem')
+const app = createApp(store, STATIC_DIR, caFile)
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Baby Tracker server listening on http://0.0.0.0:${PORT}`)
