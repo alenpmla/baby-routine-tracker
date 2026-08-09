@@ -35,6 +35,7 @@ describe('Phase 3: sync server', () => {
     first.unmount()
 
     // Device B opens the app fresh and sees the same data (profile already on the server)
+    window.history.replaceState(null, '')
     render(<App />)
     expect(await screen.findByRole('heading', { name: /hi, avery/i })).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Diaper' }))
@@ -88,7 +89,7 @@ describe('Phase 3: sync server', () => {
     // Now offline: reload uses the localStorage cache, so the profile is still there
     api.setOffline(true)
     render(<App />)
-    expect(await screen.findByRole('heading', { name: /hi, avery/i })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Diaper' })).toBeInTheDocument()
     expect(screen.getByRole('status')).toHaveTextContent(/offline/i)
   })
 })

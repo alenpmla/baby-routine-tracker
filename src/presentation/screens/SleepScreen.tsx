@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { SleepSession } from '../../domain/model/SleepSession'
 import { useTracker } from '../store/TrackerProvider'
+import { useWakeStatus } from '../store/useWakeStatus'
 import { formatClock, formatDayLabel, formatDuration, startOfDay } from '../utils/time'
 import { EditIcon, MoonIcon, TrashIcon } from '../components/icons'
 import DayNav from '../components/DayNav'
@@ -23,6 +24,7 @@ export default function SleepScreen() {
     updateSleepRecord,
     dailyAverages,
   } = useTracker()
+  const wake = useWakeStatus()
   const [error, setError] = useState<string | null>(null)
   const [sleepModal, setSleepModal] = useState<SleepModal | null>(null)
   const [backfillError, setBackfillError] = useState<string | null>(null)
@@ -102,6 +104,11 @@ export default function SleepScreen() {
           <>
             <MoonIcon size={40} />
             <p className="sleep-hint">Tap below to start tracking a nap.</p>
+            {wake.remainingMs !== null && (
+              <p className="sleep-countdown" role="status">
+                {wake.overdue ? 'Time for a nap!' : `Time left to sleep: ${formatDuration(wake.remainingMs)}`}
+              </p>
+            )}
             <button type="button" className="btn btn-primary btn-block" onClick={handleStart}>
               Start sleep timer
             </button>

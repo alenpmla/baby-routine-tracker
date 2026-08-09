@@ -1,4 +1,5 @@
 import { useTracker } from '../store/TrackerProvider'
+import { useWakeStatus } from '../store/useWakeStatus'
 import { describeAge, formatClock, formatDayLabel, formatDuration, isSameDay, startOfDay } from '../utils/time'
 import { describeFeedingMeta, describeFeedingTitle } from '../utils/feeding'
 import { BottleIcon, DiaperIcon, MoonIcon, SettingsIcon } from '../components/icons'
@@ -16,6 +17,7 @@ export default function DashboardScreen({
   onNavigate?: (tab: Tab) => void
 }) {
   const { baby, day, dayCounts, activeSleep, selectedDay, now, allWeights } = useTracker()
+  const wake = useWakeStatus()
   const name = baby?.name.split(' ')[0] ?? 'there'
   const viewingToday = isSameDay(selectedDay, startOfDay(now))
   const dayLabel = formatDayLabel(selectedDay, startOfDay(now))
@@ -58,6 +60,11 @@ export default function DashboardScreen({
             Sleeping now — {formatDuration(new Date().getTime() - new Date(activeSleep.startTime).getTime())}
           </button>
         )}
+        {viewingToday && !wake.asleep && wake.remainingMs !== null && (
+          <button type="button" className="pill pill-wake" onClick={() => onNavigate?.('sleep')}>
+            {wake.overdue ? 'Time for a nap!' : `Nap time in ${formatDuration(wake.remainingMs)}`}
+          </button>
+        )}
       </header>
 
       <div className="summary-grid">
@@ -68,7 +75,9 @@ export default function DashboardScreen({
             className={`card summary ${accent}`}
             onClick={() => onNavigate?.(tab)}
           >
-            <Icon size={26} />
+            <span className="summary-icon">
+              <Icon size={20} />
+            </span>
             <span className="summary-value">{value}</span>
             <span className="summary-label">{label}</span>
           </button>

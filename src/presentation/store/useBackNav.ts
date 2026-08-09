@@ -16,12 +16,17 @@ function isNavState(v: unknown): v is NavState {
 }
 
 export function useBackNav() {
-  const [current, setCurrent] = useState<NavState>(HOME)
-  const stackRef = useRef<NavState[]>([HOME])
+  const [current, setCurrent] = useState<NavState>(() => {
+    const st = window.history.state as unknown
+    return isNavState(st) ? (st as NavState) : HOME
+  })
+  const stackRef = useRef<NavState[]>([current])
   const pendingBacks = useRef(0)
 
   useEffect(() => {
-    window.history.replaceState(HOME, '')
+    if (!window.history.state) {
+      window.history.replaceState(HOME, '')
+    }
     const onPop = (e: PopStateEvent) => {
       if (pendingBacks.current > 0) {
         pendingBacks.current -= 1

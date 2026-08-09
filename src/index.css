@@ -939,8 +939,8 @@ body.appbar-scrolled .screen-header {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 4px;
-  padding: 14px 12px;
+  gap: 6px;
+  padding: 12px;
   min-width: 0;
 }
 
@@ -958,10 +958,23 @@ button.event-link:active {
   background: var(--md-surface-container);
 }
 
+.summary-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--shape-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  margin-bottom: 2px;
+}
+
 .summary-value {
   font-size: clamp(1.5rem, 3vw, 2rem);
   font-weight: 700;
   letter-spacing: -0.02em;
+  line-height: 1.1;
+  white-space: nowrap;
 }
 
 .summary-label {
@@ -969,29 +982,40 @@ button.event-link:active {
   color: var(--md-on-surface-variant);
 }
 
-.accent-sleep {
-  border-top: 3px solid var(--accent-sleep-fg);
+.accent-sleep .summary-icon {
+  background: var(--accent-sleep-bg);
+  color: var(--accent-sleep-fg);
 }
 
-.accent-feed {
-  border-top: 3px solid var(--accent-feed-fg);
+.accent-feed .summary-icon {
+  background: var(--accent-feed-bg);
+  color: var(--accent-feed-fg);
 }
 
-.accent-diaper {
-  border-top: 3px solid var(--accent-diaper-fg);
+.accent-diaper .summary-icon {
+  background: var(--accent-diaper-bg);
+  color: var(--accent-diaper-fg);
 }
 
 .pill {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin-top: 8px;
-  padding: 6px 16px;
+  gap: 6px;
+  width: fit-content;
+  margin: 0;
+  padding: 6px 18px;
+  min-height: 36px;
   border-radius: 999px;
   font-size: var(--type-label);
   font-weight: 600;
+  line-height: 1.2;
   border: none;
   background: none;
+}
+
+.screen-header .pill {
+  margin-top: 8px;
 }
 
 .pill-active {
@@ -1001,6 +1025,22 @@ button.event-link:active {
 
 .pill-active:hover {
   filter: brightness(0.97);
+}
+
+.pill-wake {
+  background: var(--md-tertiary-container);
+  color: var(--md-on-tertiary-container);
+}
+
+.pill-wake:hover {
+  filter: brightness(0.97);
+}
+
+.sleep-countdown {
+  color: var(--md-tertiary);
+  font-weight: 700;
+  font-size: var(--type-title);
+  text-align: center;
 }
 
 /* ---------- Timeline / event list ---------- */

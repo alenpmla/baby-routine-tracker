@@ -124,9 +124,8 @@ describe('Baby Tracker end-to-end flow', () => {
     first.unmount()
 
     render(<App />)
-    expect(await screen.findByRole('heading', { name: /hi, avery/i })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Diaper' })).toBeInTheDocument()
     expect(screen.getByRole('navigation', { name: /primary/i })).toBeInTheDocument()
-    await user.click(nav().getByRole('button', { name: 'Diaper' }))
     expect(within(screen.getByRole('group', { name: 'Changes' })).getByText('1')).toBeInTheDocument()
   })
 })
