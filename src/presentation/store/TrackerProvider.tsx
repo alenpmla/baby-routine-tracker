@@ -36,6 +36,7 @@ import { saveBabyProfile } from '../../domain/usecase/baby'
 import type { SaveBabyInput } from '../../domain/usecase/baby'
 import { addFoodSuggestion, removeFoodSuggestion } from '../../domain/usecase/settings'
 import { getDailyAverages, type DailyAverages } from '../../domain/usecase/averages'
+import { getInsights, type Insight } from '../../domain/usecase/insights'
 import { DEFAULT_AVERAGES_DAYS } from '../../domain/model/AppSettings'
 import { createSyncRepositories, type SyncRepositories } from '../../data/repositories'
 import type { BackupData } from '../../data/repositories/RemoteRepositories'
@@ -52,6 +53,7 @@ export interface TrackerState {
   dayCounts: { sleeps: number; feeds: number; diapers: number }
   foodSuggestions: string[]
   dailyAverages: DailyAverages
+  insights: Insight[]
   lastWakeEndMs: number | null
   settings: AppSettings
   now: Date
@@ -227,6 +229,11 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
         settings.averagesDays ?? DEFAULT_AVERAGES_DAYS,
       ),
     [version, settings],
+  )
+
+  const insights = useMemo(
+    () => getInsights(repos.current.sleep, repos.current.feeding),
+    [version, now],
   )
 
   const lastWakeEndMs = useMemo(() => {
@@ -425,6 +432,7 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
     foodSuggestions,
     now,
     dailyAverages,
+    insights,
     lastWakeEndMs,
     settings,
     saveProfile,

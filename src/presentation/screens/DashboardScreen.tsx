@@ -4,6 +4,7 @@ import { describeAge, formatClock, formatDayLabel, formatDuration, isSameDay, st
 import { describeFeedingMeta, describeFeedingTitle } from '../utils/feeding'
 import { BottleIcon, DiaperIcon, MoonIcon, SettingsIcon } from '../components/icons'
 import GrowthChart from '../components/GrowthChart'
+import InsightsSection from '../components/InsightsSection'
 import DayNav from '../components/DayNav'
 import type { Tab } from '../navigation'
 
@@ -85,6 +86,8 @@ export default function DashboardScreen({
           </button>
         ))}
       </div>
+
+      {viewingToday && <InsightsSection />}
 
       {(weights.length > 0 || baby?.birthWeightKg != null) && baby?.dob && (
         <section className="growth">

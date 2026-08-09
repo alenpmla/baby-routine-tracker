@@ -1052,6 +1052,40 @@ button.event-link:active {
   margin-bottom: 12px;
 }
 
+/* ---------- Trends & insights ---------- */
+
+.insights-title {
+  font-size: var(--type-title);
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.insight-row {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.insight-card {
+  flex: 0 0 auto;
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  background: var(--md-surface-container-low);
+}
+
+.insight-title {
+  font-weight: 600;
+}
+
+.insight-detail {
+  color: var(--md-on-surface-variant);
+  font-size: var(--type-caption);
+}
+
 /* ---------- Weight growth chart ---------- */
 
 .growth-title {
