@@ -492,6 +492,16 @@ body.appbar-scrolled .screen-header {
   background: color-mix(in srgb, var(--md-secondary-container) 75%, var(--md-on-secondary-container) 25%);
 }
 
+.btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.btn-secondary:disabled:hover,
+.btn-secondary:disabled:active {
+  background: var(--md-secondary-container);
+}
+
 .icon-btn {
   background: none;
   border: none;

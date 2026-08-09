@@ -72,6 +72,25 @@ export function createMockApi(): MockApi {
         return respond({ settings: state.settings })
       }
     }
+    if (path === '/api/import') {
+      if (method === 'POST') {
+        const b = body as unknown as {
+          baby?: Baby | null
+          sleeps?: SleepSession[]
+          feedings?: FeedingSession[]
+          diapers?: DiaperChange[]
+          weights?: WeightEntry[]
+          settings?: AppSettings
+        }
+        state.baby = b.baby ?? null
+        state.sleeps = b.sleeps ?? []
+        state.feedings = b.feedings ?? []
+        state.diapers = b.diapers ?? []
+        state.weights = b.weights ?? []
+        state.settings = b.settings ?? { foodSuggestions: [] }
+        return respond({ ok: true })
+      }
+    }
     for (const key of COLLECTIONS) {
       const prefix = `/api/${key}`
       if (path === prefix) {

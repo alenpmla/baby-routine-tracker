@@ -26,8 +26,6 @@ const WEIGHTS_KEY = 'weights'
 
 export type CollectionKey = 'sleeps' | 'feedings' | 'diapers' | 'weights'
 
-const COLLECTIONS: CollectionKey[] = ['sleeps', 'feedings', 'diapers', 'weights']
-
 export interface BackupData {
   version: 1
   exportedAt: string
@@ -354,20 +352,7 @@ export class RemoteRepositories implements SyncRepositories {
   }
 
   async importData(data: BackupData): Promise<void> {
-    if (data.baby) {
-      await this.http.put('/api/baby', data.baby)
-    }
-    for (const key of COLLECTIONS) {
-      const existing = await this.http.get<Record<string, { id: string }[]>>(`/api/${key}`)
-      for (const item of existing[key] ?? []) {
-        await this.http.del(`/api/${key}/${item.id}`)
-      }
-      const items = (data[key] as { id: string }[] | undefined) ?? []
-      for (const item of items) {
-        await this.http.post(`/api/${key}`, item)
-      }
-    }
-    await this.http.put('/api/settings', data.settings)
+    await this.http.post('/api/import', data)
     await this.loadAll()
   }
 }

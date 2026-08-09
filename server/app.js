@@ -41,6 +41,19 @@ export function createApp(store, staticDir, caFile) {
     res.json({ settings: store.setSettings(settings) })
   })
 
+  app.post('/api/import', (req, res) => {
+    const d = req.body
+    if (!d || typeof d !== 'object') {
+      return res.status(400).json({ error: 'invalid import body' })
+    }
+    for (const key of KEYS) {
+      if (!Array.isArray(d[key])) {
+        return res.status(400).json({ error: `${key} must be an array` })
+      }
+    }
+    res.json({ ok: true, data: store.replace(d) })
+  })
+
   for (const key of KEYS) {
     app.get(`/api/${key}`, (req, res) => {
       res.json({ [key]: store.get()[key] })

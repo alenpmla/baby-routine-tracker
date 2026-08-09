@@ -12,6 +12,7 @@ export default function DataReportsScreen({ onBack }: { onBack: () => void }) {
 
   const [dataStatus, setDataStatus] = useState<string | null>(null)
   const [dataError, setDataError] = useState<string | null>(null)
+  const [importing, setImporting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   const [periodStart, setPeriodStart] = useState('')
@@ -41,6 +42,7 @@ export default function DataReportsScreen({ onBack }: { onBack: () => void }) {
   function handleImportFile(file: File) {
     setDataStatus(null)
     setDataError(null)
+    setImporting(true)
     const reader = new FileReader()
     reader.onload = () => {
       const resetInput = () => {
@@ -52,12 +54,14 @@ export default function DataReportsScreen({ onBack }: { onBack: () => void }) {
       try {
         parsed = JSON.parse(String(reader.result))
       } catch {
+        setImporting(false)
         setDataError('That file is not valid JSON')
         showSnackbar('That file is not valid JSON', 'error')
         resetInput()
         return
       }
       if (!isValidBackup(parsed)) {
+        setImporting(false)
         setDataError('Not a valid Baby Tracker backup file')
         showSnackbar('Not a valid Baby Tracker backup file', 'error')
         resetInput()
@@ -72,7 +76,10 @@ export default function DataReportsScreen({ onBack }: { onBack: () => void }) {
           setDataError('Import failed')
           showSnackbar('Import failed', 'error')
         })
-        .finally(resetInput)
+        .finally(() => {
+          setImporting(false)
+          resetInput()
+        })
     }
     reader.readAsText(file)
   }
@@ -119,8 +126,8 @@ export default function DataReportsScreen({ onBack }: { onBack: () => void }) {
           <button type="button" className="btn btn-secondary" onClick={() => void handleExport()}>
             Export data
           </button>
-          <button type="button" className="btn btn-secondary" onClick={() => fileInputRef.current?.click()}>
-            Import data
+          <button type="button" className="btn btn-secondary" onClick={() => fileInputRef.current?.click()} disabled={importing}>
+            {importing ? 'Importing…' : 'Import data'}
           </button>
           <input
             ref={fileInputRef}
@@ -135,6 +142,11 @@ export default function DataReportsScreen({ onBack }: { onBack: () => void }) {
             }}
           />
         </div>
+        {importing && (
+          <p className="settings-ok" role="status">
+            Importing…
+          </p>
+        )}
         {dataStatus && (
           <p className="settings-ok" role="status">
             {dataStatus}

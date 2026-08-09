@@ -86,6 +86,31 @@ describe('json store', () => {
     const store2 = createStore(path.join(dir, 'missing', 'bt.json'))
     expect(store2.get().sleeps).toEqual([])
   })
+
+  it('replaces all data in a single write and normalizes feedings', () => {
+    store.add('sleeps', { id: 'old', startTime: 't', endTime: null })
+    const replaced = store.replace({
+      baby: { id: 'b1', name: 'New', dob: '2026-01-01', notes: '' },
+      sleeps: [{ id: 's1', startTime: 'a', endTime: null }],
+      feedings: [{ id: 'f1', time: 'a', type: 'solids', food: 'Banana', amount: 2, unit: 'oz' }],
+      diapers: [{ id: 'd1', time: 't', type: 'wet' }],
+      weights: [{ id: 'w1', time: 't', weight: 8, unit: 'kg' }],
+      settings: { foodSuggestions: ['carrot'] },
+    })
+    expect(replaced.sleeps).toEqual([{ id: 's1', startTime: 'a', endTime: null }])
+    expect(replaced.feedings[0].foods).toEqual(['Banana'])
+    expect(replaced.baby.name).toBe('New')
+
+    const fresh = createStore(dataFile)
+    expect(fresh.get().sleeps).toHaveLength(1)
+    expect(fresh.get().weights).toHaveLength(1)
+  })
+
+  it('replace() drops invalid collection shapes and keeps settings defaults', () => {
+    const replaced = store.replace({ baby: null, sleeps: 'nope', settings: null })
+    expect(replaced.sleeps).toEqual([])
+    expect(replaced.settings.foodSuggestions).toEqual(DEFAULT_FOOD_SUGGESTIONS)
+  })
 })
 
 function listen(app) {
@@ -171,6 +196,33 @@ describe('REST API', () => {
 
   it('rejects items without an id', async () => {
     const res = await request(server, 'POST', '/api/feedings', { time: 't', type: 'bottle' })
+    expect(res.status).toBe(400)
+  })
+
+  it('bulk-imports a full backup atomically', async () => {
+    const backup = {
+      baby: { id: 'b1', name: 'Ciara', dob: '2025-10-30', notes: '' },
+      sleeps: [{ id: 's1', startTime: 't', endTime: null }],
+      feedings: [{ id: 'f1', time: 'a', type: 'solids', food: 'Banana', amount: 2, unit: 'oz' }],
+      diapers: [{ id: 'd1', time: 't', type: 'wet' }],
+      weights: [{ id: 'w1', time: 't', weight: 8, unit: 'kg' }],
+      settings: { foodSuggestions: ['carrot'] },
+    }
+    const res = await request(server, 'POST', '/api/import', backup)
+    expect(res.status).toBe(200)
+    expect(res.json.ok).toBe(true)
+
+    const state = store.get()
+    expect(state.baby.name).toBe('Ciara')
+    expect(state.sleeps).toHaveLength(1)
+    expect(state.feedings[0].foods).toEqual(['Banana'])
+    expect(state.diapers).toHaveLength(1)
+    expect(state.weights[0].weight).toBe(8)
+    expect(state.settings.foodSuggestions).toEqual(['carrot'])
+  })
+
+  it('rejects a bulk import with missing collections', async () => {
+    const res = await request(server, 'POST', '/api/import', { baby: null })
     expect(res.status).toBe(400)
   })
 })

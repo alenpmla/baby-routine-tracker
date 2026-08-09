@@ -10,6 +10,14 @@ export const DEFAULT_FOOD_SUGGESTIONS = [
   'beef',
 ]
 
+function normalizeFeeding(f) {
+  if (f && typeof f.food === 'string' && !Array.isArray(f.foods)) {
+    const { food, ...rest } = f
+    return { ...rest, foods: [food] }
+  }
+  return f
+}
+
 export function createStore(filePath) {
   const defaults = () => ({
     baby: null,
@@ -28,13 +36,7 @@ export function createStore(filePath) {
       for (const key of KEYS) {
         base[key] = Array.isArray(data[key]) ? data[key] : []
       }
-      base.feedings = base.feedings.map((f) => {
-        if (f && typeof f.food === 'string' && !Array.isArray(f.foods)) {
-          const { food, ...rest } = f
-          return { ...rest, foods: [food] }
-        }
-        return f
-      })
+      base.feedings = base.feedings.map(normalizeFeeding)
       base.baby = data.baby ?? null
       base.settings = {
         foodSuggestions: Array.isArray(data.settings?.foodSuggestions)
@@ -69,6 +71,20 @@ export function createStore(filePath) {
 
   return {
     get: () => read(),
+    replace(data) {
+      const base = defaults()
+      for (const key of KEYS) {
+        base[key] = Array.isArray(data[key]) ? data[key].map(normalizeFeeding) : []
+      }
+      base.baby = data.baby ?? null
+      base.settings = {
+        foodSuggestions: Array.isArray(data.settings?.foodSuggestions)
+          ? data.settings.foodSuggestions
+          : base.settings.foodSuggestions,
+      }
+      write(base)
+      return base
+    },
     setBaby(baby) {
       const data = read()
       data.baby = baby
