@@ -14,22 +14,27 @@ export interface GrowthPoint {
 interface GrowthChartProps {
   dob: string
   weights: GrowthPoint[]
+  birthWeightKg?: number
 }
 
-export default function GrowthChart({ dob, weights }: GrowthChartProps) {
+export default function GrowthChart({ dob, weights, birthWeightKg }: GrowthChartProps) {
   const data = useMemo(() => {
     const dobMs = new Date(`${dob}T00:00:00`).getTime()
     if (Number.isNaN(dobMs)) {
       return []
     }
-    return weights
+    const points = weights
       .map((w) => {
         const timeMs = new Date(w.time).getTime()
         return { month: (timeMs - dobMs) / MONTH_MS, kg: w.weight }
       })
       .filter((p) => Number.isFinite(p.month) && p.month >= 0)
       .sort((a, b) => a.month - b.month)
-  }, [dob, weights])
+    if (birthWeightKg != null && birthWeightKg > 0 && !points.some((p) => p.month === 0)) {
+      points.unshift({ month: 0, kg: birthWeightKg })
+    }
+    return points
+  }, [dob, weights, birthWeightKg])
 
   const maxMonth = Math.max(24, ...data.map((d) => Math.ceil(d.month)))
 

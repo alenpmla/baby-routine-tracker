@@ -108,4 +108,29 @@ describe('Weight tracking', () => {
     await onboard(user)
     expect(screen.queryByText('Weight progress')).not.toBeInTheDocument()
   })
+
+  it('saves the birth weight from onboarding and anchors the chart at birth', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.type(await screen.findByLabelText(/name/i), 'Avery')
+    fireEvent.change(screen.getByLabelText(/date of birth/i), { target: { value: '2026-01-15' } })
+    fireEvent.change(screen.getByLabelText(/birth weight/i), { target: { value: '3.4' } })
+    await user.click(screen.getByRole('button', { name: /continue/i }))
+
+    expect(api.state.baby?.birthWeightKg).toBe(3.4)
+    expect(screen.getByText('Weight progress')).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: /weight growth chart/i })).toBeInTheDocument()
+  })
+
+  it('converts a birth weight entered in lb to kg', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.type(await screen.findByLabelText(/name/i), 'Avery')
+    fireEvent.change(screen.getByLabelText(/date of birth/i), { target: { value: '2026-01-15' } })
+    fireEvent.change(screen.getByLabelText(/unit/i), { target: { value: 'lb' } })
+    fireEvent.change(screen.getByLabelText(/birth weight/i), { target: { value: '7.5' } })
+    await user.click(screen.getByRole('button', { name: /continue/i }))
+
+    expect(api.state.baby?.birthWeightKg).toBeCloseTo(7.5 * 0.45359237, 5)
+  })
 })

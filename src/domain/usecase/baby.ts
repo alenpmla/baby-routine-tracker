@@ -6,6 +6,7 @@ export interface SaveBabyInput {
   name: string
   dob: string
   notes?: string
+  birthWeightKg?: number
 }
 
 export function getBabyProfile(repo: BabyRepository): Baby | null {
@@ -24,6 +25,7 @@ export function saveBabyProfile(repo: BabyRepository, input: SaveBabyInput, exis
     name: input.name.trim(),
     dob: input.dob,
     notes: input.notes?.trim() ?? '',
+    birthWeightKg: input.birthWeightKg,
   }
   repo.save(baby)
   return baby

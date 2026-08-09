@@ -84,11 +84,11 @@ export default function DashboardScreen({
         ))}
       </div>
 
-      {weights.length > 0 && baby?.dob && (
+      {(weights.length > 0 || baby?.birthWeightKg != null) && baby?.dob && (
         <section className="growth">
           <h2 className="growth-title">Weight progress</h2>
           <div className="card growth-card">
-            <GrowthChart dob={baby.dob} weights={weights} />
+            <GrowthChart dob={baby.dob} weights={weights} birthWeightKg={baby.birthWeightKg} />
           </div>
         </section>
       )}

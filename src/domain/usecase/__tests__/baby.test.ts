@@ -20,6 +20,19 @@ describe('baby use cases', () => {
     expect(getBabyProfile(repo)?.notes).toBe('loves naps')
   })
 
+  it('saves and reads back the birth weight', () => {
+    const repo = new MemoryBabyRepo()
+    const baby = saveBabyProfile(repo, { name: 'Avery', dob: '2026-01-15', birthWeightKg: 3.4 })
+    expect(baby.birthWeightKg).toBe(3.4)
+    expect(getBabyProfile(repo)?.birthWeightKg).toBe(3.4)
+  })
+
+  it('keeps birthWeightKg optional', () => {
+    const repo = new MemoryBabyRepo()
+    const baby = saveBabyProfile(repo, { name: 'Avery', dob: '2026-01-15' })
+    expect(baby.birthWeightKg).toBeUndefined()
+  })
+
   it('preserves the id when updating an existing profile', () => {
     const repo = new MemoryBabyRepo()
     const first = saveBabyProfile(repo, { name: 'Avery', dob: '2026-01-15' })
