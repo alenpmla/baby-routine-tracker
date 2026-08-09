@@ -81,6 +81,29 @@ describe('Wake window notification', () => {
     expect(screen.getByText('2h 30m')).toBeInTheDocument()
   })
 
+  it('sends a test notification when permission is granted', async () => {
+    const sent: { title: string; opts: unknown }[] = []
+    class FakeNotification {
+      static permission = 'granted'
+      static requestPermission = vi.fn(async () => 'granted')
+      constructor(title: string, opts: unknown) {
+        sent.push({ title, opts })
+      }
+    }
+    vi.stubGlobal('Notification', FakeNotification)
+
+    const user = userEvent.setup()
+    await onboard(user)
+    await user.click(screen.getByRole('button', { name: /settings/i }))
+    await user.click(screen.getByRole('button', { name: /notifications/i }))
+
+    await user.click(screen.getByRole('button', { name: /send test notification/i }))
+
+    expect(sent).toHaveLength(1)
+    expect(sent[0].title).toBe('Baby Tracker')
+    expect(await screen.findByTestId('snackbar')).toHaveTextContent(/test notification sent/i)
+  })
+
   it('migrates the legacy hours setting to minutes', async () => {
     window.localStorage.setItem('bt.wakeWindowEnabled', 'true')
     window.localStorage.setItem('bt.wakeWindowHours', '4')

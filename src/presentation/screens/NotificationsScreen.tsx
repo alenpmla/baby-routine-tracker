@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNotificationPrefs } from '../store/NotificationPrefsProvider'
+import { useSnackbar } from '../store/SnackbarProvider'
 import DurationPicker from '../components/DurationPicker'
 import { BackIcon, BellIcon, ScheduleIcon } from '../components/icons'
 
@@ -9,7 +10,7 @@ function currentPermission(): PermissionState {
   if (typeof window === 'undefined' || typeof Notification === 'undefined') {
     return 'unsupported'
   }
-  if (!window.isSecureContext) {
+  if (window.isSecureContext === false) {
     return 'insecure'
   }
   return Notification.permission
@@ -29,17 +30,45 @@ export function describeDuration(minutes: number): string {
 
 export default function NotificationsScreen({ onBack }: { onBack: () => void }) {
   const { wakeWindowEnabled, setWakeWindowEnabled, wakeWindowMinutes, setWakeWindowMinutes } = useNotificationPrefs()
+  const { showSnackbar } = useSnackbar()
   const [pickerOpen, setPickerOpen] = useState(false)
   const [permission, setPermission] = useState<PermissionState>(currentPermission)
 
   async function requestPermission() {
-    if (typeof Notification === 'undefined' || !window.isSecureContext) {
+    if (typeof Notification === 'undefined' || window.isSecureContext === false) {
       return
     }
     try {
       setPermission(await Notification.requestPermission())
     } catch {
       setPermission('default')
+    }
+  }
+
+  async function sendTest() {
+    let p = currentPermission()
+    if (p === 'default' && typeof Notification !== 'undefined' && window.isSecureContext !== false) {
+      await requestPermission()
+      p = currentPermission()
+    }
+    if (p === 'granted' && typeof Notification !== 'undefined') {
+      try {
+        new Notification('Baby Tracker', {
+          body: 'This is a test notification from Baby Tracker.',
+          icon: '/icon-192.png',
+        })
+        showSnackbar('Test notification sent')
+      } catch {
+        showSnackbar('Could not send the test notification', 'error')
+      }
+      return
+    }
+    if (p === 'insecure') {
+      showSnackbar('Notifications need HTTPS — open via https://your-server:3443', 'error')
+    } else if (p === 'denied') {
+      showSnackbar('Notifications are blocked for this site', 'error')
+    } else {
+      showSnackbar('Notification permission is not granted', 'error')
     }
   }
 
@@ -119,6 +148,13 @@ export default function NotificationsScreen({ onBack }: { onBack: () => void }) 
             {permission === 'denied' ? 'Try again' : 'Enable'}
           </button>
         )}
+      </div>
+
+      <div className="card">
+        <p className="settings-hint">Not sure notifications work? Send one now.</p>
+        <button type="button" className="btn btn-secondary btn-block" onClick={() => void sendTest()}>
+          Send test notification
+        </button>
       </div>
     </div>
   )
