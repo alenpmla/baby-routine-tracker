@@ -3,6 +3,7 @@ import { shouldFireWakeReminder } from '../../domain/usecase/wakeWindow'
 import { useTracker } from './TrackerProvider'
 import { useNotificationPrefs } from './NotificationPrefsProvider'
 import { useSnackbar } from './SnackbarProvider'
+import { showSystemNotification } from '../utils/notify'
 import { formatDuration } from '../utils/time'
 
 const NOTIFIED_KEY = 'wakeNotifiedForEnd'
@@ -25,13 +26,7 @@ function writeNotifiedFor(value: string) {
 }
 
 function sendNotification(body: string) {
-  if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-    try {
-      new Notification('Wake window', { body, icon: '/icon-192.png' })
-    } catch {
-      /* ignore */
-    }
-  }
+  void showSystemNotification('Wake window', body)
 }
 
 export function useWakeWindowReminder() {

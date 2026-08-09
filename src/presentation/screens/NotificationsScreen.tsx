@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNotificationPrefs } from '../store/NotificationPrefsProvider'
 import { useSnackbar } from '../store/SnackbarProvider'
 import DurationPicker from '../components/DurationPicker'
+import { showSystemNotification } from '../utils/notify'
 import { BackIcon, BellIcon, ScheduleIcon } from '../components/icons'
 
 type PermissionState = 'granted' | 'denied' | 'default' | 'unsupported' | 'insecure'
@@ -52,15 +53,8 @@ export default function NotificationsScreen({ onBack }: { onBack: () => void }) 
       p = currentPermission()
     }
     if (p === 'granted' && typeof Notification !== 'undefined') {
-      try {
-        new Notification('Baby Tracker', {
-          body: 'This is a test notification from Baby Tracker.',
-          icon: '/icon-192.png',
-        })
-        showSnackbar('Test notification sent')
-      } catch {
-        showSnackbar('Could not send the test notification', 'error')
-      }
+      const error = await showSystemNotification('Baby Tracker', 'This is a test notification from Baby Tracker.')
+      showSnackbar(error ?? 'Test notification sent', error ? 'error' : 'success')
       return
     }
     if (p === 'insecure') {
