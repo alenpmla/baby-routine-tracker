@@ -1,16 +1,12 @@
 import type { AmountUnit, FeedingSession } from '../../domain/model/FeedingSession'
 import { foodsOf } from '../../domain/model/FeedingSession'
+import type { BottleUnit, SolidsUnit } from '../../domain/model/AppSettings'
 import { formatDuration } from './time'
+
+export type { BottleUnit, SnapshotUnits, SolidsUnit } from '../../domain/model/AppSettings'
 
 const OZ_TO_GRAM = 28.3495
 const OZ_TO_ML = 29.5735
-
-export type BottleUnit = 'ml' | 'oz'
-export type SolidsUnit = 'g' | 'oz'
-export interface SnapshotUnits {
-  bottle: BottleUnit
-  solids: SolidsUnit
-}
 
 function formatAmount(value: number): string {
   return Number.isInteger(value) ? String(value) : value.toFixed(1).replace(/\.0$/, '')

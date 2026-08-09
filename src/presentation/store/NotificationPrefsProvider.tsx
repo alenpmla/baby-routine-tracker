@@ -1,10 +1,7 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, type ReactNode } from 'react'
+import { useTracker } from './TrackerProvider'
+import { DEFAULT_WAKE_WINDOW_ENABLED, DEFAULT_WAKE_WINDOW_MINUTES } from '../../domain/model/AppSettings'
 
-const ENABLED_KEY = 'wakeWindowEnabled'
-const MINUTES_KEY = 'wakeWindowMinutes'
-const LEGACY_HOURS_KEY = 'wakeWindowHours'
-const DEFAULT_ENABLED = true
-const DEFAULT_MINUTES = 180
 const MIN_MINUTES = 15
 const MAX_MINUTES = 720
 
@@ -17,7 +14,11 @@ interface NotificationPrefsValue {
 
 const NotificationPrefsContext = createContext<NotificationPrefsValue | null>(null)
 
-function readBool(key: string, fallback: boolean): boolean {
+function clampMinutes(n: number): number {
+  return Math.min(MAX_MINUTES, Math.max(MIN_MINUTES, n))
+}
+
+function readLegacyBool(key: string): boolean | null {
   try {
     const raw = window.localStorage.getItem(`bt.${key}`)
     if (raw !== null) {
@@ -26,25 +27,21 @@ function readBool(key: string, fallback: boolean): boolean {
   } catch {
     /* ignore */
   }
-  return fallback
+  return null
 }
 
-function clampMinutes(n: number): number {
-  return Math.min(MAX_MINUTES, Math.max(MIN_MINUTES, n))
-}
-
-function readMinutes(): number {
+function readLegacyMinutes(): number | null {
   try {
-    const raw = window.localStorage.getItem(`bt.${MINUTES_KEY}`)
+    const raw = window.localStorage.getItem('bt.wakeWindowMinutes')
     if (raw !== null) {
       const n = Number(raw)
       if (Number.isFinite(n)) {
         return clampMinutes(Math.round(n))
       }
     }
-    const legacy = window.localStorage.getItem(`bt.${LEGACY_HOURS_KEY}`)
-    if (legacy !== null) {
-      const h = Number(legacy)
+    const legacyHours = window.localStorage.getItem('bt.wakeWindowHours')
+    if (legacyHours !== null) {
+      const h = Number(legacyHours)
       if (Number.isFinite(h) && h >= 1 && h <= 12) {
         return clampMinutes(h * 60)
       }
@@ -52,31 +49,40 @@ function readMinutes(): number {
   } catch {
     /* ignore */
   }
-  return DEFAULT_MINUTES
+  return null
 }
 
 export function NotificationPrefsProvider({ children }: { children: ReactNode }) {
-  const [wakeWindowEnabled, setWakeWindowEnabledState] = useState(() => readBool(ENABLED_KEY, DEFAULT_ENABLED))
-  const [wakeWindowMinutes, setWakeWindowMinutesState] = useState(readMinutes)
+  const { ready, settings, updateSettings } = useTracker()
+  const wakeWindowEnabled = settings.wakeWindowEnabled ?? DEFAULT_WAKE_WINDOW_ENABLED
+  const wakeWindowMinutes = settings.wakeWindowMinutes ?? DEFAULT_WAKE_WINDOW_MINUTES
 
+  const setWakeWindowEnabled = useCallback((enabled: boolean) => updateSettings({ wakeWindowEnabled: enabled }), [updateSettings])
+  const setWakeWindowMinutes = useCallback((minutes: number) => updateSettings({ wakeWindowMinutes: clampMinutes(minutes) }), [updateSettings])
+
+  // One-time migration from legacy per-device keys into synced settings.
+  // Waits for the initial load so it never clobbers the freshly loaded settings.
   useEffect(() => {
-    try {
-      window.localStorage.setItem(`bt.${ENABLED_KEY}`, String(wakeWindowEnabled))
-    } catch {
-      /* ignore */
+    if (!ready) {
+      return
     }
-  }, [wakeWindowEnabled])
-
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(`bt.${MINUTES_KEY}`, String(wakeWindowMinutes))
-    } catch {
-      /* ignore */
+    const patch: Record<string, unknown> = {}
+    if (settings.wakeWindowEnabled === undefined) {
+      const legacy = readLegacyBool('wakeWindowEnabled')
+      if (legacy !== null) {
+        patch.wakeWindowEnabled = legacy
+      }
     }
-  }, [wakeWindowMinutes])
-
-  const setWakeWindowEnabled = useCallback((enabled: boolean) => setWakeWindowEnabledState(enabled), [])
-  const setWakeWindowMinutes = useCallback((minutes: number) => setWakeWindowMinutesState(clampMinutes(minutes)), [])
+    if (settings.wakeWindowMinutes === undefined) {
+      const legacy = readLegacyMinutes()
+      if (legacy !== null) {
+        patch.wakeWindowMinutes = legacy
+      }
+    }
+    if (Object.keys(patch).length > 0) {
+      updateSettings(patch)
+    }
+  }, [ready, settings.wakeWindowEnabled, settings.wakeWindowMinutes, updateSettings])
 
   const value = useMemo<NotificationPrefsValue>(
     () => ({ wakeWindowEnabled, setWakeWindowEnabled, wakeWindowMinutes, setWakeWindowMinutes }),

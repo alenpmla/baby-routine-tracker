@@ -70,8 +70,8 @@ export function createApp(store, staticDir, caFile) {
 
   app.put('/api/settings', (req, res) => {
     const settings = req.body
-    if (!settings || !Array.isArray(settings.foodSuggestions)) {
-      return res.status(400).json({ error: 'settings requires a foodSuggestions array' })
+    if (!settings || typeof settings !== 'object') {
+      return res.status(400).json({ error: 'settings must be an object' })
     }
     res.json({ settings: store.setSettings(settings) })
     broadcast()

@@ -18,6 +18,15 @@ function normalizeFeeding(f) {
   return f
 }
 
+/** Preserves the full settings object, defaulting only the food suggestions. */
+function normalizeSettings(dataSettings) {
+  const base = dataSettings && typeof dataSettings === 'object' ? { ...dataSettings } : {}
+  if (!Array.isArray(base.foodSuggestions)) {
+    base.foodSuggestions = [...DEFAULT_FOOD_SUGGESTIONS]
+  }
+  return base
+}
+
 export function createStore(filePath) {
   const defaults = () => ({
     baby: null,
@@ -38,11 +47,7 @@ export function createStore(filePath) {
       }
       base.feedings = base.feedings.map(normalizeFeeding)
       base.baby = data.baby ?? null
-      base.settings = {
-        foodSuggestions: Array.isArray(data.settings?.foodSuggestions)
-          ? data.settings.foodSuggestions
-          : [...DEFAULT_FOOD_SUGGESTIONS],
-      }
+      base.settings = normalizeSettings(data.settings)
       return base
     } catch {
       return defaults()
@@ -77,11 +82,7 @@ export function createStore(filePath) {
         base[key] = Array.isArray(data[key]) ? data[key].map(normalizeFeeding) : []
       }
       base.baby = data.baby ?? null
-      base.settings = {
-        foodSuggestions: Array.isArray(data.settings?.foodSuggestions)
-          ? data.settings.foodSuggestions
-          : base.settings.foodSuggestions,
-      }
+      base.settings = normalizeSettings(data.settings)
       write(base)
       return base
     },

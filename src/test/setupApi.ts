@@ -3,8 +3,8 @@ import { createMockApi, type MockApi } from './mockApi'
 
 export function setupApi(): MockApi {
   window.localStorage.clear()
-  window.localStorage.setItem('bt.wakeWindowEnabled', 'false')
   const api = createMockApi()
+  api.state.settings.wakeWindowEnabled = false
   vi.stubGlobal('fetch', api.fetchStub)
   return api
 }

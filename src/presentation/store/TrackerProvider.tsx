@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from 'react'
 import type { Baby } from '../../domain/model/Baby'
+import type { AppSettings } from '../../domain/model/AppSettings'
 import type { DiaperChange, DiaperType } from '../../domain/model/DiaperChange'
 import type { FeedingSession, FeedingType } from '../../domain/model/FeedingSession'
 import type { SleepSession } from '../../domain/model/SleepSession'
@@ -35,7 +36,7 @@ import { saveBabyProfile } from '../../domain/usecase/baby'
 import type { SaveBabyInput } from '../../domain/usecase/baby'
 import { addFoodSuggestion, removeFoodSuggestion } from '../../domain/usecase/settings'
 import { getDailyAverages, type DailyAverages } from '../../domain/usecase/averages'
-import { useSnapshotPrefs } from './SnapshotPrefsProvider'
+import { DEFAULT_AVERAGES_DAYS } from '../../domain/model/AppSettings'
 import { createSyncRepositories, type SyncRepositories } from '../../data/repositories'
 import type { BackupData } from '../../data/repositories/RemoteRepositories'
 import { getDayRange, shiftDays, startOfDay } from '../utils/time'
@@ -52,11 +53,13 @@ export interface TrackerState {
   foodSuggestions: string[]
   dailyAverages: DailyAverages
   lastWakeEndMs: number | null
+  settings: AppSettings
   now: Date
 }
 
 export interface TrackerActions {
   saveProfile: (input: SaveBabyInput) => Baby
+  updateSettings: (patch: Partial<AppSettings>) => void
   startSleepTimer: (at?: Date) => SleepSession
   stopSleepTimer: () => SleepSession
   logPastSleep: (start: Date, end: Date) => SleepSession
@@ -90,7 +93,6 @@ const TrackerContext = createContext<UseTracker | null>(null)
 
 export function TrackerProvider({ children }: { children: ReactNode }) {
   const repos = useRef<SyncRepositories>(createSyncRepositories())
-  const { averagesDays } = useSnapshotPrefs()
   const [baby, setBaby] = useState<Baby | null>(null)
   const [ready, setReady] = useState(false)
   const [offline, setOffline] = useState(false)
@@ -214,9 +216,17 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
     [version, selectedDay, start, end],
   )
 
+  const settings = useMemo(() => repos.current.settings.get(), [version])
+
   const dailyAverages = useMemo(
-    () => getDailyAverages(repos.current.sleep, repos.current.feeding, repos.current.diaper, averagesDays),
-    [version, averagesDays],
+    () =>
+      getDailyAverages(
+        repos.current.sleep,
+        repos.current.feeding,
+        repos.current.diaper,
+        settings.averagesDays ?? DEFAULT_AVERAGES_DAYS,
+      ),
+    [version, settings],
   )
 
   const lastWakeEndMs = useMemo(() => {
@@ -231,6 +241,16 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
     }
     return last
   }, [version])
+
+  const updateSettings = useCallback(
+    (patch: Partial<AppSettings>) => {
+      const next: AppSettings = { ...repos.current.settings.get(), ...patch }
+      repos.current.settings.save(next)
+      setFoodSuggestions(next.foodSuggestions)
+      refresh()
+    },
+    [refresh],
+  )
 
   const activeSleep = useMemo(() => getActiveSleep(repos.current.sleep), [version, now])
 
@@ -406,7 +426,9 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
     now,
     dailyAverages,
     lastWakeEndMs,
+    settings,
     saveProfile,
+    updateSettings,
     startSleepTimer,
     stopSleepTimer,
     logPastSleep,

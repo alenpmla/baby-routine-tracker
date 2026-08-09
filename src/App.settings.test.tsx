@@ -56,8 +56,8 @@ describe('Food suggestions', () => {
     fireEvent.change(within(card).getByLabelText(/bottle amount/i), { target: { value: 'oz' } })
     fireEvent.change(within(card).getByLabelText(/solids amount/i), { target: { value: 'oz' } })
 
-    expect(window.localStorage.getItem('bt.snapshotUnits')).toContain('"bottle":"oz"')
-    expect(window.localStorage.getItem('bt.snapshotUnits')).toContain('"solids":"oz"')
+    expect(api.state.settings.snapshotUnits?.bottle).toBe('oz')
+    expect(api.state.settings.snapshotUnits?.solids).toBe('oz')
   })
 
   it('lets you choose the PDF report preferred units (separate from snapshots)', async () => {
@@ -70,8 +70,8 @@ describe('Food suggestions', () => {
     fireEvent.change(within(card).getByLabelText(/bottle amount/i), { target: { value: 'oz' } })
     fireEvent.change(within(card).getByLabelText(/solids amount/i), { target: { value: 'g' } })
 
-    expect(window.localStorage.getItem('bt.reportUnits')).toContain('"bottle":"oz"')
-    expect(window.localStorage.getItem('bt.reportUnits')).toContain('"solids":"g"')
+    expect(api.state.settings.reportUnits?.bottle).toBe('oz')
+    expect(api.state.settings.reportUnits?.solids).toBe('g')
   })
 
   it('exports a backup file from Settings', async () => {
@@ -193,10 +193,10 @@ describe('Food suggestions', () => {
 
     const group = screen.getByRole('group', { name: /averages window/i })
     await user.click(within(group).getByRole('button', { name: '7 days' }))
-    expect(window.localStorage.getItem('bt.averagesDays')).toBe('7')
+    expect(api.state.settings.averagesDays).toBe(7)
 
     await user.click(within(group).getByRole('button', { name: '60 days' }))
-    expect(window.localStorage.getItem('bt.averagesDays')).toBe('60')
+    expect(api.state.settings.averagesDays).toBe(60)
   })
 
   it('shows seeded suggestions in the Food suggestions sub-screen, lets you add/remove, and suggests in the Food field', async () => {

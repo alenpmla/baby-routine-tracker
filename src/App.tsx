@@ -93,16 +93,16 @@ function Shell() {
 
 export default function App() {
   return (
-    <NotificationPrefsProvider>
-      <SnapshotPrefsProvider>
-        <TrackerProvider>
+    <TrackerProvider>
+      <NotificationPrefsProvider>
+        <SnapshotPrefsProvider>
           <ThemeProvider>
             <SnackbarProvider>
               <Shell />
             </SnackbarProvider>
           </ThemeProvider>
-        </TrackerProvider>
-      </SnapshotPrefsProvider>
-    </NotificationPrefsProvider>
+        </SnapshotPrefsProvider>
+      </NotificationPrefsProvider>
+    </TrackerProvider>
   )
 }

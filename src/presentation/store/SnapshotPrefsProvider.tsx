@@ -1,14 +1,15 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
-import type { BottleUnit, SnapshotUnits, SolidsUnit } from '../utils/feeding'
+import { createContext, useCallback, useContext, useEffect, useMemo, type ReactNode } from 'react'
+import { useTracker } from './TrackerProvider'
+import {
+  DEFAULT_AVERAGES_DAYS,
+  DEFAULT_SNAPSHOT_UNITS,
+  type AveragesDays,
+  type BottleUnit,
+  type SnapshotUnits,
+  type SolidsUnit,
+} from '../../domain/model/AppSettings'
 
-const KEY = 'snapshotUnits'
-const REPORT_KEY = 'reportUnits'
-const AVERAGES_KEY = 'averagesDays'
-const DEFAULTS: SnapshotUnits = { bottle: 'ml', solids: 'g' }
-
-export type AveragesDays = 7 | 15 | 30 | 60
-const AVERAGES_DAYS: AveragesDays[] = [7, 15, 30, 60]
-const DEFAULT_AVERAGES_DAYS: AveragesDays = 30
+export type { AveragesDays, BottleUnit, SnapshotUnits, SolidsUnit } from '../../domain/model/AppSettings'
 
 interface SnapshotPrefsValue {
   units: SnapshotUnits
@@ -23,79 +24,80 @@ interface SnapshotPrefsValue {
 
 const SnapshotPrefsContext = createContext<SnapshotPrefsValue | null>(null)
 
-function readStored(key: string): SnapshotUnits {
+const AVERAGES_DAYS_OPTIONS: AveragesDays[] = [7, 15, 30, 60]
+
+function readLegacy<T>(key: string): T | null {
   try {
     const raw = window.localStorage.getItem(`bt.${key}`)
-    if (raw) {
-      const parsed = JSON.parse(raw) as Partial<SnapshotUnits>
-      const bottle = parsed.bottle === 'oz' || parsed.bottle === 'ml' ? parsed.bottle : DEFAULTS.bottle
-      const solids = parsed.solids === 'oz' || parsed.solids === 'g' ? parsed.solids : DEFAULTS.solids
-      return { bottle, solids }
-    }
-  } catch {
-    /* ignore */
-  }
-  return DEFAULTS
-}
-
-function writeStored(key: string, units: SnapshotUnits) {
-  try {
-    window.localStorage.setItem(`bt.${key}`, JSON.stringify(units))
-  } catch {
-    /* ignore */
-  }
-}
-
-function readAveragesDays(): AveragesDays {
-  try {
-    const raw = window.localStorage.getItem(`bt.${AVERAGES_KEY}`)
     if (raw !== null) {
-      const n = Number(raw)
-      if (AVERAGES_DAYS.includes(n as AveragesDays)) {
-        return n as AveragesDays
-      }
+      return JSON.parse(raw) as T
     }
   } catch {
     /* ignore */
   }
-  return DEFAULT_AVERAGES_DAYS
+  return null
 }
 
 export function SnapshotPrefsProvider({ children }: { children: ReactNode }) {
-  const [units, setUnits] = useState<SnapshotUnits>(() => readStored(KEY))
-  const [reportUnits, setReportUnits] = useState<SnapshotUnits>(() => readStored(REPORT_KEY))
-  const [averagesDays, setAveragesDaysState] = useState<AveragesDays>(readAveragesDays)
+  const { ready, settings, updateSettings } = useTracker()
+  const units = settings.snapshotUnits ?? DEFAULT_SNAPSHOT_UNITS
+  const reportUnits = settings.reportUnits ?? DEFAULT_SNAPSHOT_UNITS
+  const averagesDays = settings.averagesDays ?? DEFAULT_AVERAGES_DAYS
 
-  useEffect(() => {
-    writeStored(KEY, units)
-  }, [units])
+  const setBottleUnit = useCallback((bottle: BottleUnit) => updateSettings({ snapshotUnits: { ...units, bottle } }), [units, updateSettings])
+  const setSolidsUnit = useCallback((solids: SolidsUnit) => updateSettings({ snapshotUnits: { ...units, solids } }), [units, updateSettings])
+  const setReportBottleUnit = useCallback(
+    (bottle: BottleUnit) => updateSettings({ reportUnits: { ...reportUnits, bottle } }),
+    [reportUnits, updateSettings],
+  )
+  const setReportSolidsUnit = useCallback(
+    (solids: SolidsUnit) => updateSettings({ reportUnits: { ...reportUnits, solids } }),
+    [reportUnits, updateSettings],
+  )
+  const setAveragesDays = useCallback((days: AveragesDays) => updateSettings({ averagesDays: days }), [updateSettings])
 
+  // One-time migration from legacy per-device keys into synced settings.
+  // Waits for the initial load so it never clobbers the freshly loaded settings.
   useEffect(() => {
-    writeStored(REPORT_KEY, reportUnits)
-  }, [reportUnits])
-
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(`bt.${AVERAGES_KEY}`, String(averagesDays))
-    } catch {
-      /* ignore */
+    if (!ready) {
+      return
     }
-  }, [averagesDays])
-
-  const setAveragesDays = useCallback((days: AveragesDays) => setAveragesDaysState(days), [])
+    const patch: Record<string, unknown> = {}
+    if (!settings.snapshotUnits) {
+      const legacy = readLegacy<SnapshotUnits>('snapshotUnits')
+      if (legacy && legacy.bottle && legacy.solids) {
+        patch.snapshotUnits = legacy
+      }
+    }
+    if (!settings.reportUnits) {
+      const legacy = readLegacy<SnapshotUnits>('reportUnits')
+      if (legacy && legacy.bottle && legacy.solids) {
+        patch.reportUnits = legacy
+      }
+    }
+    if (!settings.averagesDays) {
+      const legacy = readLegacy<number>('averagesDays')
+      if (legacy && (AVERAGES_DAYS_OPTIONS as number[]).includes(legacy)) {
+        patch.averagesDays = legacy as AveragesDays
+      }
+    }
+    if (Object.keys(patch).length > 0) {
+      updateSettings(patch)
+    }
+  }, [ready, settings.snapshotUnits, settings.reportUnits, settings.averagesDays, updateSettings])
 
   const value = useMemo<SnapshotPrefsValue>(
     () => ({
       units,
-      setBottleUnit: (bottle) => setUnits((u) => ({ ...u, bottle })),
-      setSolidsUnit: (solids) => setUnits((u) => ({ ...u, solids })),
+      setBottleUnit,
+      setSolidsUnit,
       reportUnits,
-      setReportBottleUnit: (bottle) => setReportUnits((u) => ({ ...u, bottle })),
-      setReportSolidsUnit: (solids) => setReportUnits((u) => ({ ...u, solids })),
+      setReportBottleUnit,
+      setReportSolidsUnit,
       averagesDays,
       setAveragesDays,
     }),
-    [units, reportUnits, averagesDays, setAveragesDays],
+    [units, setBottleUnit, setSolidsUnit, reportUnits, setReportBottleUnit, setReportSolidsUnit, averagesDays, setAveragesDays],
   )
 
   return <SnapshotPrefsContext.Provider value={value}>{children}</SnapshotPrefsContext.Provider>

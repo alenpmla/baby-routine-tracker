@@ -31,8 +31,8 @@ describe('Wake window notification', () => {
   })
 
   it('fires the reminder snackbar when the wake window is overdue', async () => {
-    window.localStorage.setItem('bt.wakeWindowEnabled', 'true')
-    window.localStorage.setItem('bt.wakeWindowMinutes', '180')
+    api.state.settings.wakeWindowEnabled = true
+    api.state.settings.wakeWindowMinutes = 180
     api.state.sleeps.push({ id: 's1', startTime: hoursAgo(6), endTime: hoursAgo(4) })
 
     const user = userEvent.setup()
@@ -44,7 +44,7 @@ describe('Wake window notification', () => {
   })
 
   it('does not fire the reminder when the wake window has not elapsed', async () => {
-    window.localStorage.setItem('bt.wakeWindowEnabled', 'true')
+    api.state.settings.wakeWindowEnabled = true
     api.state.sleeps.push({ id: 's1', startTime: hoursAgo(2), endTime: hoursAgo(1) })
 
     const user = userEvent.setup()
@@ -55,7 +55,7 @@ describe('Wake window notification', () => {
   })
 
   it('configures the reminder from Settings > Notifications', async () => {
-    window.localStorage.setItem('bt.wakeWindowEnabled', 'true')
+    api.state.settings.wakeWindowEnabled = true
     const user = userEvent.setup()
     await onboard(user)
     await user.click(screen.getByRole('button', { name: /settings/i }))
@@ -67,9 +67,9 @@ describe('Wake window notification', () => {
     const toggle = screen.getByRole('switch')
     expect(toggle).toBeChecked()
     fireEvent.click(toggle)
-    expect(window.localStorage.getItem('bt.wakeWindowEnabled')).toBe('false')
+    expect(api.state.settings.wakeWindowEnabled).toBe(false)
     fireEvent.click(toggle)
-    expect(window.localStorage.getItem('bt.wakeWindowEnabled')).toBe('true')
+    expect(api.state.settings.wakeWindowEnabled).toBe(true)
 
     await user.click(screen.getByRole('button', { name: /wake window/i }))
     const dialog = await screen.findByRole('dialog', { name: /wake window/i })
@@ -77,7 +77,7 @@ describe('Wake window notification', () => {
     fireEvent.change(within(dialog).getByLabelText('Minutes'), { target: { value: '30' } })
     await user.click(within(dialog).getByRole('button', { name: /save/i }))
 
-    expect(window.localStorage.getItem('bt.wakeWindowMinutes')).toBe('150')
+    expect(api.state.settings.wakeWindowMinutes).toBe(150)
     expect(screen.getByText('2h 30m')).toBeInTheDocument()
   })
 
@@ -105,7 +105,7 @@ describe('Wake window notification', () => {
   })
 
   it('migrates the legacy hours setting to minutes', async () => {
-    window.localStorage.setItem('bt.wakeWindowEnabled', 'true')
+    api.state.settings.wakeWindowEnabled = true
     window.localStorage.setItem('bt.wakeWindowHours', '4')
     const user = userEvent.setup()
     await onboard(user)
@@ -113,7 +113,7 @@ describe('Wake window notification', () => {
     await user.click(screen.getByRole('button', { name: /notifications/i }))
 
     expect(screen.getByText('4h')).toBeInTheDocument()
-    expect(window.localStorage.getItem('bt.wakeWindowMinutes')).toBe('240')
+    expect(api.state.settings.wakeWindowMinutes).toBe(240)
   })
 
 })

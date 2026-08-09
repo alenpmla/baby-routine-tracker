@@ -189,9 +189,23 @@ describe('REST API', () => {
     expect(put.json.settings.foodSuggestions).toEqual(['carrot'])
   })
 
-  it('rejects invalid settings', async () => {
-    const res = await request(server, 'PUT', '/api/settings', { nope: true })
+  it('rejects non-object settings', async () => {
+    const res = await request(server, 'PUT', '/api/settings', 'nope')
     expect(res.status).toBe(400)
+  })
+
+  it('persists extended settings (theme, units, wake window)', async () => {
+    const res = await request(server, 'PUT', '/api/settings', {
+      foodSuggestions: ['carrot'],
+      theme: 'dark',
+      snapshotUnits: { bottle: 'oz', solids: 'g' },
+      wakeWindowMinutes: 120,
+    })
+    expect(res.status).toBe(200)
+    const state = store.get().settings
+    expect(state.theme).toBe('dark')
+    expect(state.snapshotUnits.bottle).toBe('oz')
+    expect(state.wakeWindowMinutes).toBe(120)
   })
 
   it('rejects items without an id', async () => {
