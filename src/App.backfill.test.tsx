@@ -117,6 +117,27 @@ describe('Phase 2: backfill + day navigation', () => {
     expect(within(screen.getByRole('group', { name: 'Total slept' })).getByText('2h 30m')).toBeInTheDocument()
   })
 
+  it('shows total naps for the day excluding night sleep (7pm–9am window)', async () => {
+    const t = new Date()
+    t.setHours(0, 0, 0, 0)
+    const nightStart = new Date(t.getTime() - 2 * 3600000) // 22:00 yesterday
+    const nightEnd = new Date(t.getTime() + 4 * 3600000) // 04:00 today → 6h night (ends today)
+    const napStart = new Date(t.getTime() + 12 * 3600000) // 12:00
+    const napEnd = new Date(t.getTime() + 18.5 * 3600000) // 18:30 → 6.5h (longer than night, still a nap)
+    api.state.sleeps.push(
+      { id: 's-night', startTime: nightStart.toISOString(), endTime: nightEnd.toISOString() },
+      { id: 's-nap', startTime: napStart.toISOString(), endTime: napEnd.toISOString() },
+    )
+
+    const user = userEvent.setup()
+    await onboard(user)
+    const nav = () => within(screen.getByRole('navigation', { name: /primary/i }))
+    await user.click(nav().getByRole('button', { name: 'Sleep' }))
+
+    expect(within(screen.getByRole('group', { name: 'Total slept' })).getByText('12h 30m')).toBeInTheDocument()
+    expect(within(screen.getByRole('group', { name: 'Total naps' })).getByText('6h 30m')).toBeInTheDocument()
+  })
+
   it('backfills a completed sleep; rejects end-before-start', async () => {
     const user = userEvent.setup()
     await onboard(user)

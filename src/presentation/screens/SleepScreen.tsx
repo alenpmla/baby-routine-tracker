@@ -37,6 +37,22 @@ export default function SleepScreen() {
     return acc + new Date(s.endTime).getTime() - new Date(s.startTime).getTime()
   }, 0)
 
+  // Night sleep = a completed sleep that starts during the night window
+  // (7pm–9am local); everything else is a nap.
+  const isNightSleep = (s: SleepSession): boolean => {
+    if (!s.endTime) {
+      return false
+    }
+    const hour = new Date(s.startTime).getHours()
+    return hour >= 19 || hour < 9
+  }
+  const totalNapsMs = day.sleeps.reduce((acc, s) => {
+    if (!s.endTime || isNightSleep(s)) {
+      return acc
+    }
+    return acc + new Date(s.endTime).getTime() - new Date(s.startTime).getTime()
+  }, 0)
+
   function handleStop() {
     try {
       stopSleepTimer()
@@ -80,6 +96,9 @@ export default function SleepScreen() {
 
       <div className="stat-row">
         <StatTile accent="sleep" Icon={MoonIcon} label="Total slept" value={formatDuration(totalSlept)} />
+        {totalNapsMs > 0 && (
+          <StatTile accent="sleep" Icon={MoonIcon} label="Total naps" value={formatDuration(totalNapsMs)} />
+        )}
         {dailyAverages.avgSleepMs > 0 && (
           <StatTile
             accent="sleep"
