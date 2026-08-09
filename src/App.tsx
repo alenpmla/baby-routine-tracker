@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { TrackerProvider, useTracker } from './presentation/store/TrackerProvider'
 import { ThemeProvider } from './presentation/store/ThemeProvider'
 import { SnapshotPrefsProvider } from './presentation/store/SnapshotPrefsProvider'
+import { SnackbarProvider } from './presentation/store/SnackbarProvider'
 import ProfileScreen from './presentation/screens/ProfileScreen'
 import DashboardScreen from './presentation/screens/DashboardScreen'
 import SleepScreen from './presentation/screens/SleepScreen'
@@ -86,7 +87,9 @@ export default function App() {
     <TrackerProvider>
       <ThemeProvider>
         <SnapshotPrefsProvider>
-          <Shell />
+          <SnackbarProvider>
+            <Shell />
+          </SnackbarProvider>
         </SnapshotPrefsProvider>
       </ThemeProvider>
     </TrackerProvider>

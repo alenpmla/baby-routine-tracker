@@ -1,12 +1,14 @@
 import { useRef, useState } from 'react'
 import { useTracker } from '../store/TrackerProvider'
 import { useSnapshotPrefs } from '../store/SnapshotPrefsProvider'
+import { useSnackbar } from '../store/SnackbarProvider'
 import { isValidBackup } from '../../data/repositories/RemoteRepositories'
 import { BackIcon } from '../components/icons'
 
 export default function DataReportsScreen({ onBack }: { onBack: () => void }) {
   const { baby, exportData, importData, getPeriodRecords } = useTracker()
   const { reportUnits } = useSnapshotPrefs()
+  const { showSnackbar } = useSnackbar()
 
   const [dataStatus, setDataStatus] = useState<string | null>(null)
   const [dataError, setDataError] = useState<string | null>(null)
@@ -37,30 +39,40 @@ export default function DataReportsScreen({ onBack }: { onBack: () => void }) {
   }
 
   function handleImportFile(file: File) {
+    setDataStatus(null)
+    setDataError(null)
     const reader = new FileReader()
     reader.onload = () => {
+      const resetInput = () => {
+        if (fileInputRef.current) {
+          fileInputRef.current.value = ''
+        }
+      }
       let parsed: unknown
       try {
         parsed = JSON.parse(String(reader.result))
       } catch {
         setDataError('That file is not valid JSON')
+        showSnackbar('That file is not valid JSON', 'error')
+        resetInput()
         return
       }
       if (!isValidBackup(parsed)) {
         setDataError('Not a valid Baby Tracker backup file')
+        showSnackbar('Not a valid Baby Tracker backup file', 'error')
+        resetInput()
         return
       }
       void importData(parsed)
         .then(() => {
           setDataStatus('Data imported')
-          setDataError(null)
+          showSnackbar('Data imported')
         })
-        .catch(() => setDataError('Import failed'))
-        .finally(() => {
-          if (fileInputRef.current) {
-            fileInputRef.current.value = ''
-          }
+        .catch(() => {
+          setDataError('Import failed')
+          showSnackbar('Import failed', 'error')
         })
+        .finally(resetInput)
     }
     reader.readAsText(file)
   }

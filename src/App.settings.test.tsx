@@ -110,7 +110,7 @@ describe('Food suggestions', () => {
     const input = document.querySelector('input[type="file"]') as HTMLInputElement
     fireEvent.change(input, { target: { files: [file] } })
 
-    expect(await screen.findByText('Data imported')).toBeInTheDocument()
+    expect(await screen.findByTestId('snackbar')).toHaveTextContent('Data imported')
     expect(api.state.baby?.name).toBe('Imported')
     expect(api.state.diapers).toHaveLength(1)
     expect(api.state.diapers[0].id).toBe('n1')
@@ -126,7 +126,64 @@ describe('Food suggestions', () => {
     const input = document.querySelector('input[type="file"]') as HTMLInputElement
     fireEvent.change(input, { target: { files: [file] } })
 
-    expect(await screen.findByText(/not a valid baby tracker backup/i)).toBeInTheDocument()
+    expect(await screen.findByTestId('snackbar')).toHaveTextContent(/not a valid baby tracker backup/i)
+    expect(screen.getAllByText('Not a valid Baby Tracker backup file').length).toBeGreaterThan(0)
+  })
+
+  it('shows an error snackbar for a file that is not valid JSON', async () => {
+    const user = userEvent.setup()
+    await onboard(user)
+    await user.click(screen.getByRole('button', { name: /settings/i }))
+    await user.click(screen.getByRole('button', { name: /data & reports/i }))
+
+    const file = new File(['{ this is not json'], 'broken.json', { type: 'application/json' })
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement
+    fireEvent.change(input, { target: { files: [file] } })
+
+    const snackbar = await screen.findByTestId('snackbar')
+    expect(snackbar).toHaveTextContent('That file is not valid JSON')
+    expect(snackbar).toHaveAttribute('role', 'alert')
+  })
+
+  it('shows an error snackbar for an invalid backup and resets the file input so the same file can be re-imported', async () => {
+    const user = userEvent.setup()
+    await onboard(user)
+    await user.click(screen.getByRole('button', { name: /settings/i }))
+    await user.click(screen.getByRole('button', { name: /data & reports/i }))
+
+    const file = new File([JSON.stringify({ nope: true })], 'bad.json', { type: 'application/json' })
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement
+
+    fireEvent.change(input, { target: { files: [file] } })
+    expect((await screen.findByTestId('snackbar'))).toHaveTextContent(/not a valid baby tracker backup/i)
+    expect(input.value).toBe('')
+
+    fireEvent.change(input, { target: { files: [file] } })
+    expect((await screen.findByTestId('snackbar'))).toHaveTextContent(/not a valid baby tracker backup/i)
+  })
+
+  it('shows a success snackbar after importing a valid backup', async () => {
+    const user = userEvent.setup()
+    await onboard(user)
+    await user.click(screen.getByRole('button', { name: /settings/i }))
+    await user.click(screen.getByRole('button', { name: /data & reports/i }))
+
+    const backup = {
+      version: 1,
+      exportedAt: 'x',
+      baby: null,
+      sleeps: [],
+      feedings: [],
+      diapers: [],
+      settings: { foodSuggestions: [] },
+    }
+    const file = new File([JSON.stringify(backup)], 'ok.json', { type: 'application/json' })
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement
+    fireEvent.change(input, { target: { files: [file] } })
+
+    const snackbar = await screen.findByTestId('snackbar')
+    expect(snackbar).toHaveTextContent('Data imported')
+    expect(snackbar).toHaveAttribute('role', 'status')
   })
 
   it('shows seeded suggestions in the Food suggestions sub-screen, lets you add/remove, and suggests in the Food field', async () => {
