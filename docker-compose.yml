@@ -3,18 +3,10 @@ services:
     build: .
     container_name: baby-tracker
     ports:
-      - "127.0.0.1:3000:3000"
+      - "3000:3000"
     environment:
       PORT: 3000
       DATA_FILE: /data/bt.json
     volumes:
       - ./data:/data
-    restart: unless-stopped
-
-  cloudflared:
-    image: cloudflare/cloudflared:latest
-    container_name: cloudflared
-    command: tunnel --no-autoupdate run --token ${CF_TUNNEL_TOKEN}
-    environment:
-      TUNNEL_TOKEN: ${CF_TUNNEL_TOKEN}
     restart: unless-stopped
