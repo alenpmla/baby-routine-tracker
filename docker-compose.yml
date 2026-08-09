@@ -4,8 +4,10 @@ services:
     container_name: baby-tracker
     ports:
       - "3000:3000"
+      - "3443:3443"
     environment:
       PORT: 3000
+      HTTPS_PORT: 3443
       DATA_FILE: /data/bt.json
     volumes:
       - ./data:/data
