@@ -9,7 +9,7 @@ services:
       PORT: 3000
       HTTPS_PORT: 3443
       CERT_DIR: /data/certs
-      CERT_HOSTS: ${CERT_HOSTS:-192.168.2.38 localhost}
+      CERT_HOSTS: ${CERT_HOSTS:-homeserver localhost 192.168.2.38}
       DATA_FILE: /data/bt.json
     volumes:
       - ./data:/data
