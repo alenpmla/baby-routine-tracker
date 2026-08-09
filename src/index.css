@@ -1452,6 +1452,15 @@ button.event-link:active {
   gap: 14px;
 }
 
+/* Keep the sheet's primary action on top of the keyboard: pin it to the
+   bottom of the sheet so it stays visible no matter which field is focused. */
+.modal-body .form > button.btn-block:last-child {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  box-shadow: var(--elevation-1);
+}
+
 /* M3 dialog variant — centered, surface-container-high, shape-large, elevation 3 */
 .modal-overlay-dialog {
   align-items: center;
