@@ -62,7 +62,9 @@ export default function DashboardScreen({
         )}
         {viewingToday && !wake.asleep && wake.remainingMs !== null && (
           <button type="button" className="pill pill-wake" onClick={() => onNavigate?.('sleep')}>
-            {wake.overdue ? 'Time for a nap!' : `Nap time in ${formatDuration(wake.remainingMs)}`}
+            {wake.overdue
+              ? `Time for a nap! ${formatDuration(Math.abs(wake.remainingMs))} overdue`
+              : `Nap time in ${formatDuration(wake.remainingMs)}`}
           </button>
         )}
       </header>

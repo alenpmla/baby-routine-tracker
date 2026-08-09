@@ -43,11 +43,12 @@ describe('Time left to sleep', () => {
 
   it('shows the overdue state once the wake window has elapsed', async () => {
     window.localStorage.setItem('bt.wakeWindowMinutes', '180') // 3h
-    api.state.sleeps.push({ id: 's1', startTime: hoursAgo(6), endTime: hoursAgo(4) }) // woke 4h ago
+    api.state.sleeps.push({ id: 's1', startTime: hoursAgo(6), endTime: hoursAgo(4) }) // woke 4h ago → ~1h overdue
 
     const user = userEvent.setup()
     await onboard(user)
-    expect(await screen.findByText(/time for a nap/i)).toBeInTheDocument()
+    const pill = await screen.findByText(/time for a nap/i)
+    expect(pill.textContent).toMatch(/overdue/i)
   })
 
   it('shows time left to sleep on the Sleep screen', async () => {

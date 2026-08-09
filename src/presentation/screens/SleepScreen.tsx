@@ -106,7 +106,9 @@ export default function SleepScreen() {
             <p className="sleep-hint">Tap below to start tracking a nap.</p>
             {wake.remainingMs !== null && (
               <p className="sleep-countdown" role="status">
-                {wake.overdue ? 'Time for a nap!' : `Time left to sleep: ${formatDuration(wake.remainingMs)}`}
+                {wake.overdue
+                  ? `Time for a nap! ${formatDuration(Math.abs(wake.remainingMs))} overdue`
+                  : `Time left to sleep: ${formatDuration(wake.remainingMs)}`}
               </p>
             )}
             <button type="button" className="btn btn-primary btn-block" onClick={handleStart}>
