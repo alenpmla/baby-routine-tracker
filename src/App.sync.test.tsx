@@ -1,9 +1,24 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { render, screen, fireEvent, within, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, within, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from './App'
 import { setupApi } from './test/setupApi'
 import type { MockApi } from './test/mockApi'
+
+class FakeEventSource {
+  static instances: FakeEventSource[] = []
+  onmessage: ((e: { data: string }) => void) | null = null
+  onopen: (() => void) | null = null
+  onerror: (() => void) | null = null
+  url: string
+  constructor(url: string) {
+    this.url = url
+    FakeEventSource.instances.push(this)
+  }
+  close() {
+    FakeEventSource.instances = FakeEventSource.instances.filter((x) => x !== this)
+  }
+}
 
 async function onboard(user: ReturnType<typeof userEvent.setup>) {
   const result = render(<App />)
@@ -14,11 +29,34 @@ async function onboard(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe('Phase 3: sync server', () => {
+  let api: MockApi
   beforeEach(() => {
-    setupApi()
+    api = setupApi()
+    vi.stubGlobal('EventSource', FakeEventSource)
   })
   afterEach(() => {
+    FakeEventSource.instances = []
     vi.unstubAllGlobals()
+  })
+
+  it('live-syncs changes from another device via SSE', async () => {
+    const user = userEvent.setup()
+    await onboard(user)
+    const nav = () => within(screen.getByRole('navigation', { name: /primary/i }))
+
+    // The wife's device writes to the shared server...
+    api.state.diapers.push({ id: 'wife-d', time: new Date().toISOString(), type: 'wet' })
+
+    // ...and the server broadcasts to this device's EventSource.
+    const source = FakeEventSource.instances[0]
+    expect(source.url).toBe('/api/events')
+    act(() => source.onmessage?.({ data: '{"kind":"update"}' }))
+
+    // This device re-fetches and reflects the change.
+    await user.click(nav().getByRole('button', { name: 'Diaper' }))
+    await waitFor(() =>
+      expect(within(screen.getByRole('group', { name: 'Changes' })).getByText('1')).toBeInTheDocument(),
+    )
   })
 
   it('shares data across devices via the central server', async () => {

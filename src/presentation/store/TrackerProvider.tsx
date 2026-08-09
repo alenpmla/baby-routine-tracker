@@ -120,6 +120,40 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
     }
   }, [refresh])
 
+  // Live sync via Server-Sent Events: re-fetch when the server broadcasts an
+  // update (from another device) or when the connection (re)establishes.
+  useEffect(() => {
+    if (typeof EventSource === 'undefined') {
+      return
+    }
+    let source: EventSource | null = null
+    try {
+      source = new EventSource('/api/events')
+    } catch {
+      return
+    }
+    let firstOpen = true
+    const reload = () => {
+      void repos.current.refreshFromServer().then((ok) => {
+        if (!ok) {
+          return
+        }
+        setBaby(repos.current.baby.get())
+        setFoodSuggestions(repos.current.settings.get().foodSuggestions)
+        refresh()
+      })
+    }
+    source.onmessage = reload
+    source.onopen = () => {
+      if (firstOpen) {
+        firstOpen = false
+        return
+      }
+      reload()
+    }
+    return () => source?.close()
+  }, [refresh])
+
   const syncNow = useCallback(async () => {
     const ok = await repos.current.syncNow()
     setOffline(!ok)

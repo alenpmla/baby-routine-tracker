@@ -225,4 +225,34 @@ describe('REST API', () => {
     const res = await request(server, 'POST', '/api/import', { baby: null })
     expect(res.status).toBe(400)
   })
+
+  it('streams an SSE update to connected clients when data changes', async () => {
+    const received = []
+    const sseDone = new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('SSE update not received')), 3000)
+      const req = http.get(
+        { host: '127.0.0.1', port: server.address().port, path: '/api/events' },
+        (res) => {
+          res.on('data', (chunk) => {
+            received.push(String(chunk))
+            if (received.some((c) => c.includes('"kind":"update"'))) {
+              clearTimeout(timer)
+              res.destroy()
+              resolve()
+            }
+          })
+        },
+      )
+      req.on('error', reject)
+    })
+
+    // Give the connection a moment to register before writing.
+    await new Promise((r) => setTimeout(r, 60))
+
+    const add = await request(server, 'POST', '/api/sleeps', { id: 's1', startTime: 't', endTime: null })
+    expect(add.status).toBe(200)
+
+    await sseDone
+    expect(received.join('')).toContain('data: {"kind":"update"}')
+  })
 })

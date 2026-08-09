@@ -80,6 +80,7 @@ export interface Repositories {
 
 export interface SyncRepositories extends Repositories {
   loadAll(): Promise<void>
+  refreshFromServer(): Promise<boolean>
   syncNow(): Promise<boolean>
   isOffline(): boolean
   exportData(): Promise<BackupData>
@@ -313,6 +314,39 @@ export class RemoteRepositories implements SyncRepositories {
       return true
     } catch {
       this.offline = true
+      return false
+    }
+  }
+
+  /**
+   * Re-fetches all data from the server without the offline fallback.
+   * Used for live sync (SSE) where connectivity is already implied. Returns
+   * true on success and clears the offline flag; returns false on failure
+   * without altering cached data.
+   */
+  async refreshFromServer(): Promise<boolean> {
+    try {
+      const [baby, sleeps, feedings, diapers, weights, settings] = await Promise.all([
+        this.http.get<{ baby: Baby | null }>('/api/baby'),
+        this.http.get<{ sleeps: SleepSession[] }>('/api/sleeps'),
+        this.http.get<{ feedings: FeedingSession[] }>('/api/feedings'),
+        this.http.get<{ diapers: DiaperChange[] }>('/api/diapers'),
+        this.http.get<{ weights: WeightEntry[] }>('/api/weights'),
+        this.http.get<{ settings: AppSettings }>('/api/settings'),
+      ])
+      this.cache = {
+        baby: baby.baby,
+        sleeps: sleeps.sleeps,
+        feedings: feedings.feedings.map(normalizeFeeding),
+        diapers: diapers.diapers,
+        weights: weights.weights,
+        settings: settings.settings,
+      }
+      this.offline = false
+      await this.replayPending()
+      this.persistCache()
+      return true
+    } catch {
       return false
     }
   }
