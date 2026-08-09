@@ -22,12 +22,15 @@ export function useBackNav() {
   })
   const stackRef = useRef<NavState[]>([current])
   const pendingBacks = useRef(0)
+  // Number of in-app history entries pushed above the root app entry.
+  const depthRef = useRef(0)
 
   useEffect(() => {
     if (!window.history.state) {
       window.history.replaceState(HOME, '')
     }
     const onPop = (e: PopStateEvent) => {
+      depthRef.current = Math.max(0, depthRef.current - 1)
       if (pendingBacks.current > 0) {
         pendingBacks.current -= 1
         return
@@ -53,16 +56,28 @@ export function useBackNav() {
     } else {
       stackRef.current = [...s, next]
       window.history.pushState(next, '')
+      depthRef.current += 1
     }
     setCurrent(next)
   }, [])
 
   const goToTab = useCallback((tab: Tab) => {
+    if (tab === 'home') {
+      // Collapse back to the root so the next back press exits the app.
+      const n = depthRef.current
+      stackRef.current = [HOME]
+      setCurrent(HOME)
+      if (n > 0) {
+        window.history.go(-n)
+      }
+      return
+    }
     const next: NavState = { tab, settings: false }
     const s = stackRef.current
     if (s.length === 1) {
       stackRef.current = [...s, next]
       window.history.pushState(next, '')
+      depthRef.current += 1
     } else {
       stackRef.current = [...s.slice(0, -1), next]
       window.history.replaceState(next, '')
