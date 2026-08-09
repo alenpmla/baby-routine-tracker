@@ -37,9 +37,7 @@ done
 SAN="${SAN%,}"
 
 openssl genrsa -out "$SERVER_KEY" 2048
-openssl req -new -key "$SERVER_KEY" -out "$SERVER_CSR" \
-  -subj "/CN=baby-tracker" \
-  -addext "subjectAltName=$SAN"
+openssl req -new -key "$SERVER_KEY" -out "$SERVER_CSR" -subj "/CN=baby-tracker"
 EXTFILE="$CERT_DIR/ext.cnf"
 printf 'subjectAltName=%s\n' "$SAN" > "$EXTFILE"
 openssl x509 -req -in "$SERVER_CSR" -CA "$CA_CERT" -CAkey "$CA_KEY" -CAcreateserial \

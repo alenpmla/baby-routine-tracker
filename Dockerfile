@@ -15,6 +15,7 @@ RUN npm ci --omit=dev
 COPY --from=build /app/dist ./dist
 COPY server ./server
 COPY scripts/gen-certs.sh ./scripts/gen-certs.sh
+RUN apk add --no-cache openssl
 ENV PORT=3000
 ENV HTTPS_PORT=3443
 ENV DATA_FILE=/data/bt.json
