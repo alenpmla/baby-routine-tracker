@@ -133,3 +133,79 @@ export function EditIcon({ size = 18 }: IconProps) {
     </svg>
   )
 }
+
+export function IronIcon({ size = 22 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M13 2 4.5 13.5H11L9.5 22 18 10.5H12L13 2Z" />
+    </svg>
+  )
+}
+
+export function ProteinIcon({ size = 22 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 3c2.5 0 5 2 5 5.5 0 4-2.5 8.5-5 8.5S7 12.5 7 8.5C7 5 9.5 3 12 3Z" />
+    </svg>
+  )
+}
+
+export function VegIcon({ size = 22 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 3c2.5 3 3.5 6 3.5 9S14 18 12 21c-2.5-3-3.5-6-3.5-9S9.5 6 12 3Z" />
+      <path d="M12 3v18" />
+    </svg>
+  )
+}
+
+export function FruitIcon({ size = 22 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="14" r="6.5" />
+      <path d="M12 7.5V5.5" />
+      <path d="M12 7.5c-.5-2 1-3.5 3-3.5 0 2-1 3-3 3.5Z" />
+    </svg>
+  )
+}
+
+export function GrainIcon({ size = 22 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 21V9" />
+      <path d="M12 9c-1.6 0-2.6-1-2.6-2.6 1.6 0 2.6 1 2.6 2.6Z" />
+      <path d="M12 13c-1.6 0-2.6-1-2.6-2.6 1.6 0 2.6 1 2.6 2.6Z" />
+      <path d="M12 17c-1.6 0-2.6-1-2.6-2.6 1.6 0 2.6 1 2.6 2.6Z" />
+      <path d="M12 9c1.6 0 2.6-1 2.6-2.6C13 6.4 12 7.4 12 9Z" />
+      <path d="M12 13c1.6 0 2.6-1 2.6-2.6C13 10.4 12 11.4 12 13Z" />
+      <path d="M12 17c1.6 0 2.6-1 2.6-2.6C13 14.4 12 15.4 12 17Z" />
+    </svg>
+  )
+}
+
+export function DairyIcon({ size = 22 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M4 16 10 5l8 3-6 9H4Z" />
+      <circle cx="9.5" cy="12.5" r="1" />
+      <circle cx="12.5" cy="15" r="1" />
+    </svg>
+  )
+}
+
+export function LegumeIcon({ size = 22 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M5 9.5c2.3-1.6 4.7-1.4 6 .5 1.1 1.7.5 3.9-1.5 5.3-2.3 1.6-4.7 1.4-6-.5C2.4 13.1 3 10.9 5 9.5Z" />
+      <path d="M13.5 7.5c2.3-1.6 4.7-1.4 6 .5 1.1 1.7.5 3.9-1.5 5.3-2.3 1.6-4.7 1.4-6-.5-1.1-1.7-.5-3.9 1.5-5.3Z" />
+    </svg>
+  )
+}
+
+export function ChevronDownIcon({ size = 20 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  )
+}

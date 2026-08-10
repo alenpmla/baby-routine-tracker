@@ -56,6 +56,20 @@
   --accent-diaper-fg: #2c7a67;
   --accent-weight-bg: #e3ecff;
   --accent-weight-fg: #3557c4;
+  --accent-iron-bg: #f9e3de;
+  --accent-iron-fg: #9b3c1e;
+  --accent-protein-bg: #fdf1d8;
+  --accent-protein-fg: #8a5b00;
+  --accent-veg-bg: #e0f2df;
+  --accent-veg-fg: #2b6f2b;
+  --accent-fruit-bg: #fde3ee;
+  --accent-fruit-fg: #b02a6e;
+  --accent-grain-bg: #efe8db;
+  --accent-grain-fg: #6d5a2f;
+  --accent-dairy-bg: #e3ecff;
+  --accent-dairy-fg: #3557c4;
+  --accent-legume-bg: #e7eee0;
+  --accent-legume-fg: #5b6b3f;
 
   /* Shape scale (Material 3) */
   --shape-xs: 4px;
@@ -128,6 +142,20 @@
     --accent-feed-fg: #ffd19e;
     --accent-diaper-bg: #124e41;
     --accent-diaper-fg: #7fd8c0;
+    --accent-iron-bg: #4a2b1e;
+    --accent-iron-fg: #ffb6a1;
+    --accent-protein-bg: #4a3a10;
+    --accent-protein-fg: #ffdf9e;
+    --accent-veg-bg: #1c3f1e;
+    --accent-veg-fg: #a5d6a7;
+    --accent-fruit-bg: #4a1f38;
+    --accent-fruit-fg: #ff9ec9;
+    --accent-grain-bg: #3d341f;
+    --accent-grain-fg: #e0cf9e;
+    --accent-dairy-bg: #2b4570;
+    --accent-dairy-fg: #a9c6ff;
+    --accent-legume-bg: #30371f;
+    --accent-legume-fg: #c2d19a;
 
     --elevation-1: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.24);
     --elevation-2: 0 2px 4px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.28);
@@ -186,6 +214,20 @@
   --accent-diaper-fg: #7fd8c0;
   --accent-weight-bg: #2b4570;
   --accent-weight-fg: #a9c6ff;
+  --accent-iron-bg: #4a2b1e;
+  --accent-iron-fg: #ffb6a1;
+  --accent-protein-bg: #4a3a10;
+  --accent-protein-fg: #ffdf9e;
+  --accent-veg-bg: #1c3f1e;
+  --accent-veg-fg: #a5d6a7;
+  --accent-fruit-bg: #4a1f38;
+  --accent-fruit-fg: #ff9ec9;
+  --accent-grain-bg: #3d341f;
+  --accent-grain-fg: #e0cf9e;
+  --accent-dairy-bg: #2b4570;
+  --accent-dairy-fg: #a9c6ff;
+  --accent-legume-bg: #30371f;
+  --accent-legume-fg: #c2d19a;
 
   --elevation-1: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.24);
   --elevation-2: 0 2px 4px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.28);
@@ -258,6 +300,14 @@ select {
       border-color 0.18s ease,
       box-shadow 0.18s ease,
       color 0.18s ease;
+  }
+
+  .food-variety-chip {
+    transition: opacity 0.15s ease;
+  }
+
+  .food-variety-chevron {
+    transition: transform 0.2s ease;
   }
 }
 
@@ -1084,6 +1134,267 @@ button.event-link:active {
 .insight-detail {
   color: var(--md-on-surface-variant);
   font-size: var(--type-caption);
+}
+
+/* ---------- Food variety (last 7 days) ---------- */
+
+.food-variety {
+  padding: 0;
+  overflow: hidden;
+}
+
+.food-variety-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+}
+
+.food-variety-toggle:hover {
+  background: color-mix(in srgb, var(--md-on-surface) 4%, transparent);
+}
+
+.food-variety-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+
+.food-variety-head-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--shape-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  background: var(--accent-feed-bg);
+  color: var(--accent-feed-fg);
+}
+
+.food-variety-head-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.food-variety-title {
+  font-size: var(--type-title);
+  font-weight: 600;
+  margin: 0;
+}
+
+.food-variety-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.food-variety-score {
+  color: var(--md-primary);
+  font-weight: 700;
+  font-size: var(--type-label);
+  flex: none;
+}
+
+.food-variety-chips {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
+}
+
+.food-variety-chip {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  opacity: 1;
+}
+
+.food-variety-chip.food-iron {
+  background: var(--accent-iron-bg);
+  color: var(--accent-iron-fg);
+}
+
+.food-variety-chip.food-protein {
+  background: var(--accent-protein-bg);
+  color: var(--accent-protein-fg);
+}
+
+.food-variety-chip.food-veg {
+  background: var(--accent-veg-bg);
+  color: var(--accent-veg-fg);
+}
+
+.food-variety-chip.food-fruit {
+  background: var(--accent-fruit-bg);
+  color: var(--accent-fruit-fg);
+}
+
+.food-variety-chip.food-grain {
+  background: var(--accent-grain-bg);
+  color: var(--accent-grain-fg);
+}
+
+.food-variety-chip.food-dairy {
+  background: var(--accent-dairy-bg);
+  color: var(--accent-dairy-fg);
+}
+
+.food-variety-chip.food-legume {
+  background: var(--accent-legume-bg);
+  color: var(--accent-legume-fg);
+}
+
+.food-variety-chip-missing {
+  opacity: 0.22;
+  box-shadow: inset 0 0 0 1.5px var(--md-outline);
+}
+
+.food-variety-headline {
+  color: var(--md-on-surface-variant);
+  font-size: var(--type-caption);
+  min-width: 0;
+}
+
+.food-variety-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  color: var(--md-on-surface-variant);
+}
+
+.food-variety-chevron-open {
+  transform: rotate(180deg);
+}
+
+.food-variety-details {
+  padding: 0 16px;
+  border-top: 1px solid var(--md-outline-variant);
+}
+
+.food-variety-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.food-variety-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--md-outline-variant);
+}
+
+.food-variety-row:last-child {
+  border-bottom: none;
+}
+
+.food-variety-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--shape-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.food-iron .food-variety-icon {
+  background: var(--accent-iron-bg);
+  color: var(--accent-iron-fg);
+}
+
+.food-protein .food-variety-icon {
+  background: var(--accent-protein-bg);
+  color: var(--accent-protein-fg);
+}
+
+.food-veg .food-variety-icon {
+  background: var(--accent-veg-bg);
+  color: var(--accent-veg-fg);
+}
+
+.food-fruit .food-variety-icon {
+  background: var(--accent-fruit-bg);
+  color: var(--accent-fruit-fg);
+}
+
+.food-grain .food-variety-icon {
+  background: var(--accent-grain-bg);
+  color: var(--accent-grain-fg);
+}
+
+.food-dairy .food-variety-icon {
+  background: var(--accent-dairy-bg);
+  color: var(--accent-dairy-fg);
+}
+
+.food-legume .food-variety-icon {
+  background: var(--accent-legume-bg);
+  color: var(--accent-legume-fg);
+}
+
+.food-variety-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.food-variety-name {
+  font-weight: 600;
+  font-size: var(--type-label);
+}
+
+.food-variety-foods {
+  color: var(--md-on-surface-variant);
+  font-size: var(--type-caption);
+  min-width: 0;
+}
+
+.food-variety-status {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  background: var(--md-primary-container);
+  color: var(--md-on-primary-container);
+}
+
+.food-variety-status-missing {
+  background: none;
+  border: 1.5px dashed var(--md-outline);
+}
+
+.food-variety-row.food-variety-missing .food-variety-icon {
+  opacity: 0.55;
+}
+
+.food-variety-row.food-variety-missing .food-variety-foods {
+  color: var(--md-outline);
 }
 
 /* ---------- Weight growth chart ---------- */

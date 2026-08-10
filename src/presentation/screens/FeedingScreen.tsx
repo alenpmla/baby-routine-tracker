@@ -4,13 +4,14 @@ import { foodsOf } from '../../domain/model/FeedingSession'
 import type { FeedingDetails, SolidsFieldErrors } from '../../domain/usecase/feeding'
 import { validateSolidsDetails } from '../../domain/usecase/feeding'
 import { useTracker } from '../store/TrackerProvider'
-import { formatClock, formatDayLabel, startOfDay } from '../utils/time'
+import { formatClock, formatDayLabel, isSameDay, startOfDay } from '../utils/time'
 import { describeBottleTotal, describeFeedingMeta, describeFeedingTitle, describeSolidsAverage, describeSolidsTotal } from '../utils/feeding'
 import { useSnapshotPrefs } from '../store/SnapshotPrefsProvider'
 import { BottleIcon, BowlIcon, EditIcon, TrashIcon } from '../components/icons'
 import DayNav from '../components/DayNav'
 import Modal from '../components/Modal'
 import SolidsFields from '../components/SolidsFields'
+import FoodVarietyCard from '../components/FoodVarietyCard'
 import StatTile from '../components/StatTile'
 import { FeedDiaperBackfillForm } from '../components/BackfillForms'
 
@@ -45,6 +46,7 @@ export default function FeedingScreen() {
   const [solidsDetails, setSolidsDetails] = useState<FeedingDetails>({})
   const [solidsErrors, setSolidsErrors] = useState<SolidsFieldErrors>({})
   const dayLabel = formatDayLabel(selectedDay, startOfDay(now))
+  const viewingToday = isSameDay(selectedDay, startOfDay(now))
   const { units } = useSnapshotPrefs()
   const bottleTotal = describeBottleTotal(day.feedings, units.bottle)
   const solidsTotal = describeSolidsTotal(day.feedings, units.solids)
@@ -119,6 +121,8 @@ export default function FeedingScreen() {
           Add past feed
         </button>
       </div>
+
+      {viewingToday && <FoodVarietyCard />}
 
       <section className="timeline">
         <h2>{dayLabel}</h2>
