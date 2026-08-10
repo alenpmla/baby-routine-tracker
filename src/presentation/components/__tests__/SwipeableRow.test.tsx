@@ -113,6 +113,51 @@ describe('SwipeableRow', () => {
     expect(deleteBtn).toBeInstanceOf(HTMLButtonElement)
   })
 
+  it('renders a secondary action next to Delete and activates it without deleting', () => {
+    const onDelete = vi.fn()
+    const onDuplicate = vi.fn()
+    render(
+      <ul>
+        <SwipeableRow
+          id="a"
+          deleteLabel="Delete feed"
+          onDelete={onDelete}
+          secondaryAction={{ label: 'Duplicate feed', icon: <span>copy</span>, onActivate: onDuplicate }}
+        >
+          <span>Row content</span>
+        </SwipeableRow>
+      </ul>,
+    )
+    const row = screen.getByText('Row content').parentElement as HTMLElement
+    const li = row?.parentElement as HTMLElement
+    swipeLeft(row, 120)
+    expect(li.classList.contains('swipeable-row-open')).toBe(true)
+
+    const duplicateBtn = screen.getByRole('button', { name: 'Duplicate feed' })
+    expect(duplicateBtn).toBeInstanceOf(HTMLButtonElement)
+    fireEvent.click(duplicateBtn)
+    expect(onDuplicate).toHaveBeenCalledTimes(1)
+    expect(onDelete).not.toHaveBeenCalled()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(li.classList.contains('swipeable-row-open')).toBe(false)
+  })
+
+  it('secondary action is focusable (keyboard path)', () => {
+    render(
+      <ul>
+        <SwipeableRow
+          id="a"
+          deleteLabel="Delete feed"
+          onDelete={() => {}}
+          secondaryAction={{ label: 'Duplicate feed', icon: <span>copy</span>, onActivate: () => {} }}
+        >
+          <span>Row content</span>
+        </SwipeableRow>
+      </ul>,
+    )
+    expect(screen.getByRole('button', { name: 'Duplicate feed' })).toBeInstanceOf(HTMLButtonElement)
+  })
+
   it('resets open state between renders', () => {
     closeSwipeRows()
     expect(1).toBe(1)

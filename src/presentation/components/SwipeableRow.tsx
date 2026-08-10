@@ -3,11 +3,19 @@ import { TrashIcon } from './icons'
 import { closeSwipeRows, openSwipeRow, useSwipeOpenId } from './swipeRows'
 import ConfirmDialog from './ConfirmDialog'
 
+interface SwipeAction {
+  label: string
+  icon: ReactNode
+  onActivate: () => void
+}
+
 interface SwipeableRowProps {
   /** Unique id for this row (used for single-open coordination). */
   id: string
   deleteLabel: string
   onDelete: () => void
+  /** Optional secondary action revealed next to Delete (e.g. Duplicate). */
+  secondaryAction?: SwipeAction
   children: ReactNode
 }
 
@@ -20,9 +28,10 @@ const CLOSE_THRESHOLD = 24
  * Only one row is open at a time; tapping elsewhere closes it. The delete button
  * stays in the DOM and is keyboard-focusable (it becomes visible on focus).
  */
-export default function SwipeableRow({ id, deleteLabel, onDelete, children }: SwipeableRowProps) {
+export default function SwipeableRow({ id, deleteLabel, onDelete, secondaryAction, children }: SwipeableRowProps) {
   const openId = useSwipeOpenId()
   const open = openId === id
+  const reveal = secondaryAction ? REVEAL * 2 : REVEAL
 
   const dragStart = useRef<number | null>(null)
   const dragDelta = useRef(0)
@@ -35,7 +44,7 @@ export default function SwipeableRow({ id, deleteLabel, onDelete, children }: Sw
     }
     const closeOnPointerDown = (e: PointerEvent) => {
       const target = e.target
-      if (target instanceof Element && target.closest('.swipeable-row-delete')) {
+      if (target instanceof Element && target.closest('.swipeable-row-actions')) {
         return
       }
       closeSwipeRows()
@@ -63,9 +72,9 @@ export default function SwipeableRow({ id, deleteLabel, onDelete, children }: Sw
     }
     dragDelta.current = dragStart.current - e.clientX
     if (dragDelta.current > 0) {
-      setOffset(Math.min(dragDelta.current, REVEAL))
+      setOffset(Math.min(dragDelta.current, reveal))
     } else if (open) {
-      setOffset(Math.max(0, REVEAL + dragDelta.current))
+      setOffset(Math.max(0, reveal + dragDelta.current))
     }
   }
 
@@ -76,31 +85,49 @@ export default function SwipeableRow({ id, deleteLabel, onDelete, children }: Sw
     dragStart.current = null
     if (dragDelta.current >= OPEN_THRESHOLD) {
       openSwipeRow(id)
-      setOffset(REVEAL)
+      setOffset(reveal)
     } else if (open && dragDelta.current < -CLOSE_THRESHOLD) {
       closeSwipeRows()
       setOffset(0)
     } else {
-      setOffset(open ? REVEAL : 0)
+      setOffset(open ? reveal : 0)
     }
   }
 
   return (
     <li className={`card event swipeable-row${open ? ' swipeable-row-open' : ''}`}>
-      <button
-        type="button"
-        className="swipeable-row-delete"
-        aria-label={deleteLabel}
-        onFocus={() => openSwipeRow(id)}
-        onClick={(e) => {
-          e.stopPropagation()
-          closeSwipeRows()
-          setOffset(0)
-          setConfirming(true)
-        }}
-      >
-        <TrashIcon />
-      </button>
+      <div className="swipeable-row-actions">
+        {secondaryAction && (
+          <button
+            type="button"
+            className="swipeable-row-secondary"
+            aria-label={secondaryAction.label}
+            onFocus={() => openSwipeRow(id)}
+            onClick={(e) => {
+              e.stopPropagation()
+              closeSwipeRows()
+              setOffset(0)
+              secondaryAction.onActivate()
+            }}
+          >
+            {secondaryAction.icon}
+          </button>
+        )}
+        <button
+          type="button"
+          className="swipeable-row-delete"
+          aria-label={deleteLabel}
+          onFocus={() => openSwipeRow(id)}
+          onClick={(e) => {
+            e.stopPropagation()
+            closeSwipeRows()
+            setOffset(0)
+            setConfirming(true)
+          }}
+        >
+          <TrashIcon />
+        </button>
+      </div>
       {confirming && (
         <ConfirmDialog
           title="Delete this record?"
@@ -112,7 +139,7 @@ export default function SwipeableRow({ id, deleteLabel, onDelete, children }: Sw
       )}
       <div
         className="swipeable-row-content"
-        style={{ transform: `translateX(-${open ? REVEAL : offset}px)` }}
+        style={{ transform: `translateX(-${open ? reveal : offset}px)` }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerEnd}

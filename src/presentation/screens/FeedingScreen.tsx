@@ -7,7 +7,7 @@ import { useTracker } from '../store/TrackerProvider'
 import { formatClock, formatDayLabel, isSameDay, startOfDay } from '../utils/time'
 import { describeBottleTotal, describeFeedingMeta, describeFeedingTitle, describeSolidsAverage, describeSolidsTotal } from '../utils/feeding'
 import { useSnapshotPrefs } from '../store/SnapshotPrefsProvider'
-import { BottleIcon, BowlIcon, EditIcon } from '../components/icons'
+import { BottleIcon, BowlIcon, CopyIcon, EditIcon } from '../components/icons'
 import DayNav from '../components/DayNav'
 import Modal from '../components/Modal'
 import SolidsFields from '../components/SolidsFields'
@@ -28,7 +28,42 @@ const TYPE_LABEL: Record<FeedingType, string> = {
   solids: 'Solids',
 }
 
-type FeedModal = { mode: 'add'; preset?: FeedingType } | { mode: 'edit'; record: FeedingSession }
+type FeedModal =
+  | { mode: 'add'; preset?: FeedingType }
+  | { mode: 'edit'; record: FeedingSession }
+  | { mode: 'duplicate'; record: FeedingSession }
+
+function detailsFromRecord(record: FeedingSession): FeedingDetails | undefined {
+  if (record.type === 'solids') {
+    return {
+      foods: foodsOf(record),
+      amount: record.amount,
+      unit: record.unit,
+    }
+  }
+  if (
+    (record.type === 'bottle' && record.amount !== undefined) ||
+    (record.type === 'breast' && record.startTime)
+  ) {
+    return {
+      amount: record.amount,
+      unit: record.unit,
+      startTime: record.startTime ? new Date(record.startTime) : undefined,
+      endTime: record.endTime ? new Date(record.endTime) : undefined,
+    }
+  }
+  return undefined
+}
+
+function duplicateDetailsFromRecord(record: FeedingSession): FeedingDetails | undefined {
+  if (record.type === 'breast' && record.startTime && record.endTime) {
+    return {
+      startTime: new Date(record.startTime),
+      endTime: new Date(record.endTime),
+    }
+  }
+  return detailsFromRecord(record)
+}
 
 export default function FeedingScreen() {
   const {
@@ -139,6 +174,11 @@ export default function FeedingScreen() {
                 id={f.id}
                 deleteLabel={`Delete ${TYPE_LABEL[f.type]} feed`}
                 onDelete={() => removeFeeding(f.id)}
+                secondaryAction={{
+                  label: `Duplicate ${TYPE_LABEL[f.type]} feed`,
+                  icon: <CopyIcon />,
+                  onActivate: () => setFeedModal({ mode: 'duplicate', record: f }),
+                }}
               >
                 <span className="event-icon event-feeding">
                   <BottleIcon size={18} />
@@ -193,30 +233,17 @@ export default function FeedingScreen() {
             showBottleDetails
             suggestions={foodSuggestions}
             initial={
-              feedModal.mode === 'edit'
+              feedModal.mode === 'edit' || feedModal.mode === 'duplicate'
                 ? {
                     type: feedModal.record.type,
-                    at: new Date(feedModal.record.time),
+                    at:
+                      feedModal.mode === 'edit' || feedModal.record.type === 'breast'
+                        ? new Date(feedModal.record.time)
+                        : new Date(),
                     details:
-                      feedModal.record.type === 'solids'
-                        ? {
-                            foods: foodsOf(feedModal.record),
-                            amount: feedModal.record.amount,
-                            unit: feedModal.record.unit,
-                          }
-                        : (feedModal.record.type === 'bottle' && feedModal.record.amount !== undefined) ||
-                          (feedModal.record.type === 'breast' && feedModal.record.startTime)
-                          ? {
-                              amount: feedModal.record.amount,
-                              unit: feedModal.record.unit,
-                              startTime: feedModal.record.startTime
-                                ? new Date(feedModal.record.startTime)
-                                : undefined,
-                              endTime: feedModal.record.endTime
-                                ? new Date(feedModal.record.endTime)
-                                : undefined,
-                            }
-                          : undefined,
+                      feedModal.mode === 'edit'
+                        ? detailsFromRecord(feedModal.record)
+                        : duplicateDetailsFromRecord(feedModal.record),
                   }
                 : feedModal.preset
                   ? { type: feedModal.preset, at: new Date() }

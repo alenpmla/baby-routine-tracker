@@ -1574,15 +1574,19 @@ button.event-link:active {
   user-select: none;
 }
 
-.swipeable-row-delete {
+.swipeable-row-actions {
   position: absolute;
   top: 0;
   right: 0;
   bottom: 0;
+  display: flex;
+  align-items: stretch;
+}
+
+.swipeable-row-delete,
+.swipeable-row-secondary {
   width: 72px;
   border: none;
-  background: var(--md-error-container);
-  color: var(--md-on-error-container);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1590,7 +1594,18 @@ button.event-link:active {
   touch-action: manipulation;
 }
 
-.swipeable-row-delete:focus-visible {
+.swipeable-row-delete {
+  background: var(--md-error-container);
+  color: var(--md-on-error-container);
+}
+
+.swipeable-row-secondary {
+  background: var(--md-surface-container-high);
+  color: var(--md-primary);
+}
+
+.swipeable-row-delete:focus-visible,
+.swipeable-row-secondary:focus-visible {
   outline-offset: -2px;
 }
 
@@ -1598,18 +1613,24 @@ button.event-link:active {
   background: color-mix(in srgb, var(--md-error-container) 85%, var(--md-error));
 }
 
+.swipeable-row-secondary:active {
+  background: color-mix(in srgb, var(--md-surface-container-high) 85%, var(--md-primary));
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .swipeable-row-content {
     transition: transform 0.2s ease;
   }
 
-  .swipeable-row-delete {
+  .swipeable-row-delete,
+  .swipeable-row-secondary {
     transition: opacity 0.15s ease;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .swipeable-row-delete {
+  .swipeable-row-delete,
+  .swipeable-row-secondary {
     opacity: 1;
   }
 }

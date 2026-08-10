@@ -90,4 +90,74 @@ describe('Edit records', () => {
 
     expect(new Date(api.state.sleeps[0].startTime).getHours()).toBe(0)
   })
+
+  it('duplicates a solids feed via the swipe-reveal action', async () => {
+    const user = userEvent.setup()
+    await onboard(user)
+    const nav = () => within(screen.getByRole('navigation', { name: /primary/i }))
+
+    await user.click(nav().getByRole('button', { name: 'Feeding' }))
+    await user.click(screen.getByRole('button', { name: 'Solids' }))
+    await user.type(screen.getByRole('textbox', { name: /food/i }), 'Banana')
+    fireEvent.change(screen.getByRole('spinbutton', { name: /amount/i }), { target: { value: '2' } })
+    fireEvent.change(screen.getByRole('combobox', { name: /unit/i }), { target: { value: 'oz' } })
+    await user.click(screen.getByRole('button', { name: /save solid food/i }))
+    expect(api.state.feedings).toHaveLength(1)
+
+    // Swipe the row open and tap Duplicate.
+    const list = within(screen.getByRole('heading', { name: 'Today' }).closest('section') as HTMLElement)
+    const rowText = list.getByText('Solids · Banana')
+    const row = rowText.closest('.swipeable-row-content') as HTMLElement
+    fireEvent.pointerDown(row, { pointerId: 1, clientX: 200, button: 0, pointerType: 'touch' })
+    fireEvent.pointerMove(row, { pointerId: 1, clientX: 200 - 120, button: 0 })
+    fireEvent.pointerUp(row, { pointerId: 1, clientX: 200 - 120, button: 0 })
+
+    await user.click(screen.getByRole('button', { name: /duplicate solids feed/i }))
+    const dialog = screen.getByRole('dialog')
+    expect(dialog).toBeInTheDocument()
+    // Details are prefilled (food chip), and the dialog is the Add feed sheet.
+    expect(within(dialog).getByRole('button', { name: /remove banana/i })).toBeInTheDocument()
+
+    await user.click(within(dialog).getByRole('button', { name: /save feed/i }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(api.state.feedings).toHaveLength(2)
+    // The copy keeps the original details; the original record is untouched.
+    expect(api.state.feedings[1].foods).toEqual(['Banana'])
+    expect(api.state.feedings[1].amount).toBe(2)
+    expect(api.state.feedings[1].unit).toBe('oz')
+    expect(api.state.feedings[0].id).not.toBe(api.state.feedings[1].id)
+  })
+
+  it('duplicates a breast feed preserving start/end times', async () => {
+    const user = userEvent.setup()
+    await onboard(user)
+    const nav = () => within(screen.getByRole('navigation', { name: /primary/i }))
+
+    await user.click(nav().getByRole('button', { name: 'Feeding' }))
+    await user.click(screen.getByRole('button', { name: 'Breast' }))
+    const dialog = screen.getByRole('dialog')
+    fireEvent.change(within(dialog).getAllByLabelText(/time/i)[0], { target: { value: '08:00' } })
+    fireEvent.change(within(dialog).getAllByLabelText(/time/i)[1], { target: { value: '08:30' } })
+    await user.click(within(dialog).getByRole('button', { name: /save feed/i }))
+    expect(api.state.feedings).toHaveLength(1)
+
+    const list = within(screen.getByRole('heading', { name: 'Today' }).closest('section') as HTMLElement)
+    const rowText = list.getByText('Breast')
+    const row = rowText.closest('.swipeable-row-content') as HTMLElement
+    fireEvent.pointerDown(row, { pointerId: 1, clientX: 200, button: 0, pointerType: 'touch' })
+    fireEvent.pointerMove(row, { pointerId: 1, clientX: 200 - 120, button: 0 })
+    fireEvent.pointerUp(row, { pointerId: 1, clientX: 200 - 120, button: 0 })
+
+    await user.click(screen.getByRole('button', { name: /duplicate breast feed/i }))
+    const dup = screen.getByRole('dialog')
+    await user.click(within(dup).getByRole('button', { name: /save feed/i }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(api.state.feedings).toHaveLength(2)
+    // Breast sessions are copied faithfully (start/end preserved); the record time
+    // defaults to now for the other feed types.
+    const original = api.state.feedings[0]
+    const copy = api.state.feedings[1]
+    expect(copy.startTime).toBe(original.startTime)
+    expect(copy.endTime).toBe(original.endTime)
+  })
 })

@@ -2,6 +2,10 @@
 
 Vite + React 18 + TypeScript baby tracker (PWA). Mobile-first Material 3 UI. Self-hosted sync server (`server/`) served on :3000; dev server on :5173.
 
+## Non-negotiable rules
+
+- **The Agent Loop Framework MUST be used for ALL tasks, plans, features, bugs, and any additions in this project.** No work may be planned, changed, or added outside of it. Do not bypass or skip the framework under any circumstances.
+
 ## How to work on this project
 
 **Run every task, feature, bug, or request through the Agent Loop Framework at `/Users/chinchujose/build/agent-loop-framework`.**
