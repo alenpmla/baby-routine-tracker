@@ -42,3 +42,27 @@ if (typeof window !== 'undefined' && !window.localStorage) {
     writable: true,
   })
 }
+
+// jsdom does not define PointerEvent, so React never attaches its pointer* listeners
+// and swipe gestures (onPointerDown/Move/Up) never fire under test. Polyfill a minimal
+// PointerEvent before React module init so swipe interactions are testable. Guarded to
+// also run under node-environment tests (server/*.test.js) where MouseEvent is absent.
+if (
+  typeof window !== 'undefined' &&
+  typeof MouseEvent !== 'undefined' &&
+  !('PointerEvent' in window)
+) {
+  class TestPointerEvent extends MouseEvent {
+    pointerId: number
+    pointerType: string
+
+    constructor(type: string, init: PointerEventInit = {}) {
+      super(type, init)
+      this.pointerId = init.pointerId ?? 0
+      this.pointerType = init.pointerType ?? ''
+    }
+  }
+  const polyfilled = TestPointerEvent as unknown as typeof PointerEvent
+  ;(window as unknown as Record<string, unknown>).PointerEvent = polyfilled
+  ;(globalThis as unknown as Record<string, unknown>).PointerEvent = polyfilled
+}

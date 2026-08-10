@@ -89,7 +89,8 @@ Items are merged by `id` on the server, so concurrent adds from two devices are 
 7. Forgot to log something? Use **Add past feed / sleep / change** and pick the date + time. For sleep, choose **Still sleeping** if the nap is ongoing (just pick when it started), or **Completed** to enter start + end. Future times are rejected.
 8. Use the **previous / next / today** arrows to view any day's timeline and counts (you can't go beyond today).
 9. **Edit a record**: tap the pencil on any sleep, feed, or diaper in a list to change its properties (times, type, and for solids the foods/amount/unit). Edits sync like every other change.
-10. Everything persists in your browser between visits. Use *Edit profile* on Home to change details.
+10. **Delete a record**: swipe a row (sleep, feed, diaper, or weight) to the left to reveal a red **Delete** control, then tap it. Only one row is open at a time; tapping elsewhere closes it. Keyboard users can tab to the revealed Delete button. Tapping **Delete** asks for confirmation first — the row collapses and a dialog asks you to confirm before the record is removed.
+11. Everything persists in your browser between visits. Use *Edit profile* on Home to change details.
 
 ## Project layout
 

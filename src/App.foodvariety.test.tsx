@@ -46,20 +46,23 @@ describe('Food variety card', () => {
     expect(within(card).getByText('6 of 7')).toBeInTheDocument()
     expect(within(card).getByText(/great mix — 6 of 7 food groups covered/i)).toBeInTheDocument()
 
-    // Collapsed: no per-group food names are printed up front.
-    expect(within(card).queryByText('beef · broccoli')).not.toBeInTheDocument()
-    expect(within(card).queryByText('none yet — try lentils · chickpeas · hummus')).not.toBeInTheDocument()
+    // Collapsed: per-group food names stay in the DOM but are hidden from view and AT.
+    const details = within(card).getByText('Beef · Broccoli').closest('#food-variety-details') as HTMLElement
+    expect(details).toHaveAttribute('aria-hidden', 'true')
+    expect(within(card).getByText('Beef · Broccoli')).not.toBeVisible()
+    expect(within(card).getByText('none yet — try Lentils · Chickpeas · Hummus')).not.toBeVisible()
 
     // Expand: details reveal per-group rows.
     await user.click(toggle)
     expect(toggle).toHaveAttribute('aria-expanded', 'true')
-    expect(within(card).getByText('beef · broccoli')).toBeInTheDocument()
-    expect(within(card).getByText('none yet — try lentils · chickpeas · hummus')).toBeInTheDocument()
+    expect(details).not.toHaveAttribute('aria-hidden')
+    expect(within(card).getByText('Beef · Broccoli')).toBeVisible()
+    expect(within(card).getByText('none yet — try Lentils · Chickpeas · Hummus')).toBeVisible()
 
     // Collapse again.
     await user.click(toggle)
     expect(toggle).toHaveAttribute('aria-expanded', 'false')
-    expect(within(card).queryByText('beef · broccoli')).not.toBeInTheDocument()
+    expect(within(card).getByText('Beef · Broccoli')).not.toBeVisible()
   })
 
   it('classifies misspelled real-world foods', async () => {
@@ -77,8 +80,8 @@ describe('Food variety card', () => {
 
     const card = screen.getByRole('region', { name: /food variety this week/i })
     await user.click(within(card).getByRole('button', { name: /food variety · last 7 days/i }))
-    expect(within(card).getByText(/sakmon/i)).toBeInTheDocument()
-    expect(within(card).getByText(/cattot/i)).toBeInTheDocument()
+    expect(within(card).getByText(/salmon/i)).toBeInTheDocument()
+    expect(within(card).getByText(/carrot/i)).toBeInTheDocument()
   })
 
   it('hides the card when no solids were recorded this week', async () => {

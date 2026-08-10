@@ -38,6 +38,55 @@ export function classifyFood(food: string): FoodGroupId[] {
   return groups
 }
 
+/** Every recognised food token, used to guard plural collapsing. */
+const KEYWORD_SET = new Set(FOOD_GROUP_DEFS.flatMap((def) => def.keywords))
+
+/** Maps real-data misspellings to the canonical food name (lowercased). */
+const FOOD_ALIASES: Record<string, string> = {
+  pototo: 'potato',
+  parship: 'parsnip',
+  cattot: 'carrot',
+  catty: 'carrot',
+  sakmon: 'salmon',
+  avacado: 'avocado',
+  acvado: 'avocado',
+  avado: 'avocado',
+  banna: 'banana',
+  baanan: 'banana',
+  prars: 'pear',
+  zuchini: 'zucchini',
+}
+
+/**
+ * Reduces a food name to its canonical form (lowercased, singular) so that
+ * case variants, simple plurals and known misspellings dedupe to one entry.
+ */
+export function canonicalFoodName(name: string): string {
+  const lower = name.trim().toLowerCase()
+  if (FOOD_ALIASES[lower]) {
+    return FOOD_ALIASES[lower]
+  }
+  if (lower.endsWith('ies')) {
+    const singular = `${lower.slice(0, -3)}y`
+    if (KEYWORD_SET.has(singular)) {
+      return singular
+    }
+  }
+  if (lower.endsWith('es')) {
+    const singular = lower.slice(0, -2)
+    if (KEYWORD_SET.has(singular)) {
+      return singular
+    }
+  }
+  if (lower.endsWith('s')) {
+    const singular = lower.slice(0, -1)
+    if (KEYWORD_SET.has(singular)) {
+      return singular
+    }
+  }
+  return lower
+}
+
 /** Covers the food groups eaten via solids feeds over the last `days` (rolling window). */
 export function getFoodVariety(
   feedingRepo: FeedingRepository,
@@ -66,8 +115,16 @@ export function getFoodVariety(
     }
   }
 
+  const byCanonical = new Map<string, string>()
+  for (const [, original] of byName) {
+    const lower = original.toLowerCase()
+    const canonical = canonicalFoodName(original)
+    const display = lower === canonical ? original : (byCanonical.get(canonical) ?? canonical)
+    byCanonical.set(canonical, display)
+  }
+
   const groups = FOOD_GROUP_DEFS.map((def) => {
-    const foods = [...byName.entries()]
+    const foods = [...byCanonical.entries()]
       .filter(([key]) => classifyFood(key).includes(def.id))
       .map(([, original]) => original)
       .sort((a, b) => a.localeCompare(b))

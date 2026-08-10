@@ -2,11 +2,12 @@ import { useState } from 'react'
 import type { WeightEntry, WeightUnit } from '../../domain/model/WeightEntry'
 import { useTracker } from '../store/TrackerProvider'
 import { formatClock, formatDayLabel, startOfDay } from '../utils/time'
-import { EditIcon, ScaleIcon, TrashIcon } from '../components/icons'
+import { EditIcon, ScaleIcon } from '../components/icons'
 import DayNav from '../components/DayNav'
 import Modal from '../components/Modal'
 import StatTile from '../components/StatTile'
 import { WeightBackfillForm, type WeightBackfillSubmit } from '../components/BackfillForms'
+import SwipeableRow from '../components/SwipeableRow'
 
 type WeightModal = { mode: 'add' } | { mode: 'edit'; record: WeightEntry }
 
@@ -107,7 +108,12 @@ export default function WeightScreen() {
         ) : (
           <ul className="event-list">
             {day.weights.map((w) => (
-              <li key={w.id} className="card event">
+              <SwipeableRow
+                key={w.id}
+                id={w.id}
+                deleteLabel={`Delete weight ${formatClock(w.time)}`}
+                onDelete={() => removeWeight(w.id)}
+              >
                 <span className="event-icon event-weight">
                   <ScaleIcon size={18} />
                 </span>
@@ -125,15 +131,7 @@ export default function WeightScreen() {
                 >
                   <EditIcon />
                 </button>
-                <button
-                  type="button"
-                  className="icon-btn"
-                  aria-label={`Delete weight ${formatClock(w.time)}`}
-                  onClick={() => removeWeight(w.id)}
-                >
-                  <TrashIcon />
-                </button>
-              </li>
+              </SwipeableRow>
             ))}
           </ul>
         )}

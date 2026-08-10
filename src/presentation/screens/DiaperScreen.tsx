@@ -2,11 +2,12 @@ import { useState } from 'react'
 import type { DiaperChange, DiaperType } from '../../domain/model/DiaperChange'
 import { useTracker } from '../store/TrackerProvider'
 import { formatClock, formatDayLabel, startOfDay } from '../utils/time'
-import { DiaperIcon, EditIcon, TrashIcon } from '../components/icons'
+import { DiaperIcon, EditIcon } from '../components/icons'
 import DayNav from '../components/DayNav'
 import Modal from '../components/Modal'
 import StatTile from '../components/StatTile'
 import { FeedDiaperBackfillForm } from '../components/BackfillForms'
+import SwipeableRow from '../components/SwipeableRow'
 
 const TYPES: { id: DiaperType; label: string }[] = [
   { id: 'wet', label: 'Wet' },
@@ -89,7 +90,12 @@ export default function DiaperScreen() {
         ) : (
           <ul className="event-list">
             {day.diapers.map((d) => (
-              <li key={d.id} className="card event">
+              <SwipeableRow
+                key={d.id}
+                id={d.id}
+                deleteLabel={`Delete ${d.type} diaper change`}
+                onDelete={() => removeDiaper(d.id)}
+              >
                 <span className="event-icon event-diaper">
                   <DiaperIcon size={18} />
                 </span>
@@ -105,15 +111,7 @@ export default function DiaperScreen() {
                 >
                   <EditIcon />
                 </button>
-                <button
-                  type="button"
-                  className="icon-btn"
-                  aria-label={`Delete ${d.type} diaper change`}
-                  onClick={() => removeDiaper(d.id)}
-                >
-                  <TrashIcon />
-                </button>
-              </li>
+              </SwipeableRow>
             ))}
           </ul>
         )}

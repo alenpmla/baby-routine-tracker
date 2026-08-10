@@ -65,6 +65,7 @@ describe('Baby Tracker end-to-end flow', () => {
     // Delete a diaper change, count updates
     await user.click(within(nav()).getByRole('button', { name: 'Diaper' }))
     await user.click(screen.getByRole('button', { name: /delete wet diaper change/i }))
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Delete' }))
     expect(within(screen.getByRole('group', { name: 'Changes' })).getByText('1')).toBeInTheDocument()
   })
 

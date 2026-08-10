@@ -309,6 +309,12 @@ select {
   .food-variety-chevron {
     transition: transform 0.2s ease;
   }
+
+  .food-variety-details {
+    transition:
+      grid-template-rows 0.25s ease,
+      opacity 0.2s ease;
+  }
 }
 
 /* ---------- Layout shell ---------- */
@@ -568,6 +574,7 @@ body.appbar-scrolled .screen-header {
 
 .icon-btn:hover {
   background: color-mix(in srgb, var(--md-on-surface) 8%, transparent);
+  color: var(--md-on-surface);
 }
 
 .icon-btn:active {
@@ -1284,8 +1291,27 @@ button.event-link:active {
 }
 
 .food-variety-details {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+}
+
+.food-variety-details-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.food-variety-details-inner {
+  min-height: 0;
+  overflow: hidden;
   padding: 0 16px;
   border-top: 1px solid var(--md-outline-variant);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .food-variety-details[hidden] {
+    display: none;
+  }
 }
 
 .food-variety-list {
@@ -1526,6 +1552,68 @@ button.event-link:active {
   font-size: var(--type-caption);
 }
 
+/* ---------- Swipeable rows ---------- */
+
+.swipeable-row {
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+}
+
+.swipeable-row-content {
+  position: relative;
+  z-index: 1;
+  background: var(--md-surface-container-low);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  width: 100%;
+  min-width: 0;
+  touch-action: pan-y;
+  user-select: none;
+}
+
+.swipeable-row-delete {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 72px;
+  border: none;
+  background: var(--md-error-container);
+  color: var(--md-on-error-container);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 1;
+  touch-action: manipulation;
+}
+
+.swipeable-row-delete:focus-visible {
+  outline-offset: -2px;
+}
+
+.swipeable-row-delete:active {
+  background: color-mix(in srgb, var(--md-error-container) 85%, var(--md-error));
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .swipeable-row-content {
+    transition: transform 0.2s ease;
+  }
+
+  .swipeable-row-delete {
+    transition: opacity 0.15s ease;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .swipeable-row-delete {
+    opacity: 1;
+  }
+}
+
 .empty {
   background: var(--md-surface-container-low);
   border: 1px dashed var(--md-outline-variant);
@@ -1643,6 +1731,7 @@ button.event-link:active {
   bottom: 0;
   left: 0;
   right: 0;
+  z-index: 15;
   background: color-mix(in srgb, var(--md-surface-container) 92%, transparent);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -1852,6 +1941,21 @@ button.event-link:active {
 
 .dialog-actions .btn:active {
   background: color-mix(in srgb, var(--md-primary) 12%, transparent);
+}
+
+.dialog-message {
+  margin: 8px 0 0;
+  color: var(--md-on-surface-variant);
+  font-size: var(--type-body);
+  line-height: 1.5;
+}
+
+.dialog-actions .btn-danger-text {
+  color: var(--md-error);
+}
+
+.dialog-actions .btn-danger-text:active {
+  background: color-mix(in srgb, var(--md-error) 12%, transparent);
 }
 
 @media (min-width: 640px) {

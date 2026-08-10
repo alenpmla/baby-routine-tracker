@@ -1,5 +1,24 @@
 import { describe, it, expect } from 'vitest'
-import { headline } from '../FoodVarietyCard'
+import { capitalizeFood, headline } from '../FoodVarietyCard'
+
+describe('FoodVarietyCard capitalizeFood', () => {
+  it('uppercases the first letter of a food name', () => {
+    expect(capitalizeFood('beef')).toBe('Beef')
+    expect(capitalizeFood('Corn')).toBe('Corn')
+    expect(capitalizeFood('apple')).toBe('Apple')
+    expect(capitalizeFood('pear')).toBe('Pear')
+  })
+
+  it('capitalises only the first letter of multi-word names', () => {
+    expect(capitalizeFood('sweet potato')).toBe('Sweet potato')
+    expect(capitalizeFood('Corn porridge')).toBe('Corn porridge')
+    expect(capitalizeFood('oats porridge')).toBe('Oats porridge')
+  })
+
+  it('handles empty input', () => {
+    expect(capitalizeFood('')).toBe('')
+  })
+})
 
 describe('FoodVarietyCard headline', () => {
   it('reports an excellent week when all groups are covered', () => {

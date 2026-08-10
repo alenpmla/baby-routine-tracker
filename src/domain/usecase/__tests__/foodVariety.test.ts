@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { classifyFood, getFoodVariety, tokenizeFood } from '../foodVariety'
+import { canonicalFoodName, classifyFood, getFoodVariety, tokenizeFood } from '../foodVariety'
 import type { FeedingSession } from '../../model/FeedingSession'
 import type { FeedingRepository } from '../../repository/repositories'
 
@@ -13,6 +13,42 @@ function feedingRepo(items: FeedingSession[]): FeedingRepository {
 function solids(id: string, foods: string[], offsetMs: number): FeedingSession {
   return { id, time: new Date(NOW.getTime() + offsetMs).toISOString(), type: 'solids', foods }
 }
+
+describe('canonicalFoodName', () => {
+  it('lowercases and trims without changing a canonical name', () => {
+    expect(canonicalFoodName('  Potato  ')).toBe('potato')
+    expect(canonicalFoodName('Banana')).toBe('banana')
+  })
+
+  it('collapses simple plurals only when the singular is a recognised keyword', () => {
+    expect(canonicalFoodName('Peaches')).toBe('peach')
+    expect(canonicalFoodName('pears')).toBe('pear')
+    expect(canonicalFoodName('Peas')).toBe('pea')
+    expect(canonicalFoodName('carrots')).toBe('carrot')
+    expect(canonicalFoodName('oats')).toBe('oats')
+    expect(canonicalFoodName('grapes')).toBe('grape')
+  })
+
+  it('handles es and ies plural endings', () => {
+    expect(canonicalFoodName('potatoes')).toBe('potato')
+    expect(canonicalFoodName('tomatoes')).toBe('tomato')
+    expect(canonicalFoodName('strawberries')).toBe('strawberry')
+    expect(canonicalFoodName('raspberries')).toBe('raspberry')
+  })
+
+  it('maps real-data misspellings to their canonical food', () => {
+    expect(canonicalFoodName('pototo')).toBe('potato')
+    expect(canonicalFoodName('Parship')).toBe('parsnip')
+    expect(canonicalFoodName('sakmon')).toBe('salmon')
+    expect(canonicalFoodName('zuchini')).toBe('zucchini')
+  })
+
+  it('keeps compound names intact', () => {
+    expect(canonicalFoodName('Corn porridge')).toBe('corn porridge')
+    expect(canonicalFoodName('Oats porridge')).toBe('oats porridge')
+    expect(canonicalFoodName('Sweet potato')).toBe('sweet potato')
+  })
+})
 
 describe('tokenizeFood', () => {
   it('splits on punctuation and lowercases', () => {
@@ -123,5 +159,34 @@ describe('getFoodVariety', () => {
     const v14 = getFoodVariety(feedingRepo(feeds), NOW, 14)
     expect(v7?.groups.find((g) => g.id === 'iron')?.foods).toEqual(['beef'])
     expect(v14?.groups.find((g) => g.id === 'protein')?.foods).toEqual(['beef', 'chicken'])
+  })
+
+  it('dedupes near-duplicate foods within a group (case, plural, misspelling)', () => {
+    const feeds = [
+      solids('f1', ['pototo', 'Parship', 'peach'], -DAY),
+      solids('f2', ['Potato', 'Parsnip', 'Peaches', 'pears', 'Pears'], -DAY),
+    ]
+    const variety = getFoodVariety(feedingRepo(feeds), NOW)
+    if (!variety) throw new Error('expected variety')
+
+    const veg = variety.groups.find((g) => g.id === 'vegetables')
+    expect(veg?.foods).toEqual(['Parsnip', 'Potato'])
+
+    const fruit = variety.groups.find((g) => g.id === 'fruit')
+    expect(fruit?.foods).toEqual(['peach', 'pear'])
+  })
+
+  it('keeps compound names distinct from their single-word components', () => {
+    const feeds = [
+      solids('f1', ['corn', 'Corn porridge', 'potato', 'sweet potato'], -DAY),
+    ]
+    const variety = getFoodVariety(feedingRepo(feeds), NOW)
+    if (!variety) throw new Error('expected variety')
+
+    const veg = variety.groups.find((g) => g.id === 'vegetables')
+    expect(veg?.foods).toEqual(['corn', 'Corn porridge', 'potato', 'sweet potato'])
+
+    const grains = variety.groups.find((g) => g.id === 'grains')
+    expect(grains?.foods).toEqual(['Corn porridge'])
   })
 })

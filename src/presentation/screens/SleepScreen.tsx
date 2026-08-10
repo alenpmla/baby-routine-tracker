@@ -3,11 +3,12 @@ import type { SleepSession } from '../../domain/model/SleepSession'
 import { useTracker } from '../store/TrackerProvider'
 import { useWakeStatus } from '../store/useWakeStatus'
 import { formatClock, formatDayLabel, formatDuration, startOfDay } from '../utils/time'
-import { EditIcon, MoonIcon, TrashIcon } from '../components/icons'
+import { EditIcon, MoonIcon } from '../components/icons'
 import DayNav from '../components/DayNav'
 import Modal from '../components/Modal'
 import StatTile from '../components/StatTile'
 import { SleepBackfillForm, type SleepBackfillSubmit } from '../components/BackfillForms'
+import SwipeableRow from '../components/SwipeableRow'
 
 type SleepModal = { mode: 'add' } | { mode: 'edit'; record: SleepSession }
 
@@ -154,7 +155,12 @@ export default function SleepScreen() {
         ) : (
           <ul className="event-list">
             {day.sleeps.map((s) => (
-              <li key={s.id} className="card event">
+              <SwipeableRow
+                key={s.id}
+                id={s.id}
+                deleteLabel={`Delete sleep ${formatClock(s.startTime)}`}
+                onDelete={() => removeSleep(s.id)}
+              >
                 <span className="event-icon event-sleep">
                   <MoonIcon size={18} />
                 </span>
@@ -177,15 +183,7 @@ export default function SleepScreen() {
                 >
                   <EditIcon />
                 </button>
-                <button
-                  type="button"
-                  className="icon-btn"
-                  aria-label={`Delete sleep ${formatClock(s.startTime)}`}
-                  onClick={() => removeSleep(s.id)}
-                >
-                  <TrashIcon />
-                </button>
-              </li>
+              </SwipeableRow>
             ))}
           </ul>
         )}

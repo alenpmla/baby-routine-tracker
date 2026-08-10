@@ -77,15 +77,26 @@ describe('Weight tracking', () => {
     expect(api.state.weights[0].weight).toBe(7.4)
   })
 
-  it('deletes a weight', async () => {
+  it('deletes a weight via swipe-to-reveal', async () => {
     const user = userEvent.setup()
     await onboard(user)
     await goWeight(user)
 
     fireEvent.change(screen.getByLabelText(/weight/i), { target: { value: '7.5' } })
     await user.click(screen.getByRole('button', { name: /add weight/i }))
+    expect(api.state.weights).toHaveLength(1)
+
+    const list = within(screen.getByRole('heading', { name: 'Today' }).closest('section') as HTMLElement)
+    const rowText = list.getByText(/7.5\s*kg/)
+    const row = rowText.closest('.swipeable-row-content') as HTMLElement
+    const li = rowText.closest('.swipeable-row') as HTMLElement
+    fireEvent.pointerDown(row, { pointerId: 1, clientX: 200, button: 0, pointerType: 'touch' })
+    fireEvent.pointerMove(row, { pointerId: 1, clientX: 200 - 60, button: 0 })
+    fireEvent.pointerUp(row, { pointerId: 1, clientX: 200 - 60, button: 0 })
+    expect(li.classList.contains('swipeable-row-open')).toBe(true)
 
     await user.click(screen.getByRole('button', { name: /delete weight/i }))
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Delete' }))
     expect(api.state.weights).toHaveLength(0)
     expect(screen.queryByText('7.5 kg')).not.toBeInTheDocument()
   })

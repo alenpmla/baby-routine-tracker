@@ -34,6 +34,11 @@ const GROUP_ACCENT: Record<FoodGroupId, string> = {
   legumes: 'legume',
 }
 
+/** Uppercases the first letter of a food name for display. */
+export function capitalizeFood(name: string): string {
+  return name.length > 0 ? name[0].toUpperCase() + name.slice(1) : name
+}
+
 export function headline(covered: number, total: number): string {
   if (covered === total) {
     return `Excellent — all ${total} food groups covered this week`
@@ -94,8 +99,13 @@ export default function FoodVarietyCard() {
         </span>
       </button>
 
-      {open && (
-        <div className="food-variety-details" id="food-variety-details">
+      <div
+        id="food-variety-details"
+        className={`food-variety-details${open ? ' food-variety-details-open' : ''}`}
+        hidden={!open}
+        aria-hidden={open ? undefined : true}
+      >
+        <div className="food-variety-details-inner">
           <ul className="food-variety-list">
             {foodVariety.groups.map((group) => {
               const Icon = GROUP_ICON[group.id]
@@ -111,7 +121,9 @@ export default function FoodVarietyCard() {
                   <span className="food-variety-body">
                     <span className="food-variety-name">{group.label}</span>
                     <span className="food-variety-foods">
-                      {group.covered ? group.foods.join(' · ') : `none yet — try ${group.trySuggestion}`}
+                      {group.covered
+                        ? group.foods.map(capitalizeFood).join(' · ')
+                        : `none yet — try ${group.trySuggestion.split(' · ').map(capitalizeFood).join(' · ')}`}
                     </span>
                   </span>
                   {group.covered ? (
@@ -126,7 +138,7 @@ export default function FoodVarietyCard() {
             })}
           </ul>
         </div>
-      )}
+      </div>
     </section>
   )
 }

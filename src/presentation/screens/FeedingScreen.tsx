@@ -7,11 +7,12 @@ import { useTracker } from '../store/TrackerProvider'
 import { formatClock, formatDayLabel, isSameDay, startOfDay } from '../utils/time'
 import { describeBottleTotal, describeFeedingMeta, describeFeedingTitle, describeSolidsAverage, describeSolidsTotal } from '../utils/feeding'
 import { useSnapshotPrefs } from '../store/SnapshotPrefsProvider'
-import { BottleIcon, BowlIcon, EditIcon, TrashIcon } from '../components/icons'
+import { BottleIcon, BowlIcon, EditIcon } from '../components/icons'
 import DayNav from '../components/DayNav'
 import Modal from '../components/Modal'
 import SolidsFields from '../components/SolidsFields'
 import FoodVarietyCard from '../components/FoodVarietyCard'
+import SwipeableRow from '../components/SwipeableRow'
 import StatTile from '../components/StatTile'
 import { FeedDiaperBackfillForm } from '../components/BackfillForms'
 
@@ -133,7 +134,12 @@ export default function FeedingScreen() {
         ) : (
           <ul className="event-list">
             {day.feedings.map((f) => (
-              <li key={f.id} className="card event">
+              <SwipeableRow
+                key={f.id}
+                id={f.id}
+                deleteLabel={`Delete ${TYPE_LABEL[f.type]} feed`}
+                onDelete={() => removeFeeding(f.id)}
+              >
                 <span className="event-icon event-feeding">
                   <BottleIcon size={18} />
                 </span>
@@ -152,15 +158,7 @@ export default function FeedingScreen() {
                 >
                   <EditIcon />
                 </button>
-                <button
-                  type="button"
-                  className="icon-btn"
-                  aria-label={`Delete ${TYPE_LABEL[f.type]} feed`}
-                  onClick={() => removeFeeding(f.id)}
-                >
-                  <TrashIcon />
-                </button>
-              </li>
+              </SwipeableRow>
             ))}
           </ul>
         )}
