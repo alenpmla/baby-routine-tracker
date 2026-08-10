@@ -1,6 +1,7 @@
 import Modal from './Modal'
 
 interface ConfirmDialogProps {
+  open: boolean
   title: string
   message: string
   confirmLabel: string
@@ -10,6 +11,7 @@ interface ConfirmDialogProps {
 
 /** M3 confirmation dialog: centered dialog with right-aligned text actions. */
 export default function ConfirmDialog({
+  open,
   title,
   message,
   confirmLabel,
@@ -17,7 +19,7 @@ export default function ConfirmDialog({
   onClose,
 }: ConfirmDialogProps) {
   return (
-    <Modal title={title} variant="dialog" onClose={onClose}>
+    <Modal open={open} title={title} variant="dialog" onClose={onClose}>
       <p className="dialog-message">{message}</p>
       <div className="dialog-actions">
         <button type="button" className="btn" onClick={onClose}>

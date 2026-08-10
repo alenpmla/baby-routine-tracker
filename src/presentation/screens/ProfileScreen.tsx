@@ -139,7 +139,7 @@ export default function ProfileScreen({ existing, onSubmit, onBack }: ProfileScr
               <h1>Edit profile</h1>
             </div>
           </div>
-          <p className="sub">Update your baby\u2019s details below.</p>
+          <p className="sub">Update your baby&rsquo;s details below.</p>
         </header>
         {form}
       </div>

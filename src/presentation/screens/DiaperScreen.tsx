@@ -117,28 +117,31 @@ export default function DiaperScreen() {
         )}
       </section>
 
-      {diaperModal && (
-        <Modal
-          title={diaperModal.mode === 'edit' ? 'Edit change' : 'Add past change'}
-          onClose={() => setDiaperModal(null)}
-        >
-          <FeedDiaperBackfillForm
-            options={TYPES}
-            submitLabel={diaperModal.mode === 'edit' ? 'Save changes' : 'Save change'}
-            initial={
-              diaperModal.mode === 'edit'
-                ? { type: diaperModal.record.type, at: new Date(diaperModal.record.time) }
-                : undefined
-            }
-            onSubmit={handleBackfill}
-          />
-          {backfillError && (
-            <p className="form-error" role="alert">
-              {backfillError}
-            </p>
-          )}
-        </Modal>
-      )}
+      <Modal
+        open={diaperModal !== null}
+        title={diaperModal?.mode === 'edit' ? 'Edit change' : 'Add past change'}
+        onClose={() => setDiaperModal(null)}
+      >
+        {diaperModal && (
+          <>
+            <FeedDiaperBackfillForm
+              options={TYPES}
+              submitLabel={diaperModal.mode === 'edit' ? 'Save changes' : 'Save change'}
+              initial={
+                diaperModal.mode === 'edit'
+                  ? { type: diaperModal.record.type, at: new Date(diaperModal.record.time) }
+                  : undefined
+              }
+              onSubmit={handleBackfill}
+            />
+            {backfillError && (
+              <p className="form-error" role="alert">
+                {backfillError}
+              </p>
+            )}
+          </>
+        )}
+      </Modal>
     </div>
   )
 }

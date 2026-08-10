@@ -204,60 +204,61 @@ export default function FeedingScreen() {
         )}
       </section>
 
-      {showSolids && (
-        <Modal title="Add solid food" onClose={() => setShowSolids(false)}>
-          <div className="form">
-            <SolidsFields
-              value={solidsDetails}
-              errors={solidsErrors}
-              suggestions={foodSuggestions}
-              onChange={setSolidsDetails}
-            />
-            <button type="button" className="btn btn-primary btn-block" onClick={handleAddSolids}>
-              Save solid food
-            </button>
-          </div>
-        </Modal>
-      )}
-
-      {feedModal && (
-        <Modal
-          title={feedModal.mode === 'edit' ? 'Edit feed' : 'Add feed'}
-          onClose={() => setFeedModal(null)}
-        >
-          <FeedDiaperBackfillForm
-            options={TYPES}
-            submitLabel={feedModal.mode === 'edit' ? 'Save changes' : 'Save feed'}
-            showSolidsDetails
-            showBreastTiming
-            showBottleDetails
+      <Modal open={showSolids} title="Add solid food" onClose={() => setShowSolids(false)}>
+        <div className="form">
+          <SolidsFields
+            value={solidsDetails}
+            errors={solidsErrors}
             suggestions={foodSuggestions}
-            initial={
-              feedModal.mode === 'edit' || feedModal.mode === 'duplicate'
-                ? {
-                    type: feedModal.record.type,
-                    at:
-                      feedModal.mode === 'edit' || feedModal.record.type === 'breast'
-                        ? new Date(feedModal.record.time)
-                        : new Date(),
-                    details:
-                      feedModal.mode === 'edit'
-                        ? detailsFromRecord(feedModal.record)
-                        : duplicateDetailsFromRecord(feedModal.record),
-                  }
-                : feedModal.preset
-                  ? { type: feedModal.preset, at: new Date() }
-                  : undefined
-            }
-            onSubmit={handleBackfill}
+            onChange={setSolidsDetails}
           />
-          {backfillError && (
-            <p className="form-error" role="alert">
-              {backfillError}
-            </p>
-          )}
-        </Modal>
-      )}
+          <button type="button" className="btn btn-primary btn-block" onClick={handleAddSolids}>
+            Save solid food
+          </button>
+        </div>
+      </Modal>
+
+      <Modal
+        open={feedModal !== null}
+        title={feedModal?.mode === 'edit' ? 'Edit feed' : 'Add feed'}
+        onClose={() => setFeedModal(null)}
+      >
+        {feedModal && (
+          <>
+            <FeedDiaperBackfillForm
+              options={TYPES}
+              submitLabel={feedModal.mode === 'edit' ? 'Save changes' : 'Save feed'}
+              showSolidsDetails
+              showBreastTiming
+              showBottleDetails
+              suggestions={foodSuggestions}
+              initial={
+                feedModal.mode === 'edit' || feedModal.mode === 'duplicate'
+                  ? {
+                      type: feedModal.record.type,
+                      at:
+                        feedModal.mode === 'edit' || feedModal.record.type === 'breast'
+                          ? new Date(feedModal.record.time)
+                          : new Date(),
+                      details:
+                        feedModal.mode === 'edit'
+                          ? detailsFromRecord(feedModal.record)
+                          : duplicateDetailsFromRecord(feedModal.record),
+                    }
+                  : feedModal.preset
+                    ? { type: feedModal.preset, at: new Date() }
+                    : undefined
+              }
+              onSubmit={handleBackfill}
+            />
+            {backfillError && (
+              <p className="form-error" role="alert">
+                {backfillError}
+              </p>
+            )}
+          </>
+        )}
+      </Modal>
     </div>
   )
 }

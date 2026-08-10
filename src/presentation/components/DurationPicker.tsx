@@ -2,6 +2,7 @@ import { useState } from 'react'
 import Modal from './Modal'
 
 interface DurationPickerProps {
+  open: boolean
   value: number
   onChange: (minutes: number) => void
   onClose: () => void
@@ -23,7 +24,7 @@ function clamp(v: number): number {
   return Math.min(MAX_MINUTES, Math.max(0, v))
 }
 
-export default function DurationPicker({ value, onChange, onClose }: DurationPickerProps) {
+export default function DurationPicker({ open, value, onChange, onClose }: DurationPickerProps) {
   const [hours, setHours] = useState(Math.min(12, Math.floor(value / 60)))
   const [minutes, setMinutes] = useState(value % 60)
 
@@ -59,7 +60,7 @@ export default function DurationPicker({ value, onChange, onClose }: DurationPic
   }
 
   return (
-    <Modal title="Set wake window" onClose={onClose} variant="dialog">
+    <Modal open={open} title="Set wake window" onClose={onClose} variant="dialog">
       <div className="duration-picker">
         <div className="duration-display" aria-live="polite">
           {hours}h {String(minutes).padStart(2, '0')}m

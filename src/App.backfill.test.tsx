@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { render, screen, fireEvent, within } from '@testing-library/react'
+import { render, screen, fireEvent, within, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from './App'
 import { shiftDays, toInputDate } from './presentation/utils/time'
@@ -43,7 +43,7 @@ describe('Phase 2: backfill + day navigation', () => {
     expect(within(dialog).getAllByLabelText(/time/i)).toHaveLength(1) // start only
     fireEvent.change(within(dialog).getByLabelText(/time/i), { target: { value: '00:00' } })
     await user.click(screen.getByRole('button', { name: /save changes/i }))
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
 
     expect(screen.getByText('Sleeping now')).toBeInTheDocument()
     expect(new Date(api.state.sleeps[0].startTime).getHours()).toBe(0)
@@ -63,7 +63,7 @@ describe('Phase 2: backfill + day navigation', () => {
     fireEvent.change(screen.getByRole('combobox', { name: /unit/i }), { target: { value: 'ml' } })
     await user.click(screen.getByRole('button', { name: /save feed/i }))
 
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     expect(screen.getByText(/no feeds recorded/i)).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: /previous day/i }))
@@ -159,7 +159,7 @@ describe('Phase 2: backfill + day navigation', () => {
 
     fireEvent.change(times[1], { target: { value: '11:30' } })
     await user.click(within(dialog).getByRole('button', { name: /save sleep/i }))
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
 
     await user.click(screen.getByRole('button', { name: /previous day/i }))
     const list = within(screen.getByRole('heading', { name: 'Yesterday' }).closest('section') as HTMLElement)
@@ -180,7 +180,7 @@ describe('Phase 2: backfill + day navigation', () => {
     fireEvent.change(within(dialog).getByLabelText(/date/i), { target: { value: yesterday() } })
     fireEvent.change(within(dialog).getByLabelText(/time/i), { target: { value: '08:00' } })
     await user.click(within(dialog).getByRole('button', { name: /save sleep/i }))
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
 
     // It becomes the running timer with the past start time
     expect(screen.getByText('Sleeping now')).toBeInTheDocument()

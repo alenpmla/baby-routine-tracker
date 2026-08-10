@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { render, screen, fireEvent, within } from '@testing-library/react'
+import { render, screen, fireEvent, within, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from './App'
 import { setupApi } from './test/setupApi'
@@ -77,6 +77,7 @@ describe('Wake window notification', () => {
     fireEvent.change(within(dialog).getByLabelText('Minutes'), { target: { value: '30' } })
     await user.click(within(dialog).getByRole('button', { name: /save/i }))
 
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     expect(api.state.settings.wakeWindowMinutes).toBe(150)
     expect(screen.getByText('2h 30m')).toBeInTheDocument()
   })

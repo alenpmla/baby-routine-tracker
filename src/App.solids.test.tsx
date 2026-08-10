@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { render, screen, fireEvent, within } from '@testing-library/react'
+import { render, screen, fireEvent, within, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from './App'
 import { setupApi } from './test/setupApi'
@@ -55,7 +55,7 @@ describe('Solid-food details', () => {
 
     fireEvent.change(screen.getByRole('combobox', { name: /unit/i }), { target: { value: 'oz' } })
     await user.click(screen.getByRole('button', { name: /save solid food/i }))
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
 
     const list = within(screen.getByRole('heading', { name: 'Today' }).closest('section') as HTMLElement)
     expect(list.getByText('Solids · Banana')).toBeInTheDocument()
@@ -85,7 +85,7 @@ describe('Solid-food details', () => {
     fireEvent.change(screen.getByRole('spinbutton', { name: /amount/i }), { target: { value: '2' } })
     fireEvent.change(screen.getByRole('combobox', { name: /unit/i }), { target: { value: 'oz' } })
     await user.click(screen.getByRole('button', { name: /save solid food/i }))
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
 
     expect(api.state.feedings[0].foods).toEqual(['salmon', 'beef'])
     const list = within(screen.getByRole('heading', { name: 'Today' }).closest('section') as HTMLElement)
@@ -231,7 +231,7 @@ describe('Solid-food details', () => {
     fireEvent.change(within(dialog).getByLabelText(/amount/i), { target: { value: '30' } })
     fireEvent.change(within(dialog).getByLabelText(/unit/i), { target: { value: 'gram' } })
     await user.click(within(dialog).getByRole('button', { name: /save feed/i }))
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
 
     const list = within(screen.getByRole('heading', { name: 'Today' }).closest('section') as HTMLElement)
     expect(list.getByText('Solids · Carrot')).toBeInTheDocument()

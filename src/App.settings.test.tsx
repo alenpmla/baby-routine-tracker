@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { render, screen, fireEvent, within } from '@testing-library/react'
+import { render, screen, fireEvent, within, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from './App'
 import { setupApi } from './test/setupApi'
@@ -244,7 +244,7 @@ describe('Food suggestions', () => {
     fireEvent.change(screen.getByRole('spinbutton', { name: /amount/i }), { target: { value: '2' } })
     fireEvent.change(screen.getByRole('combobox', { name: /unit/i }), { target: { value: 'oz' } })
     await user.click(screen.getByRole('button', { name: /save solid food/i }))
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
   })
 
   it('lets you edit the profile from Settings', async () => {

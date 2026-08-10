@@ -128,15 +128,14 @@ export default function SwipeableRow({ id, deleteLabel, onDelete, secondaryActio
           <TrashIcon />
         </button>
       </div>
-      {confirming && (
-        <ConfirmDialog
-          title="Delete this record?"
-          message="This will permanently remove the record. This action cannot be undone."
-          confirmLabel="Delete"
-          onConfirm={onDelete}
-          onClose={() => setConfirming(false)}
-        />
-      )}
+      <ConfirmDialog
+        open={confirming}
+        title="Delete this record?"
+        message="This will permanently remove the record. This action cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={onDelete}
+        onClose={() => setConfirming(false)}
+      />
       <div
         className="swipeable-row-content"
         style={{ transform: `translateX(-${open ? reveal : offset}px)` }}

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { render, screen, fireEvent, within } from '@testing-library/react'
+import { render, screen, fireEvent, within, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from './App'
 import { setupApi } from './test/setupApi'
@@ -35,7 +35,7 @@ describe('Edit records', () => {
     expect(screen.getByRole('dialog', { name: /edit change/i })).toBeInTheDocument()
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Dirty' }))
     await user.click(screen.getByRole('button', { name: /save changes/i }))
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
 
     expect(api.state.diapers[0].type).toBe('dirty')
     const list = within(screen.getByRole('heading', { name: 'Today' }).closest('section') as HTMLElement)
@@ -53,6 +53,7 @@ describe('Edit records', () => {
     fireEvent.change(screen.getByRole('spinbutton', { name: /amount/i }), { target: { value: '2' } })
     fireEvent.change(screen.getByRole('combobox', { name: /unit/i }), { target: { value: 'oz' } })
     await user.click(screen.getByRole('button', { name: /save solid food/i }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
 
     await user.click(screen.getByRole('button', { name: /edit solids feed/i }))
     const dialog = screen.getByRole('dialog')
@@ -63,7 +64,7 @@ describe('Edit records', () => {
     fireEvent.change(within(dialog).getByRole('spinbutton', { name: /amount/i }), { target: { value: '30' } })
     fireEvent.change(within(dialog).getByRole('combobox', { name: /unit/i }), { target: { value: 'gram' } })
     await user.click(screen.getByRole('button', { name: /save changes/i }))
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
 
     expect(api.state.feedings[0].foods).toEqual(['Carrot'])
     expect(api.state.feedings[0].amount).toBe(30)
@@ -86,7 +87,7 @@ describe('Edit records', () => {
     const times = within(dialog).getAllByLabelText(/time/i)
     fireEvent.change(times[0], { target: { value: '00:00' } })
     await user.click(screen.getByRole('button', { name: /save changes/i }))
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
 
     expect(new Date(api.state.sleeps[0].startTime).getHours()).toBe(0)
   })
@@ -103,6 +104,7 @@ describe('Edit records', () => {
     fireEvent.change(screen.getByRole('combobox', { name: /unit/i }), { target: { value: 'oz' } })
     await user.click(screen.getByRole('button', { name: /save solid food/i }))
     expect(api.state.feedings).toHaveLength(1)
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
 
     // Swipe the row open and tap Duplicate.
     const list = within(screen.getByRole('heading', { name: 'Today' }).closest('section') as HTMLElement)
@@ -119,7 +121,7 @@ describe('Edit records', () => {
     expect(within(dialog).getByRole('button', { name: /remove banana/i })).toBeInTheDocument()
 
     await user.click(within(dialog).getByRole('button', { name: /save feed/i }))
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     expect(api.state.feedings).toHaveLength(2)
     // The copy keeps the original details; the original record is untouched.
     expect(api.state.feedings[1].foods).toEqual(['Banana'])
@@ -151,7 +153,7 @@ describe('Edit records', () => {
     await user.click(screen.getByRole('button', { name: /duplicate breast feed/i }))
     const dup = screen.getByRole('dialog')
     await user.click(within(dup).getByRole('button', { name: /save feed/i }))
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     expect(api.state.feedings).toHaveLength(2)
     // Breast sessions are copied faithfully (start/end preserved); the record time
     // defaults to now for the other feed types.

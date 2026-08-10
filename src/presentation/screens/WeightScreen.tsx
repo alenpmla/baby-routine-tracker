@@ -137,31 +137,34 @@ export default function WeightScreen() {
         )}
       </section>
 
-      {weightModal && (
-        <Modal
-          title={weightModal.mode === 'edit' ? 'Edit weight' : 'Add past weight'}
-          onClose={() => setWeightModal(null)}
-        >
-          <WeightBackfillForm
-            submitLabel={weightModal.mode === 'edit' ? 'Save changes' : 'Save weight'}
-            initial={
-              weightModal.mode === 'edit'
-                ? {
-                    at: new Date(weightModal.record.time),
-                    weight: weightModal.record.weight,
-                    unit: weightModal.record.unit,
-                  }
-                : undefined
-            }
-            onSubmit={handleSubmit}
-          />
-          {backfillError && (
-            <p className="form-error" role="alert">
-              {backfillError}
-            </p>
-          )}
-        </Modal>
-      )}
+      <Modal
+        open={weightModal !== null}
+        title={weightModal?.mode === 'edit' ? 'Edit weight' : 'Add past weight'}
+        onClose={() => setWeightModal(null)}
+      >
+        {weightModal && (
+          <>
+            <WeightBackfillForm
+              submitLabel={weightModal.mode === 'edit' ? 'Save changes' : 'Save weight'}
+              initial={
+                weightModal.mode === 'edit'
+                  ? {
+                      at: new Date(weightModal.record.time),
+                      weight: weightModal.record.weight,
+                      unit: weightModal.record.unit,
+                    }
+                  : undefined
+              }
+              onSubmit={handleSubmit}
+            />
+            {backfillError && (
+              <p className="form-error" role="alert">
+                {backfillError}
+              </p>
+            )}
+          </>
+        )}
+      </Modal>
     </div>
   )
 }

@@ -115,9 +115,12 @@ export default function NotificationsScreen({ onBack }: { onBack: () => void }) 
         </button>
       )}
 
-      {pickerOpen && (
-        <DurationPicker value={wakeWindowMinutes} onChange={setWakeWindowMinutes} onClose={() => setPickerOpen(false)} />
-      )}
+      <DurationPicker
+        open={pickerOpen}
+        value={wakeWindowMinutes}
+        onChange={setWakeWindowMinutes}
+        onClose={() => setPickerOpen(false)}
+      />
 
       <div className="card event">
         <span className="event-icon event-diaper">

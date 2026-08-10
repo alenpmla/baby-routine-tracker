@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { render, screen, fireEvent, within } from '@testing-library/react'
+import { render, screen, fireEvent, within, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from './App'
 import { setupApi } from './test/setupApi'
@@ -40,7 +40,7 @@ describe('Breast feeding start/end', () => {
     fireEvent.change(times[0], { target: { value: toInputTime(new Date(Date.now() - 2 * 3600 * 1000)) } })
     fireEvent.change(times[1], { target: { value: toInputTime(new Date(Date.now() - 60000)) } })
     await user.click(screen.getByRole('button', { name: /save feed/i }))
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
 
     expect(api.state.feedings[0].type).toBe('breast')
     expect(api.state.feedings[0].startTime).toBeDefined()

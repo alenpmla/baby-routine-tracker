@@ -189,30 +189,33 @@ export default function SleepScreen() {
         )}
       </section>
 
-      {sleepModal && (
-        <Modal
-          title={sleepModal.mode === 'edit' ? 'Edit sleep' : 'Add past sleep'}
-          onClose={() => setSleepModal(null)}
-        >
-          <SleepBackfillForm
-            submitLabel={sleepModal.mode === 'edit' ? 'Save changes' : 'Save sleep'}
-            initial={
-              sleepModal.mode === 'edit'
-                ? {
-                    start: new Date(sleepModal.record.startTime),
-                    end: sleepModal.record.endTime ? new Date(sleepModal.record.endTime) : null,
-                  }
-                : undefined
-            }
-            onSubmit={handleBackfill}
-          />
-          {backfillError && (
-            <p className="form-error" role="alert">
-              {backfillError}
-            </p>
-          )}
-        </Modal>
-      )}
+      <Modal
+        open={sleepModal !== null}
+        title={sleepModal?.mode === 'edit' ? 'Edit sleep' : 'Add past sleep'}
+        onClose={() => setSleepModal(null)}
+      >
+        {sleepModal && (
+          <>
+            <SleepBackfillForm
+              submitLabel={sleepModal.mode === 'edit' ? 'Save changes' : 'Save sleep'}
+              initial={
+                sleepModal.mode === 'edit'
+                  ? {
+                      start: new Date(sleepModal.record.startTime),
+                      end: sleepModal.record.endTime ? new Date(sleepModal.record.endTime) : null,
+                    }
+                  : undefined
+              }
+              onSubmit={handleBackfill}
+            />
+            {backfillError && (
+              <p className="form-error" role="alert">
+                {backfillError}
+              </p>
+            )}
+          </>
+        )}
+      </Modal>
     </div>
   )
 }

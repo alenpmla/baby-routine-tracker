@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import SwipeableRow from '../SwipeableRow'
 import { closeSwipeRows } from '../swipeRows'
 
@@ -22,7 +22,7 @@ describe('SwipeableRow', () => {
     expect(screen.getByRole('button', { name: 'Delete feed' })).toBeInTheDocument()
   })
 
-  it('opens on swipe and calls onDelete only after confirmation', () => {
+  it('opens on swipe and calls onDelete only after confirmation', async () => {
     const onDelete = vi.fn()
     render(
       <ul>
@@ -50,7 +50,7 @@ describe('SwipeableRow', () => {
     // Cancelling leaves the record intact.
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
     expect(onDelete).not.toHaveBeenCalled()
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
 
     // Confirm deletes exactly once.
     fireEvent.click(deleteBtn)
