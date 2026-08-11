@@ -42,7 +42,10 @@ describe('Solid-food details', () => {
     expect(screen.getByText('Please choose a unit')).toBeInTheDocument()
     expect(screen.queryByRole('dialog')).toBeInTheDocument()
 
-    await user.type(screen.getByRole('textbox', { name: /food/i }), 'Banana')
+    await user.click(screen.getByRole('button', { name: 'Add foods' }))
+    await user.type(screen.getByRole('textbox', { name: /search foods/i }), 'sal')
+    await user.click(screen.getByRole('checkbox', { name: 'salmon' }))
+    await user.click(screen.getByRole('button', { name: 'Done' }))
     await user.click(screen.getByRole('button', { name: /save solid food/i }))
     expect(screen.queryByText('Choose at least one food')).not.toBeInTheDocument()
     expect(screen.getByText('Amount is required')).toBeInTheDocument()
@@ -58,12 +61,17 @@ describe('Solid-food details', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
 
     const list = within(screen.getByRole('heading', { name: 'Today' }).closest('section') as HTMLElement)
-    expect(list.getByText('Solids · Banana')).toBeInTheDocument()
+    expect(list.getByText('Solids · salmon')).toBeInTheDocument()
     expect(list.getByText(/2 oz/i)).toBeInTheDocument()
+
+    // No inline emoji in the history row
+    const row = list.getByText('Solids · salmon').closest('.swipeable-row-content') as HTMLElement
+    expect(row.querySelector('.food-mini')).toBeNull()
+    expect(row.querySelector('.food-item-icon-sm')).toBeNull()
 
     // Dashboard shows the same details
     await user.click(nav().getByRole('button', { name: 'Home' }))
-    expect(screen.getByText('Solids · Banana')).toBeInTheDocument()
+    expect(screen.getByText('Solids · salmon')).toBeInTheDocument()
     expect(screen.getByText(/2 oz/i)).toBeInTheDocument()
   })
 
@@ -74,11 +82,15 @@ describe('Solid-food details', () => {
     await user.click(nav().getByRole('button', { name: 'Feeding' }))
     await user.click(screen.getByRole('button', { name: 'Solids' }))
 
-    const food = screen.getByRole('textbox', { name: /food/i })
-    await user.type(food, 'sa')
+    const food = screen.getByRole('button', { name: 'Add foods' })
+    await user.click(food)
+    const search = screen.getByRole('textbox', { name: /search foods/i })
+    await user.type(search, 'sa')
     await user.click(screen.getByRole('checkbox', { name: 'salmon' }))
-    await user.type(food, 'be')
+    await user.clear(search)
+    await user.type(search, 'be')
     await user.click(screen.getByRole('checkbox', { name: 'beef' }))
+    await user.click(screen.getByRole('button', { name: 'Done' }))
     expect(screen.getByRole('button', { name: /remove salmon/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /remove beef/i })).toBeInTheDocument()
 
@@ -221,20 +233,24 @@ describe('Solid-food details', () => {
 
     const dialog = screen.getByRole('dialog')
     await user.click(within(dialog).getByRole('button', { name: 'Solids' }))
-    expect(within(dialog).getByLabelText(/food/i)).toBeInTheDocument()
+    expect(within(dialog).getByRole('button', { name: 'Add foods' })).toBeInTheDocument()
 
     await user.click(within(dialog).getByRole('button', { name: /save feed/i }))
     expect(within(dialog).getByText('Choose at least one food')).toBeInTheDocument()
     expect(within(dialog).getByText('Amount is required')).toBeInTheDocument()
 
-    await user.type(within(dialog).getByLabelText(/food/i), 'Carrot')
+    await user.click(within(dialog).getByRole('button', { name: 'Add foods' }))
+    const picker = screen.getByRole('dialog', { name: 'Add foods' })
+    await user.type(within(picker).getByRole('textbox', { name: /search foods/i }), 'be')
+    await user.click(within(picker).getByRole('checkbox', { name: 'beef' }))
+    await user.click(within(picker).getByRole('button', { name: 'Done' }))
     fireEvent.change(within(dialog).getByLabelText(/amount/i), { target: { value: '30' } })
     fireEvent.change(within(dialog).getByLabelText(/unit/i), { target: { value: 'gram' } })
     await user.click(within(dialog).getByRole('button', { name: /save feed/i }))
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
 
     const list = within(screen.getByRole('heading', { name: 'Today' }).closest('section') as HTMLElement)
-    expect(list.getByText('Solids · Carrot')).toBeInTheDocument()
+    expect(list.getByText('Solids · beef')).toBeInTheDocument()
     expect(list.getByText(/30 gram/i)).toBeInTheDocument()
   })
 })

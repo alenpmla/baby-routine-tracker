@@ -6,6 +6,7 @@ interface SolidsFieldsProps {
   value: FeedingDetails
   errors?: SolidsFieldErrors
   suggestions?: string[]
+  mostUsed?: string[]
   onChange: (details: FeedingDetails) => void
 }
 
@@ -24,6 +25,7 @@ export default function SolidsFields({
   value,
   errors = {},
   suggestions = [],
+  mostUsed,
   onChange,
 }: SolidsFieldsProps) {
   return (
@@ -33,6 +35,7 @@ export default function SolidsFields({
         <FoodMultiSelect
           value={value.foods ?? []}
           suggestions={suggestions}
+          mostUsed={mostUsed}
           onChange={(foods) => onChange({ ...value, foods })}
           ariaInvalid={Boolean(errors.foods)}
           ariaDescribedby={errors.foods ? 'solids-food-error' : undefined}

@@ -41,6 +41,7 @@ interface FeedDiaperBackfillFormProps {
   showBreastTiming?: boolean
   showBottleDetails?: boolean
   suggestions?: string[]
+  mostUsed?: string[]
   initial?: { type: string; at: Date; details?: FeedingDetails }
   onSubmit: (type: string, at: Date, details?: FeedingDetails) => void
 }
@@ -52,6 +53,7 @@ export function FeedDiaperBackfillForm({
   showBreastTiming = false,
   showBottleDetails = false,
   suggestions = [],
+  mostUsed,
   initial,
   onSubmit,
 }: FeedDiaperBackfillFormProps) {
@@ -172,6 +174,7 @@ export function FeedDiaperBackfillForm({
           value={solidsDetails}
           errors={solidsErrors}
           suggestions={suggestions}
+          mostUsed={mostUsed}
           onChange={setSolidsDetails}
         />
       )}

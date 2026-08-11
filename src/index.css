@@ -749,6 +749,27 @@ body.appbar-scrolled .screen-header {
   accent-color: var(--md-primary);
 }
 
+.food-item-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--shape-md);
+  flex: none;
+  font-size: 1.2rem;
+  line-height: 1;
+  background: color-mix(in srgb, var(--food-icon-accent, var(--md-primary)) 14%, transparent);
+  color: var(--food-icon-accent, var(--md-primary));
+}
+
+.food-item-icon-sm {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--shape-sm);
+  font-size: 0.9rem;
+}
+
 .food-tags {
   display: flex;
   flex-wrap: wrap;
@@ -760,10 +781,12 @@ body.appbar-scrolled .screen-header {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  height: 32px;
+  box-sizing: border-box;
   background: var(--md-secondary-container);
   color: var(--md-on-secondary-container);
-  border-radius: var(--shape-sm);
-  padding: 6px 12px;
+  border-radius: 16px;
+  padding: 0 6px 0 12px;
   font-size: var(--type-label);
   font-weight: 600;
 }
@@ -771,10 +794,15 @@ body.appbar-scrolled .screen-header {
 .food-tag-remove {
   border: none;
   background: none;
-  color: var(--md-on-surface-variant);
-  font-size: 1rem;
+  color: var(--md-on-secondary-container);
+  font-size: 1.1rem;
   line-height: 1;
-  padding: 2px 6px;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 50%;
 }
 
@@ -784,6 +812,150 @@ body.appbar-scrolled .screen-header {
 
 .food-tag-remove:active {
   color: var(--md-error);
+}
+
+/* ---------- Food picker (chip + searchable bottom sheet) ---------- */
+
+.food-picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.food-picker .food-tags {
+  margin-top: 0;
+}
+
+.food-add-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 16px;
+  border-radius: 16px;
+  border: 1px solid var(--md-outline);
+  background: var(--md-surface);
+  color: var(--md-on-surface);
+  font-size: var(--type-label);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.food-add-chip:hover {
+  background: color-mix(in srgb, var(--md-on-surface) 6%, transparent);
+}
+
+.food-add-chip:active {
+  background: color-mix(in srgb, var(--md-on-surface) 10%, transparent);
+}
+
+.food-add-chip[aria-invalid='true'] {
+  border-color: var(--md-error);
+}
+
+.food-picker-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+}
+
+.food-picker-sheet > input {
+  width: 100%;
+  min-width: 0;
+  margin-top: 4px;
+  border-radius: var(--shape-lg);
+  border: 1px solid var(--md-outline);
+  background: var(--md-surface-container-high);
+  padding: 12px 16px;
+  font-size: 1rem;
+  color: var(--md-on-surface);
+}
+
+.food-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.food-search > input {
+  width: 100%;
+  min-width: 0;
+  margin-top: 4px;
+  border-radius: var(--shape-lg);
+  border: 1px solid var(--md-outline);
+  background: var(--md-surface-container-high);
+  padding: 12px 44px 12px 16px;
+  font-size: 1rem;
+  color: var(--md-on-surface);
+}
+
+.food-search-clear {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(calc(-50% + 2px));
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--md-on-surface-variant);
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.food-search-clear:hover {
+  background: color-mix(in srgb, var(--md-on-surface) 8%, transparent);
+}
+
+.food-most-used-label {
+  margin: 0;
+  font-size: var(--type-label);
+  font-weight: 600;
+  color: var(--md-on-surface-variant);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.food-most-used-label-item {
+  padding: 10px 12px 2px;
+}
+
+.food-list-divider {
+  height: 1px;
+  background: var(--md-outline-variant);
+  margin: 4px 0;
+}
+
+.food-picker-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.food-picker-sheet > .btn-block {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  box-shadow: var(--elevation-1);
+}
+
+.food-picker-empty {
+  padding: 16px 12px;
+  color: var(--md-on-surface-variant);
+  font-size: var(--type-label);
 }
 
 /* ---------- Settings ---------- */
@@ -1941,6 +2113,29 @@ button.event-link:active {
 
 .modal-dialog .modal-header {
   margin-bottom: 8px;
+}
+
+/* M3 full-screen sheet — fills the viewport height with rounded top corners */
+.modal-overlay-fullscreen {
+  align-items: flex-end;
+}
+
+.modal-fullscreen {
+  max-height: 100dvh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-fullscreen .modal-header {
+  flex: none;
+}
+
+.modal-fullscreen .modal-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 /* M3 dialog actions — right-aligned text buttons */

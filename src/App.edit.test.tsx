@@ -49,7 +49,10 @@ describe('Edit records', () => {
 
     await user.click(nav().getByRole('button', { name: 'Feeding' }))
     await user.click(screen.getByRole('button', { name: 'Solids' }))
-    await user.type(screen.getByRole('textbox', { name: /food/i }), 'Banana')
+    await user.click(screen.getByRole('button', { name: 'Add foods' }))
+    await user.type(screen.getByRole('textbox', { name: /search foods/i }), 'sal')
+    await user.click(screen.getByRole('checkbox', { name: 'salmon' }))
+    await user.click(screen.getByRole('button', { name: 'Done' }))
     fireEvent.change(screen.getByRole('spinbutton', { name: /amount/i }), { target: { value: '2' } })
     fireEvent.change(screen.getByRole('combobox', { name: /unit/i }), { target: { value: 'oz' } })
     await user.click(screen.getByRole('button', { name: /save solid food/i }))
@@ -57,19 +60,22 @@ describe('Edit records', () => {
 
     await user.click(screen.getByRole('button', { name: /edit solids feed/i }))
     const dialog = screen.getByRole('dialog')
-    expect(within(dialog).getByRole('button', { name: /remove banana/i })).toBeInTheDocument()
-    await user.click(within(dialog).getByRole('button', { name: /remove banana/i }))
-    const food = within(dialog).getByRole('textbox', { name: /food/i })
-    await user.type(food, 'Carrot')
+    expect(within(dialog).getByRole('button', { name: /remove salmon/i })).toBeInTheDocument()
+    await user.click(within(dialog).getByRole('button', { name: /remove salmon/i }))
+    await user.click(within(dialog).getByRole('button', { name: 'Add foods' }))
+    const picker = screen.getByRole('dialog', { name: 'Add foods' })
+    await user.type(within(picker).getByRole('textbox', { name: /search foods/i }), 'be')
+    await user.click(within(picker).getByRole('checkbox', { name: 'beef' }))
+    await user.click(within(picker).getByRole('button', { name: 'Done' }))
     fireEvent.change(within(dialog).getByRole('spinbutton', { name: /amount/i }), { target: { value: '30' } })
     fireEvent.change(within(dialog).getByRole('combobox', { name: /unit/i }), { target: { value: 'gram' } })
     await user.click(screen.getByRole('button', { name: /save changes/i }))
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
 
-    expect(api.state.feedings[0].foods).toEqual(['Carrot'])
+    expect(api.state.feedings[0].foods).toEqual(['beef'])
     expect(api.state.feedings[0].amount).toBe(30)
     const list = within(screen.getByRole('heading', { name: 'Today' }).closest('section') as HTMLElement)
-    expect(list.getByText('Solids · Carrot')).toBeInTheDocument()
+    expect(list.getByText('Solids · beef')).toBeInTheDocument()
     expect(list.getByText(/30 gram/i)).toBeInTheDocument()
   })
 
@@ -99,7 +105,10 @@ describe('Edit records', () => {
 
     await user.click(nav().getByRole('button', { name: 'Feeding' }))
     await user.click(screen.getByRole('button', { name: 'Solids' }))
-    await user.type(screen.getByRole('textbox', { name: /food/i }), 'Banana')
+    await user.click(screen.getByRole('button', { name: 'Add foods' }))
+    await user.type(screen.getByRole('textbox', { name: /search foods/i }), 'sal')
+    await user.click(screen.getByRole('checkbox', { name: 'salmon' }))
+    await user.click(screen.getByRole('button', { name: 'Done' }))
     fireEvent.change(screen.getByRole('spinbutton', { name: /amount/i }), { target: { value: '2' } })
     fireEvent.change(screen.getByRole('combobox', { name: /unit/i }), { target: { value: 'oz' } })
     await user.click(screen.getByRole('button', { name: /save solid food/i }))
@@ -108,7 +117,7 @@ describe('Edit records', () => {
 
     // Swipe the row open and tap Duplicate.
     const list = within(screen.getByRole('heading', { name: 'Today' }).closest('section') as HTMLElement)
-    const rowText = list.getByText('Solids · Banana')
+    const rowText = list.getByText('Solids · salmon')
     const row = rowText.closest('.swipeable-row-content') as HTMLElement
     fireEvent.pointerDown(row, { pointerId: 1, clientX: 200, button: 0, pointerType: 'touch' })
     fireEvent.pointerMove(row, { pointerId: 1, clientX: 200 - 120, button: 0 })
@@ -118,13 +127,13 @@ describe('Edit records', () => {
     const dialog = screen.getByRole('dialog')
     expect(dialog).toBeInTheDocument()
     // Details are prefilled (food chip), and the dialog is the Add feed sheet.
-    expect(within(dialog).getByRole('button', { name: /remove banana/i })).toBeInTheDocument()
+    expect(within(dialog).getByRole('button', { name: /remove salmon/i })).toBeInTheDocument()
 
     await user.click(within(dialog).getByRole('button', { name: /save feed/i }))
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     expect(api.state.feedings).toHaveLength(2)
     // The copy keeps the original details; the original record is untouched.
-    expect(api.state.feedings[1].foods).toEqual(['Banana'])
+    expect(api.state.feedings[1].foods).toEqual(['salmon'])
     expect(api.state.feedings[1].amount).toBe(2)
     expect(api.state.feedings[1].unit).toBe('oz')
     expect(api.state.feedings[0].id).not.toBe(api.state.feedings[1].id)

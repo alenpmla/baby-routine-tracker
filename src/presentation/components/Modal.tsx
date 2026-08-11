@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 
 interface ModalProps {
   /** Controls visibility; Modal animates out before unmounting when it goes false. */
@@ -6,12 +7,16 @@ interface ModalProps {
   title: string
   onClose: () => void
   children: ReactNode
-  /** 'sheet' = bottom sheet (default), 'dialog' = centered M3 dialog */
-  variant?: 'sheet' | 'dialog'
+  /** 'sheet' = bottom sheet (default), 'dialog' = centered M3 dialog, 'fullscreen' = full-height sheet */
+  variant?: 'sheet' | 'dialog' | 'fullscreen'
 }
 
 /** Exit transition duration in ms — keep in sync with the CSS transition length. */
 const EXIT_MS = 200
+
+/** Track open modals so Escape closes only the topmost sheet (nested pickers). */
+const openStack: Array<number> = []
+let nextModalId = 0
 
 function scrollIntoView(el: HTMLElement | null) {
   try {
@@ -55,13 +60,21 @@ export default function Modal({ open, title, onClose, children, variant = 'sheet
     if (!mounted) {
       return
     }
+    const id = nextModalId++
+    openStack.push(id)
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+      if (e.key === 'Escape' && openStack[openStack.length - 1] === id) {
         onClose()
       }
     }
     document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
+    return () => {
+      const idx = openStack.indexOf(id)
+      if (idx >= 0) {
+        openStack.splice(idx, 1)
+      }
+      document.removeEventListener('keydown', onKey)
+    }
   }, [mounted, onClose])
 
   // Keep the focused field in view as the browser resizes for the keyboard,
@@ -97,13 +110,13 @@ export default function Modal({ open, title, onClose, children, variant = 'sheet
 
   const shown = open ? { title, children } : snapshot.current
 
-  return (
+  return createPortal(
     <div
-      className={`modal-overlay${variant === 'dialog' ? ' modal-overlay-dialog' : ''}${entered ? ' modal-overlay-open' : ''}`}
+      className={`modal-overlay${variant === 'dialog' ? ' modal-overlay-dialog' : ''}${variant === 'fullscreen' ? ' modal-overlay-fullscreen' : ''}${entered ? ' modal-overlay-open' : ''}`}
       onClick={onClose}
     >
       <div
-        className={`modal${variant === 'dialog' ? ' modal-dialog' : ''}${entered ? ' modal-open' : ''}`}
+        className={`modal${variant === 'dialog' ? ' modal-dialog' : ''}${variant === 'fullscreen' ? ' modal-fullscreen' : ''}${entered ? ' modal-open' : ''}`}
         role="dialog"
         aria-modal="true"
         aria-label={shown.title}
@@ -117,6 +130,7 @@ export default function Modal({ open, title, onClose, children, variant = 'sheet
         </div>
         <div className="modal-body">{shown.children}</div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

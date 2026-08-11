@@ -226,18 +226,17 @@ describe('Food suggestions', () => {
     // Food field suggests, filters, and lets you tick a suggestion
     await user.click(screen.getByRole('button', { name: 'Feeding' }))
     await user.click(screen.getByRole('button', { name: 'Solids' }))
-    const food = screen.getByRole('textbox', { name: /food/i })
-    await user.click(food)
+    await user.click(screen.getByRole('button', { name: 'Add foods' }))
 
     expect(screen.getByRole('checkbox', { name: 'sweet potato' })).toBeInTheDocument()
     expect(screen.queryByRole('checkbox', { name: 'salmon' })).not.toBeInTheDocument()
 
-    await user.type(food, 'po')
+    await user.type(screen.getByRole('textbox', { name: /search foods/i }), 'po')
     expect(screen.getByRole('checkbox', { name: 'sweet potato' })).toBeInTheDocument()
     expect(screen.getByRole('checkbox', { name: 'porridge (with pears)' })).toBeInTheDocument()
 
     await user.click(screen.getByRole('checkbox', { name: 'sweet potato' }))
-    expect(food).toHaveValue('')
+    await user.click(screen.getByRole('button', { name: 'Done' }))
     expect(screen.getByRole('button', { name: /remove sweet potato/i })).toBeInTheDocument()
 
     // Completing the solid feed works

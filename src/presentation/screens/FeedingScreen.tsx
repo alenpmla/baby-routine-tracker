@@ -74,6 +74,7 @@ export default function FeedingScreen() {
     selectedDay,
     now,
     foodSuggestions,
+    mostUsedFoods,
     dailyAverages,
   } = useTracker()
   const [feedModal, setFeedModal] = useState<FeedModal | null>(null)
@@ -210,6 +211,7 @@ export default function FeedingScreen() {
             value={solidsDetails}
             errors={solidsErrors}
             suggestions={foodSuggestions}
+            mostUsed={mostUsedFoods}
             onChange={setSolidsDetails}
           />
           <button type="button" className="btn btn-primary btn-block" onClick={handleAddSolids}>
@@ -232,6 +234,7 @@ export default function FeedingScreen() {
               showBreastTiming
               showBottleDetails
               suggestions={foodSuggestions}
+              mostUsed={mostUsedFoods}
               initial={
                 feedModal.mode === 'edit' || feedModal.mode === 'duplicate'
                   ? {

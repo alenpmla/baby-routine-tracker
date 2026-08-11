@@ -1,0 +1,48 @@
+import type { FoodIconKey } from '../../domain/usecase/foodIcons'
+
+/**
+ * Accent color per food category, used for the icon's tinted box.
+ * Neutrals for the generic icon; hues chosen to stay legible in both themes.
+ */
+export const FOOD_ICON_COLORS: Record<FoodIconKey, string> = {
+  fish: '#1E88E5',
+  meat: '#E53935',
+  poultry: '#FB8C00',
+  egg: '#F9A825',
+  'root-veg': '#E07B39',
+  leafy: '#43A047',
+  brassica: '#2E7D32',
+  squash: '#F57C00',
+  gourd: '#7CB342',
+  aubergine: '#8E24AA',
+  tomato: '#E53935',
+  pepper: '#C62828',
+  legume: '#558B2F',
+  corn: '#F9A825',
+  grain: '#8D6E63',
+  rice: '#A1887F',
+  porridge: '#8D6E63',
+  pasta: '#F6A625',
+  bread: '#795548',
+  avocado: '#7CB342',
+  banana: '#F9A825',
+  apple: '#E53935',
+  pear: '#7CB342',
+  'stone-fruit': '#FB8C00',
+  mango: '#FB8C00',
+  melon: '#66BB6A',
+  watermelon: '#E53935',
+  berry: '#AB47BC',
+  cherry: '#E53935',
+  pineapple: '#F9A825',
+  citrus: '#FB8C00',
+  grapes: '#8E24AA',
+  kiwi: '#7CB342',
+  dairy: '#42A5F5',
+  cheese: '#F9A825',
+  nut: '#6D4C41',
+  seed: '#8D6E63',
+  butter: '#F9A825',
+  bottle: '#42A5F5',
+  generic: '#9E9E9E',
+}

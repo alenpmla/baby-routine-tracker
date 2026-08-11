@@ -38,6 +38,7 @@ import { addFoodSuggestion, removeFoodSuggestion } from '../../domain/usecase/se
 import { getDailyAverages, type DailyAverages } from '../../domain/usecase/averages'
 import { getInsights, type Insight } from '../../domain/usecase/insights'
 import { getFoodVariety, type FoodVariety } from '../../domain/usecase/foodVariety'
+import { getMostUsedFoods } from '../../domain/usecase/foodFrequency'
 import { DEFAULT_AVERAGES_DAYS } from '../../domain/model/AppSettings'
 import { createSyncRepositories, type SyncRepositories } from '../../data/repositories'
 import type { BackupData } from '../../data/repositories/RemoteRepositories'
@@ -56,6 +57,7 @@ export interface TrackerState {
   dailyAverages: DailyAverages
   insights: Insight[]
   foodVariety: FoodVariety | null
+  mostUsedFoods: string[]
   lastWakeEndMs: number | null
   settings: AppSettings
   now: Date
@@ -239,6 +241,11 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
   )
 
   const foodVariety = useMemo(() => getFoodVariety(repos.current.feeding), [version])
+
+  const mostUsedFoods = useMemo(
+    () => getMostUsedFoods(repos.current.feeding, foodSuggestions),
+    [version, foodSuggestions],
+  )
 
   const lastWakeEndMs = useMemo(() => {
     let last: number | null = null
@@ -438,6 +445,7 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
     dailyAverages,
     insights,
     foodVariety,
+    mostUsedFoods,
     lastWakeEndMs,
     settings,
     saveProfile,

@@ -91,4 +91,18 @@ describe('Modal open/close lifecycle', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Inside' }))
     expect(onClose).not.toHaveBeenCalled()
   })
+
+  it('renders the overlay into document.body via a portal (not nested in callers)', () => {
+    const { container } = render(
+      <div id="caller">
+        <Modal open={true} title="Sheet" onClose={() => {}}>
+          <p>Content</p>
+        </Modal>
+      </div>,
+    )
+    const overlay = screen.getByRole('dialog').parentElement as HTMLElement
+    expect(overlay.classList.contains('modal-overlay')).toBe(true)
+    expect(overlay.parentElement).toBe(document.body)
+    expect(container.querySelector('.modal-overlay')).toBeNull()
+  })
 })
