@@ -233,6 +233,9 @@ export class RemoteRepositories implements SyncRepositories {
 
   async loadAll(): Promise<void> {
     try {
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        throw new Error('offline')
+      }
       const [baby, sleeps, feedings, diapers, weights, settings] = await Promise.all([
         this.http.get<{ baby: Baby | null }>('/api/baby'),
         this.http.get<{ sleeps: SleepSession[] }>('/api/sleeps'),
@@ -310,7 +313,11 @@ export class RemoteRepositories implements SyncRepositories {
 
   async syncNow(): Promise<boolean> {
     try {
+      // Verify the server is actually reachable, even when there are no pending
+      // ops to replay — otherwise an offline Retry would report success.
+      await this.http.get('/api/health')
       await this.replayPending()
+      this.offline = false
       return true
     } catch {
       this.offline = true

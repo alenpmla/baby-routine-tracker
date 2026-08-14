@@ -18,8 +18,11 @@ async function onboard(user: ReturnType<typeof userEvent.setup>) {
 describe('Edit records', () => {
   beforeEach(() => {
     api = setupApi()
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-08-14T12:00:00'))
   })
   afterEach(() => {
+    vi.useRealTimers()
     vi.unstubAllGlobals()
   })
 
@@ -75,7 +78,8 @@ describe('Edit records', () => {
     expect(api.state.feedings[0].foods).toEqual(['beef'])
     expect(api.state.feedings[0].amount).toBe(30)
     const list = within(screen.getByRole('heading', { name: 'Today' }).closest('section') as HTMLElement)
-    expect(list.getByText('Solids · beef')).toBeInTheDocument()
+    expect(list.getByText('Solids')).toBeInTheDocument()
+    expect(list.getByText('beef')).toBeInTheDocument()
     expect(list.getByText(/30 gram/i)).toBeInTheDocument()
   })
 
@@ -117,7 +121,7 @@ describe('Edit records', () => {
 
     // Swipe the row open and tap Duplicate.
     const list = within(screen.getByRole('heading', { name: 'Today' }).closest('section') as HTMLElement)
-    const rowText = list.getByText('Solids · salmon')
+    const rowText = list.getByText('salmon')
     const row = rowText.closest('.swipeable-row-content') as HTMLElement
     fireEvent.pointerDown(row, { pointerId: 1, clientX: 200, button: 0, pointerType: 'touch' })
     fireEvent.pointerMove(row, { pointerId: 1, clientX: 200 - 120, button: 0 })

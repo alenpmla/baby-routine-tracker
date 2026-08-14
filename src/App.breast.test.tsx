@@ -19,8 +19,11 @@ async function onboard(user: ReturnType<typeof userEvent.setup>) {
 describe('Breast feeding start/end', () => {
   beforeEach(() => {
     api = setupApi()
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-08-14T12:00:00'))
   })
   afterEach(() => {
+    vi.useRealTimers()
     vi.unstubAllGlobals()
   })
 

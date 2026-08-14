@@ -270,4 +270,19 @@ describe('Food suggestions', () => {
     await user.click(screen.getByRole('button', { name: 'Add' }))
     expect(screen.getByRole('alert')).toHaveTextContent(/empty/i)
   })
+
+  it('shows the What is new screen with recent features and navigates back', async () => {
+    const user = userEvent.setup()
+    await onboard(user)
+
+    await user.click(screen.getByRole('button', { name: /settings/i }))
+    expect(screen.getByRole('button', { name: /what's new/i })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /what's new/i }))
+    expect(screen.getByRole('heading', { name: /what's new/i })).toBeInTheDocument()
+    expect(screen.getByText(/offline→online sync/i)).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /back/i }))
+    expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument()
+  })
 })

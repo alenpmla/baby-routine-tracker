@@ -2,14 +2,14 @@ import { useState } from 'react'
 import type { WeightEntry, WeightUnit } from '../../domain/model/WeightEntry'
 import { useTracker } from '../store/TrackerProvider'
 import { formatClock, formatDayLabel, startOfDay } from '../utils/time'
-import { EditIcon, ScaleIcon } from '../components/icons'
+import { CopyIcon, EditIcon, ScaleIcon } from '../components/icons'
 import DayNav from '../components/DayNav'
 import Modal from '../components/Modal'
 import StatTile from '../components/StatTile'
 import { WeightBackfillForm, type WeightBackfillSubmit } from '../components/BackfillForms'
 import SwipeableRow from '../components/SwipeableRow'
 
-type WeightModal = { mode: 'add' } | { mode: 'edit'; record: WeightEntry }
+type WeightModal = { mode: 'add' } | { mode: 'edit'; record: WeightEntry } | { mode: 'duplicate'; record: WeightEntry }
 
 export default function WeightScreen() {
   const { day, addWeight, removeWeight, updateWeightRecord, latestWeight, selectedDay, now } = useTracker()
@@ -113,6 +113,11 @@ export default function WeightScreen() {
                 id={w.id}
                 deleteLabel={`Delete weight ${formatClock(w.time)}`}
                 onDelete={() => removeWeight(w.id)}
+                secondaryAction={{
+                  label: `Duplicate weight ${formatClock(w.time)}`,
+                  icon: <CopyIcon />,
+                  onActivate: () => setWeightModal({ mode: 'duplicate', record: w }),
+                }}
               >
                 <span className="event-icon event-weight">
                   <ScaleIcon size={18} />
@@ -153,7 +158,13 @@ export default function WeightScreen() {
                       weight: weightModal.record.weight,
                       unit: weightModal.record.unit,
                     }
-                  : undefined
+                  : weightModal.mode === 'duplicate'
+                    ? {
+                        at: new Date(),
+                        weight: weightModal.record.weight,
+                        unit: weightModal.record.unit,
+                      }
+                    : undefined
               }
               onSubmit={handleSubmit}
             />

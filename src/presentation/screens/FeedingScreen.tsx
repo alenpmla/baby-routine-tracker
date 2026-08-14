@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { FeedingSession, FeedingType } from '../../domain/model/FeedingSession'
 import { foodsOf } from '../../domain/model/FeedingSession'
 import type { FeedingDetails, SolidsFieldErrors } from '../../domain/usecase/feeding'
@@ -7,6 +7,8 @@ import { useTracker } from '../store/TrackerProvider'
 import { formatClock, formatDayLabel, isSameDay, startOfDay } from '../utils/time'
 import { describeBottleTotal, describeFeedingMeta, describeFeedingTitle, describeSolidsAverage, describeSolidsTotal } from '../utils/feeding'
 import { useSnapshotPrefs } from '../store/SnapshotPrefsProvider'
+import { foodEmoji, foodIconKey } from '../../domain/usecase/foodIcons'
+import { FOOD_ICON_COLORS } from '../components/FoodIcon'
 import { BottleIcon, BowlIcon, CopyIcon, EditIcon } from '../components/icons'
 import DayNav from '../components/DayNav'
 import Modal from '../components/Modal'
@@ -32,6 +34,48 @@ type FeedModal =
   | { mode: 'add'; preset?: FeedingType }
   | { mode: 'edit'; record: FeedingSession }
   | { mode: 'duplicate'; record: FeedingSession }
+
+function SolidsFoodToggle({
+  foods,
+  expanded,
+  onToggle,
+}: {
+  foods: string[]
+  expanded: boolean
+  onToggle: () => void
+}) {
+  const ref = useRef<HTMLButtonElement | null>(null)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) {
+      return
+    }
+    if (expanded) {
+      el.classList.add('solids-food-names-open')
+      el.style.maxHeight = 'none'
+      const h = el.scrollHeight
+      el.style.maxHeight = ''
+      el.style.maxHeight = `${h}px`
+    } else {
+      el.style.maxHeight = ''
+    }
+  }, [expanded, foods])
+
+  const text = foods.join(', ')
+  return (
+    <button
+      ref={ref}
+      type="button"
+      className={`solids-food-names${expanded ? ' solids-food-names-open' : ''}`}
+      aria-expanded={expanded}
+      aria-label={expanded ? 'Hide food list' : 'Show all foods'}
+      onClick={onToggle}
+    >
+      {text}
+    </button>
+  )
+}
 
 function detailsFromRecord(record: FeedingSession): FeedingDetails | undefined {
   if (record.type === 'solids') {
@@ -65,8 +109,7 @@ function duplicateDetailsFromRecord(record: FeedingSession): FeedingDetails | un
   return detailsFromRecord(record)
 }
 
-export default function FeedingScreen() {
-  const {
+export default function FeedingScreen() {  const {
     addFeeding,
     updateFeedingRecord,
     day,
@@ -82,6 +125,11 @@ export default function FeedingScreen() {
   const [showSolids, setShowSolids] = useState(false)
   const [solidsDetails, setSolidsDetails] = useState<FeedingDetails>({})
   const [solidsErrors, setSolidsErrors] = useState<SolidsFieldErrors>({})
+  const [expandedFoods, setExpandedFoods] = useState<string[]>([])
+
+  function toggleFoods(id: string) {
+    setExpandedFoods((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]))
+  }
   const dayLabel = formatDayLabel(selectedDay, startOfDay(now))
   const viewingToday = isSameDay(selectedDay, startOfDay(now))
   const { units } = useSnapshotPrefs()
@@ -182,14 +230,48 @@ export default function FeedingScreen() {
                 }}
               >
                 <span className="event-icon event-feeding">
-                  <BottleIcon size={18} />
+                  {f.type === 'solids' ? <BowlIcon size={18} /> : <BottleIcon size={18} />}
                 </span>
                 <span className="event-body">
-                  <span className="event-title">{describeFeedingTitle(f)}</span>
-                  <span className="event-meta">
-                    {formatClock(f.time)}
-                    {describeFeedingMeta(f) ? ` · ${describeFeedingMeta(f)}` : ''}
-                  </span>
+                  {f.type === 'solids' ? (
+                    <>
+                      <span className="solids-title-row">
+                        <span className="event-title">Solids</span>
+                        <span aria-hidden="true" className="solids-title-sep">
+                          ·
+                        </span>
+                        <SolidsFoodToggle
+                          foods={foodsOf(f)}
+                          expanded={expandedFoods.includes(f.id)}
+                          onToggle={() => toggleFoods(f.id)}
+                        />
+                      </span>
+                      <span className="solids-food-icons">
+                        {foodsOf(f).map((food) => (
+                          <span
+                            key={food}
+                            className="solids-food-icon"
+                            aria-hidden="true"
+                            style={{ ['--food-icon-accent' as string]: FOOD_ICON_COLORS[foodIconKey(food)] }}
+                          >
+                            {foodEmoji(food)}
+                          </span>
+                        ))}
+                      </span>
+                      <span className="event-meta">
+                        {formatClock(f.time)}
+                        {describeFeedingMeta(f) ? ` · ${describeFeedingMeta(f)}` : ''}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="event-title">{describeFeedingTitle(f)}</span>
+                      <span className="event-meta">
+                        {formatClock(f.time)}
+                        {describeFeedingMeta(f) ? ` · ${describeFeedingMeta(f)}` : ''}
+                      </span>
+                    </>
+                  )}
                 </span>
                 <button
                   type="button"

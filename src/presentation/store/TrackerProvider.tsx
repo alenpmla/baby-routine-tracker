@@ -85,7 +85,7 @@ export interface TrackerActions {
   prevDay: () => void
   nextDay: () => void
   goToToday: () => void
-  syncNow: () => Promise<void>
+  syncNow: () => Promise<boolean>
   addSuggestion: (value: string) => void
   removeSuggestion: (value: string) => void
   exportData: () => Promise<BackupData>
@@ -153,19 +153,52 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
     }
     source.onmessage = reload
     source.onopen = () => {
-      if (firstOpen) {
+      // On a normal online load the first open follows loadAll, so skip the
+      // redundant reload. But if we were offline (e.g. the app loaded without
+      // connectivity), the first open IS the reconnect — reload to merge queued
+      // events and clear the offline banner.
+      if (firstOpen && !repos.current.isOffline()) {
         firstOpen = false
         return
       }
+      firstOpen = false
       reload()
     }
     return () => source?.close()
   }, [refresh])
 
-  const syncNow = useCallback(async () => {
+  // Belt-and-suspenders: when the browser reports the network is back, trigger a
+  // merge even if the SSE stream hasn't re-opened yet. Also reflect connectivity
+  // loss proactively (offline event / navigator.onLine) so the banner appears even
+  // when no request has failed yet.
+  useEffect(() => {
+    const setNetOffline = () => setOffline(true)
+    const onOnline = () => {
+      void repos.current.refreshFromServer().then((ok) => {
+        if (!ok) {
+          return
+        }
+        setBaby(repos.current.baby.get())
+        setFoodSuggestions(repos.current.settings.get().foodSuggestions)
+        refresh()
+      })
+    }
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      setNetOffline()
+    }
+    window.addEventListener('offline', setNetOffline)
+    window.addEventListener('online', onOnline)
+    return () => {
+      window.removeEventListener('offline', setNetOffline)
+      window.removeEventListener('online', onOnline)
+    }
+  }, [refresh])
+
+  const syncNow = useCallback(async (): Promise<boolean> => {
     const ok = await repos.current.syncNow()
     setOffline(!ok)
     refresh()
+    return ok
   }, [refresh])
 
   const addSuggestion = useCallback(

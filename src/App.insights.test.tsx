@@ -13,8 +13,11 @@ function baby(): Baby {
 describe('Dashboard trends & insights', () => {
   beforeEach(() => {
     setupApi()
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-08-14T12:00:00'))
   })
   afterEach(() => {
+    vi.useRealTimers()
     vi.unstubAllGlobals()
   })
 

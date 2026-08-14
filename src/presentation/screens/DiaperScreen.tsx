@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { DiaperChange, DiaperType } from '../../domain/model/DiaperChange'
 import { useTracker } from '../store/TrackerProvider'
 import { formatClock, formatDayLabel, startOfDay } from '../utils/time'
-import { DiaperIcon, EditIcon } from '../components/icons'
+import { DiaperIcon, DirtyDiaperIcon, EditIcon } from '../components/icons'
 import DayNav from '../components/DayNav'
 import Modal from '../components/Modal'
 import StatTile from '../components/StatTile'
@@ -97,7 +97,7 @@ export default function DiaperScreen() {
                 onDelete={() => removeDiaper(d.id)}
               >
                 <span className="event-icon event-diaper">
-                  <DiaperIcon size={18} />
+                  {d.type === 'dirty' || d.type === 'both' ? <DirtyDiaperIcon size={18} /> : <DiaperIcon size={18} />}
                 </span>
                 <span className="event-body">
                   <span className="event-title">Diaper ({d.type})</span>

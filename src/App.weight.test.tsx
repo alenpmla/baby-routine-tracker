@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { render, screen, fireEvent, within } from '@testing-library/react'
+import { render, screen, fireEvent, within, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from './App'
 import { setupApi } from './test/setupApi'
@@ -99,6 +99,35 @@ describe('Weight tracking', () => {
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Delete' }))
     expect(api.state.weights).toHaveLength(0)
     expect(screen.queryByText('7.5 kg')).not.toBeInTheDocument()
+  })
+
+  it('duplicates a weight via the swipe-reveal action', async () => {
+    const user = userEvent.setup()
+    await onboard(user)
+    await goWeight(user)
+
+    fireEvent.change(screen.getByLabelText(/weight/i), { target: { value: '7.5' } })
+    await user.click(screen.getByRole('button', { name: /add weight/i }))
+    expect(api.state.weights).toHaveLength(1)
+
+    const list = within(screen.getByRole('heading', { name: 'Today' }).closest('section') as HTMLElement)
+    const rowText = list.getByText(/7.5\s*kg/)
+    const row = rowText.closest('.swipeable-row-content') as HTMLElement
+    fireEvent.pointerDown(row, { pointerId: 1, clientX: 200, button: 0, pointerType: 'touch' })
+    fireEvent.pointerMove(row, { pointerId: 1, clientX: 200 - 120, button: 0 })
+    fireEvent.pointerUp(row, { pointerId: 1, clientX: 200 - 120, button: 0 })
+
+    await user.click(screen.getByRole('button', { name: /duplicate weight/i }))
+    const dialog = screen.getByRole('dialog')
+    expect(dialog).toBeInTheDocument()
+    // Weight and unit are prefilled from the original record.
+    expect(within(dialog).getByLabelText(/weight/i)).toHaveValue(7.5)
+
+    await user.click(within(dialog).getByRole('button', { name: /save weight/i }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    expect(api.state.weights).toHaveLength(2)
+    expect(api.state.weights[1].weight).toBe(7.5)
+    expect(api.state.weights[0].id).not.toBe(api.state.weights[1].id)
   })
 
   it('shows the weight progress chart on the dashboard', async () => {

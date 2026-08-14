@@ -11,18 +11,17 @@ describe('FoodMultiSelect', () => {
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
   })
 
-  it('renders a small emoji box inside each selected-food chip', () => {
+  it('renders a plain emoji (no container) inside each selected-food chip', () => {
     render(<FoodMultiSelect value={['salmon', 'Carrot']} suggestions={['salmon', 'Carrot']} onChange={() => {}} />)
     const chips = Array.from(document.querySelectorAll<HTMLElement>('.food-tag'))
     expect(chips.length).toBe(2)
     const salmonChip = chips.find((c) => c.textContent?.includes('salmon'))
     const carrotChip = chips.find((c) => c.textContent?.includes('Carrot'))
-    const salmonBox = salmonChip?.querySelector<HTMLElement>('.food-item-icon-sm')
-    const carrotBox = carrotChip?.querySelector<HTMLElement>('.food-item-icon-sm')
-    expect(salmonBox?.textContent).toBe('🐟')
-    expect(salmonBox?.getAttribute('aria-hidden')).toBe('true')
-    expect(salmonBox?.style.getPropertyValue('--food-icon-accent')).toBe('#1E88E5')
-    expect(carrotBox?.textContent).toBe('🥕')
+    expect(salmonChip?.querySelector('.food-item-icon-sm')).toBeNull()
+    expect(carrotChip?.querySelector('.food-item-icon-sm')).toBeNull()
+    const salmonEmoji = salmonChip?.querySelector<HTMLElement>('[aria-hidden="true"]')
+    expect(salmonEmoji?.textContent).toBe('🐟')
+    expect(carrotChip?.querySelector<HTMLElement>('[aria-hidden="true"]')?.textContent).toBe('🥕')
   })
 
   it('opens the Add foods sheet with a search field and the full suggestion list', () => {

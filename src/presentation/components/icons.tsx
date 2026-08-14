@@ -91,6 +91,15 @@ export function DiaperIcon({ size = 22 }: IconProps) {
   )
 }
 
+export function DirtyDiaperIcon({ size = 22 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 3c4 3.5 6 6 6 9a6 6 0 1 1-12 0c0-3 2-5.5 6-9Z" />
+      <path d="M7 12.5c1.8-1.4 3.4-1.2 4.2.5.9 1.9 2.6 2.1 4.8.4" />
+    </svg>
+  )
+}
+
 export function BowlIcon({ size = 22 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

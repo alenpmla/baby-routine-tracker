@@ -80,13 +80,7 @@ export default function FoodMultiSelect({
         <div className="food-tags">
           {value.map((f) => (
             <span key={f} className="food-tag">
-              <span
-                className="food-item-icon food-item-icon-sm"
-                aria-hidden="true"
-                style={{ ['--food-icon-accent' as string]: FOOD_ICON_COLORS[foodIconKey(f)] }}
-              >
-                {foodEmoji(f)}
-              </span>
+              <span aria-hidden="true">{foodEmoji(f)}</span>
               {f}
               <button
                 type="button"

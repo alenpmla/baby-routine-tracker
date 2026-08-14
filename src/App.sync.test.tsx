@@ -94,7 +94,7 @@ describe('Phase 3: sync server', () => {
     api.setOffline(true)
     render(<App />)
     await screen.findByLabelText(/name/i)
-    expect(await screen.findByRole('status')).toHaveTextContent(/offline/i)
+    expect(await screen.findByTestId('offline-banner')).toHaveTextContent(/offline/i)
 
     // Add a feed while offline — it is queued locally
     await user.type(screen.getByLabelText(/name/i), 'Avery')
@@ -109,10 +109,99 @@ describe('Phase 3: sync server', () => {
     // Reconnect and retry sync
     api.setOffline(false)
     await user.click(screen.getByRole('button', { name: /retry sync/i }))
-    await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument())
+    await waitFor(() => expect(screen.queryByTestId('offline-banner')).not.toBeInTheDocument())
 
-    // The queued feed reached the server
+    // The queued feed reached the server, and the user got success feedback.
     expect(api.state.feedings).toHaveLength(1)
+    expect(await screen.findByTestId('snackbar')).toHaveTextContent(/synced/i)
+  })
+
+  it('auto-syncs offline-added events when the SSE connection re-establishes (no manual Retry)', async () => {    const user = userEvent.setup()
+    const api: MockApi = setupApi()
+
+    // First device: create profile while online so the baby exists on the server.
+    const first = await onboard(user)
+    first.unmount()
+
+    // A device that was offline when it loaded: no cache, SSE never connected yet.
+    window.localStorage.clear()
+    api.setOffline(true)
+    render(<App />)
+    await screen.findByLabelText(/name/i)
+    expect(await screen.findByTestId('offline-banner')).toHaveTextContent(/offline/i)
+
+    // Add a feed while offline — it is queued locally.
+    await user.type(screen.getByLabelText(/name/i), 'Avery')
+    fireEvent.change(screen.getByLabelText(/date of birth/i), { target: { value: '2026-01-15' } })
+    await user.click(screen.getByRole('button', { name: /continue/i }))
+    await user.click(within(screen.getByRole('navigation', { name: /primary/i })).getByRole('button', { name: 'Feeding' }))
+    await user.click(screen.getByRole('button', { name: 'Bottle' }))
+    fireEvent.change(screen.getByRole('spinbutton', { name: /amount/i }), { target: { value: '120' } })
+    fireEvent.change(screen.getByRole('combobox', { name: /unit/i }), { target: { value: 'ml' } })
+    await user.click(screen.getByRole('button', { name: /save feed/i }))
+
+    // Return online: the browser reconnects the SSE stream. The FIRST successful
+    // onopen after this offline period should trigger a reload that merges the
+    // queued feed — WITHOUT the user pressing "Retry sync".
+    api.setOffline(false)
+    const source = FakeEventSource.instances[0]
+    act(() => source.onopen?.())
+
+    // The banner should clear and the queued feed should reach the server.
+    await waitFor(() => expect(screen.queryByTestId('offline-banner')).not.toBeInTheDocument())
+    expect(api.state.feedings).toHaveLength(1)
+  })
+
+  it('auto-syncs offline-added events when the browser reports online (window online event)', async () => {
+    const user = userEvent.setup()
+    const api: MockApi = setupApi()
+
+    const first = await onboard(user)
+    first.unmount()
+
+    // Load offline (no cache, SSE never connected) and queue a feed.
+    window.localStorage.clear()
+    api.setOffline(true)
+    render(<App />)
+    await screen.findByLabelText(/name/i)
+    expect(await screen.findByTestId('offline-banner')).toHaveTextContent(/offline/i)
+
+    await user.type(screen.getByLabelText(/name/i), 'Avery')
+    fireEvent.change(screen.getByLabelText(/date of birth/i), { target: { value: '2026-01-15' } })
+    await user.click(screen.getByRole('button', { name: /continue/i }))
+    await user.click(within(screen.getByRole('navigation', { name: /primary/i })).getByRole('button', { name: 'Feeding' }))
+    await user.click(screen.getByRole('button', { name: 'Bottle' }))
+    fireEvent.change(screen.getByRole('spinbutton', { name: /amount/i }), { target: { value: '120' } })
+    fireEvent.change(screen.getByRole('combobox', { name: /unit/i }), { target: { value: 'ml' } })
+    await user.click(screen.getByRole('button', { name: /save feed/i }))
+
+    // Return online via the browser's online event (no SSE onopen, no Retry).
+    api.setOffline(false)
+    act(() => window.dispatchEvent(new Event('online')))
+
+    await waitFor(() => expect(screen.queryByTestId('offline-banner')).not.toBeInTheDocument())
+    expect(api.state.feedings).toHaveLength(1)
+  })
+
+  it('shows the offline banner proactively when the browser reports the network is gone', async () => {
+    const user = userEvent.setup()
+    setupApi()
+
+    const first = await onboard(user)
+    first.unmount()
+
+    // The app loads while online — no banner yet.
+    render(<App />)
+    expect(await screen.findByRole('heading', { name: /hi, avery/i })).toBeInTheDocument()
+    expect(screen.queryByTestId('offline-banner')).not.toBeInTheDocument()
+
+    // The browser reports connectivity loss — the banner appears without any write.
+    act(() => window.dispatchEvent(new Event('offline')))
+    expect(await screen.findByTestId('offline-banner')).toHaveTextContent(/offline/i)
+
+    // And back online clears it.
+    act(() => window.dispatchEvent(new Event('online')))
+    await waitFor(() => expect(screen.queryByTestId('offline-banner')).not.toBeInTheDocument())
   })
 
   it('uses cached data when the server is unreachable on load', async () => {
@@ -128,6 +217,30 @@ describe('Phase 3: sync server', () => {
     api.setOffline(true)
     render(<App />)
     expect(await screen.findByRole('heading', { name: 'Diaper' })).toBeInTheDocument()
-    expect(screen.getByRole('status')).toHaveTextContent(/offline/i)
+    expect(screen.getByTestId('offline-banner')).toHaveTextContent(/offline/i)
+  })
+
+  it('does not report "Synced" when Retry is tapped while still offline with no pending ops', async () => {
+    const user = userEvent.setup()
+    const api: MockApi = setupApi()
+
+    // Load online and record nothing (no pending ops). Then go offline.
+    const first = await onboard(user)
+    first.unmount()
+
+    render(<App />)
+    expect(await screen.findByRole('heading', { name: /hi, avery/i })).toBeInTheDocument()
+    expect(screen.queryByTestId('offline-banner')).not.toBeInTheDocument()
+
+    // Browser reports offline; no writes were queued, so syncNow must still
+    // detect that the server is unreachable (via /api/health), not claim success.
+    api.setOffline(true)
+    act(() => window.dispatchEvent(new Event('offline')))
+    expect(await screen.findByTestId('offline-banner')).toHaveTextContent(/offline/i)
+
+    await user.click(screen.getByRole('button', { name: /retry sync/i }))
+    expect(await screen.findByTestId('snackbar')).toHaveTextContent(/sync failed/i)
+    expect(screen.queryByText(/synced/i)).not.toBeInTheDocument()
+    expect(screen.getByTestId('offline-banner')).toBeInTheDocument()
   })
 })

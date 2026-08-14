@@ -892,6 +892,13 @@ body.appbar-scrolled .screen-header {
   color: var(--md-on-surface);
 }
 
+.food-search > input:focus-visible,
+.food-picker-sheet > input:focus-visible {
+  outline: none;
+  border-color: var(--md-primary);
+  box-shadow: inset 0 0 0 2px var(--md-primary);
+}
+
 .food-search-clear {
   position: absolute;
   right: 6px;
@@ -1019,6 +1026,39 @@ body.appbar-scrolled .screen-header {
   color: var(--md-on-surface-variant);
   font-size: 1.4rem;
   line-height: 1;
+}
+
+.whatsnew-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.whatsnew-entry-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.whatsnew-entry-head h2 {
+  font-size: var(--type-title);
+  margin: 0;
+}
+
+.whatsnew-entry-date {
+  color: var(--md-on-surface-variant);
+  font-size: var(--type-caption);
+}
+
+.whatsnew-items {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--md-on-surface);
 }
 
 .notification-enable {
@@ -1724,6 +1764,73 @@ button.event-link:active {
   font-size: var(--type-caption);
 }
 
+.solids-food-names {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: var(--md-on-surface-variant);
+  font-size: var(--type-caption);
+  text-align: left;
+  min-width: 0;
+  flex: 0 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  max-height: 1.4em;
+  transition: max-height 0.3s ease;
+}
+
+.solids-food-names-open {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.solids-title-row {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 0;
+}
+
+.solids-title-row .event-title {
+  flex: none;
+}
+
+.solids-title-row .event-meta {
+  flex: none;
+}
+
+.solids-title-sep {
+  color: var(--md-on-surface-variant);
+  flex: none;
+}
+
+.solids-food-icons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.solids-food-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 25.92px;
+  height: 25.92px;
+  border-radius: var(--shape-sm);
+  flex: none;
+  font-size: 14.58px;
+  line-height: 1;
+  background: color-mix(in srgb, var(--food-icon-accent, var(--md-primary)) 14%, transparent);
+  color: var(--food-icon-accent, var(--md-primary));
+}
+
 /* ---------- Swipeable rows ---------- */
 
 .swipeable-row {
@@ -2043,10 +2150,20 @@ button.event-link:active {
   width: 100%;
   max-width: 680px;
   max-height: 88dvh;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  touch-action: none;
   border-radius: var(--shape-xl) var(--shape-xl) 0 0;
   padding: 14px 20px calc(24px + env(safe-area-inset-bottom));
   box-shadow: 0 -8px 32px rgba(43, 38, 34, 0.2);
+}
+.modal-body {
+  overflow-y: auto;
+  touch-action: pan-y;
+  overscroll-behavior-y: contain;
+  flex: 1;
+  min-height: 0;
 }
 .modal::before {
   content: '';
@@ -2187,6 +2304,11 @@ button.event-link:active {
   .modal {
     transform: translateY(100%);
     transition: transform 0.24s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  /* Disable the transition while a drag-to-dismiss gesture is in progress. */
+  .modal.modal-dragging {
+    transition: transform 0s;
   }
 
   .modal.modal-open {

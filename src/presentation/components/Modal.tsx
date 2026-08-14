@@ -38,6 +38,12 @@ const raf: (cb: () => void) => { cancel: () => void } = (cb) => {
 export default function Modal({ open, title, onClose, children, variant = 'sheet' }: ModalProps) {
   const [mounted, setMounted] = useState(open)
   const [entered, setEntered] = useState(false)
+  const [dragY, setDragY] = useState(0)
+  const [dragging, setDragging] = useState(false)
+  const modalRef = useRef<HTMLDivElement | null>(null)
+  const bodyRef = useRef<HTMLDivElement | null>(null)
+  const dragStartY = useRef<number | null>(null)
+  const dragYRef = useRef(0)
   // Snapshot the last open content so the sheet keeps it visible during exit.
   const snapshot = useRef({ title, children })
 
@@ -52,6 +58,8 @@ export default function Modal({ open, title, onClose, children, variant = 'sheet
       return t.cancel
     }
     setEntered(false)
+    setDragY(0)
+    setDragging(false)
     const id = window.setTimeout(() => setMounted(false), EXIT_MS)
     return () => window.clearTimeout(id)
   }, [open])
@@ -110,17 +118,93 @@ export default function Modal({ open, title, onClose, children, variant = 'sheet
 
   const shown = open ? { title, children } : snapshot.current
 
+  const draggable = variant === 'sheet' || variant === 'fullscreen'
+
+  const reducedMotion =
+    typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+  function isDragTarget(target: EventTarget | null): boolean {
+    if (!draggable) {
+      return false
+    }
+    if (!(target instanceof Element)) {
+      return false
+    }
+    if (target.closest('button, input, select, textarea, a')) {
+      return false
+    }
+    // Drag from any non-interactive area of the sheet (body, header, handle).
+    return Boolean(target.closest('.modal'))
+  }
+
+  function handlePointerDown(e: React.PointerEvent) {
+    if (e.button !== 0 && e.pointerType === 'mouse') {
+      return
+    }
+    if (!isDragTarget(e.target)) {
+      return
+    }
+    // Only engage the drag when the sheet is scrolled to the top, so scrolling
+    // the sheet body still works.
+    const el = bodyRef.current
+    if (!el || el.scrollTop > 0) {
+      return
+    }
+    dragStartY.current = e.clientY
+    setDragging(true)
+    try {
+      e.currentTarget.setPointerCapture?.(e.pointerId)
+    } catch {
+      // jsdom and some browsers do not implement pointer capture; ignore.
+    }
+  }
+
+  function handlePointerMove(e: React.PointerEvent) {
+    if (dragStartY.current === null) {
+      return
+    }
+    const dy = e.clientY - dragStartY.current
+    dragYRef.current = dy > 0 ? dy : 0
+    setDragY(dragYRef.current)
+  }
+
+  function handlePointerEnd() {
+    if (dragStartY.current === null) {
+      return
+    }
+    dragStartY.current = null
+    setDragging(false)
+    const height = modalRef.current?.offsetHeight ?? window.innerHeight
+    const threshold = Math.min(140, height * 0.3)
+    if (dragYRef.current >= threshold) {
+      setDragY(window.innerHeight)
+      if (reducedMotion) {
+        onClose()
+      } else {
+        window.setTimeout(() => onClose(), EXIT_MS)
+      }
+    } else {
+      setDragY(0)
+    }
+  }
+
   return createPortal(
     <div
       className={`modal-overlay${variant === 'dialog' ? ' modal-overlay-dialog' : ''}${variant === 'fullscreen' ? ' modal-overlay-fullscreen' : ''}${entered ? ' modal-overlay-open' : ''}`}
       onClick={onClose}
     >
       <div
-        className={`modal${variant === 'dialog' ? ' modal-dialog' : ''}${variant === 'fullscreen' ? ' modal-fullscreen' : ''}${entered ? ' modal-open' : ''}`}
+        ref={modalRef}
+        className={`modal${variant === 'dialog' ? ' modal-dialog' : ''}${variant === 'fullscreen' ? ' modal-fullscreen' : ''}${entered ? ' modal-open' : ''}${dragging ? ' modal-dragging' : ''}`}
         role="dialog"
         aria-modal="true"
         aria-label={shown.title}
+        style={dragY > 0 ? { transform: `translateY(${dragY}px)` } : undefined}
         onClick={(e) => e.stopPropagation()}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerEnd}
+        onPointerCancel={handlePointerEnd}
       >
         <div className="modal-header">
           <h2>{shown.title}</h2>
@@ -128,7 +212,7 @@ export default function Modal({ open, title, onClose, children, variant = 'sheet
             ×
           </button>
         </div>
-        <div className="modal-body">{shown.children}</div>
+        <div className="modal-body" ref={bodyRef}>{shown.children}</div>
       </div>
     </div>,
     document.body,

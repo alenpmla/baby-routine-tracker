@@ -2,7 +2,7 @@ import { useTracker } from '../store/TrackerProvider'
 import { useWakeStatus } from '../store/useWakeStatus'
 import { describeAge, formatClock, formatDayLabel, formatDuration, isSameDay, startOfDay } from '../utils/time'
 import { describeFeedingMeta, describeFeedingTitle } from '../utils/feeding'
-import { BottleIcon, DiaperIcon, MoonIcon, SettingsIcon } from '../components/icons'
+import { BottleIcon, DiaperIcon, DirtyDiaperIcon, MoonIcon, SettingsIcon } from '../components/icons'
 import GrowthChart from '../components/GrowthChart'
 import InsightsSection from '../components/InsightsSection'
 import DayNav from '../components/DayNav'
@@ -117,7 +117,12 @@ export default function DashboardScreen({
                   <span className={`event-icon event-${event.kind}`}>
                     {event.kind === 'sleep' && <MoonIcon size={18} />}
                     {event.kind === 'feeding' && <BottleIcon size={18} />}
-                    {event.kind === 'diaper' && <DiaperIcon size={18} />}
+                    {event.kind === 'diaper' &&
+                      (event.data.type === 'dirty' || event.data.type === 'both' ? (
+                        <DirtyDiaperIcon size={18} />
+                      ) : (
+                        <DiaperIcon size={18} />
+                      ))}
                   </span>
                   <span className="event-body">
                     <span className="event-title">

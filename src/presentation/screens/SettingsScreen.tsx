@@ -6,6 +6,7 @@ import FoodSuggestionsScreen from './FoodSuggestionsScreen'
 import UnitsScreen from './UnitsScreen'
 import DataReportsScreen from './DataReportsScreen'
 import NotificationsScreen from './NotificationsScreen'
+import WhatsNewScreen from './WhatsNewScreen'
 import type { SettingsView } from '../store/useBackNav'
 import { BackIcon, BellIcon, BowlIcon, DownloadIcon, ProfileIcon, SettingsIcon } from '../components/icons'
 
@@ -57,6 +58,10 @@ export default function SettingsScreen({
     return <NotificationsScreen onBack={onGoBack} />
   }
 
+  if (view === 'whatsnew') {
+    return <WhatsNewScreen onBack={onGoBack} />
+  }
+
   return (
     <div className="screen-content">
       <header className="screen-header">
@@ -105,6 +110,17 @@ export default function SettingsScreen({
           ))}
         </div>
       </div>
+
+      <button type="button" className="card event settings-nav" onClick={() => onOpenView('whatsnew')}>
+        <span className="event-icon event-feeding">
+          <BowlIcon size={18} />
+        </span>
+        <span className="event-body">
+          <span className="event-title">What&apos;s new</span>
+          <span className="event-meta">Recent features and improvements</span>
+        </span>
+        <span className="settings-chevron">›</span>
+      </button>
 
       <button type="button" className="card event settings-nav" onClick={() => onOpenView('profile')}>
         <span className="event-icon event-sleep">

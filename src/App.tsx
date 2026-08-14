@@ -15,10 +15,12 @@ import WeightScreen from './presentation/screens/WeightScreen'
 import SettingsScreen from './presentation/screens/SettingsScreen'
 import TabBar from './presentation/components/TabBar'
 import OfflineBanner from './presentation/components/OfflineBanner'
+import { useSnackbar } from './presentation/store/SnackbarProvider'
 
 function Shell() {
   const { ready, offline, syncNow, baby, saveProfile } = useTracker()
   const { current, navigate, goToTab, goBack } = useBackNav()
+  const { showSnackbar } = useSnackbar()
   const { tab, settings, settingsView } = current
   useWakeWindowReminder()
 
@@ -41,7 +43,14 @@ function Shell() {
     )
   }
 
-  const banner = offline ? <OfflineBanner onRetry={syncNow} /> : null
+  const banner = offline ? (
+    <OfflineBanner
+      onRetry={async () => {
+        const ok = await syncNow()
+        showSnackbar(ok ? 'Synced' : 'Sync failed — still offline', ok ? 'success' : 'error')
+      }}
+    />
+  ) : null
 
   if (!baby) {
     return (

@@ -61,11 +61,18 @@ describe('Solid-food details', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
 
     const list = within(screen.getByRole('heading', { name: 'Today' }).closest('section') as HTMLElement)
-    expect(list.getByText('Solids · salmon')).toBeInTheDocument()
+    expect(list.getByText('Solids')).toBeInTheDocument()
+    expect(list.getByText('salmon')).toBeInTheDocument()
     expect(list.getByText(/2 oz/i)).toBeInTheDocument()
 
-    // No inline emoji in the history row
-    const row = list.getByText('Solids · salmon').closest('.swipeable-row-content') as HTMLElement
+    // Emoji boxes: one 32px tinted box per food, wrapping container, no title prefix
+    const row = list.getByText('salmon').closest('.swipeable-row-content') as HTMLElement
+    const boxes = row.querySelectorAll('.solids-food-icon')
+    expect(boxes.length).toBe(1)
+    expect(boxes[0].getAttribute('aria-hidden')).toBe('true')
+    expect(row.querySelector('.solids-food-icons')).not.toBeNull()
+    expect(row.querySelector('.event-title')?.textContent).toBe('Solids')
+    expect(row.querySelector('.solids-food-names')?.textContent).toBe('salmon')
     expect(row.querySelector('.food-mini')).toBeNull()
     expect(row.querySelector('.food-item-icon-sm')).toBeNull()
 
@@ -101,7 +108,10 @@ describe('Solid-food details', () => {
 
     expect(api.state.feedings[0].foods).toEqual(['salmon', 'beef'])
     const list = within(screen.getByRole('heading', { name: 'Today' }).closest('section') as HTMLElement)
-    expect(list.getByText('Solids · salmon, beef')).toBeInTheDocument()
+    expect(list.getByText('Solids')).toBeInTheDocument()
+    expect(list.getByText('salmon, beef')).toBeInTheDocument()
+    const row = list.getByText('salmon, beef').closest('.swipeable-row-content') as HTMLElement
+    expect(row.querySelectorAll('.solids-food-icon').length).toBe(2)
   })
 
   it('shows the total solid food consumed for the day (ignores non-solids)', async () => {
@@ -250,7 +260,8 @@ describe('Solid-food details', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
 
     const list = within(screen.getByRole('heading', { name: 'Today' }).closest('section') as HTMLElement)
-    expect(list.getByText('Solids · beef')).toBeInTheDocument()
+    expect(list.getByText('Solids')).toBeInTheDocument()
+    expect(list.getByText('beef')).toBeInTheDocument()
     expect(list.getByText(/30 gram/i)).toBeInTheDocument()
   })
 })

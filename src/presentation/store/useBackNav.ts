@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Tab } from '../navigation'
 
-export type SettingsView = 'main' | 'profile' | 'suggestions' | 'units' | 'data' | 'notifications'
+export type SettingsView = 'main' | 'profile' | 'suggestions' | 'units' | 'data' | 'notifications' | 'whatsnew'
 
 export interface NavState {
   tab: Tab
