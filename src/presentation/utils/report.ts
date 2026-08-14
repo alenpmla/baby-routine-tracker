@@ -5,7 +5,7 @@ import type { FeedingSession } from '../../domain/model/FeedingSession'
 import { foodsOf } from '../../domain/model/FeedingSession'
 import type { DiaperChange } from '../../domain/model/DiaperChange'
 import type { SleepSession } from '../../domain/model/SleepSession'
-import { formatDuration } from './time'
+import { formatDuration, startOfDay, toInputDate } from './time'
 import { describeBottleTotal, describeSolidsTotal, describeAmount, type SnapshotUnits } from './feeding'
 
 const PRIMARY: [number, number, number] = [107, 92, 230]
@@ -33,6 +33,95 @@ export interface ReportSummary {
   wet: number
   dirty: number
   both: number
+}
+
+export interface DayTotals {
+  /** Local calendar day key, YYYY-MM-DD */
+  dayKey: string
+  /** Local midnight of the day */
+  date: Date
+  sleepCount: number
+  sleepTotal: string
+  feedCount: number
+  bottleCount: number
+  breastCount: number
+  solidsCount: number
+  bottleTotal: string
+  solidsTotal: string
+  diaperCount: number
+  wet: number
+  dirty: number
+  both: number
+}
+
+export function buildDailyTotals(records: ReportRecords, units: SnapshotUnits): DayTotals[] {
+  const sleepsByDay = new Map<string, SleepSession[]>()
+  const feedingsByDay = new Map<string, FeedingSession[]>()
+  const diapersByDay = new Map<string, DiaperChange[]>()
+  const dayStart = new Map<string, Date>()
+
+  const append = <T>(map: Map<string, T[]>, key: string, value: T) => {
+    const list = map.get(key)
+    if (list) {
+      list.push(value)
+    } else {
+      map.set(key, [value])
+    }
+  }
+
+  for (const s of records.sleeps) {
+    const d = new Date(s.startTime)
+    const key = toInputDate(d)
+    append(sleepsByDay, key, s)
+    dayStart.set(key, startOfDay(d))
+  }
+  for (const f of records.feedings) {
+    const d = new Date(f.time)
+    const key = toInputDate(d)
+    append(feedingsByDay, key, f)
+    dayStart.set(key, startOfDay(d))
+  }
+  for (const d of records.diapers) {
+    const date = new Date(d.time)
+    const key = toInputDate(date)
+    append(diapersByDay, key, d)
+    dayStart.set(key, startOfDay(date))
+  }
+
+  const keys = Array.from(
+    new Set([...sleepsByDay.keys(), ...feedingsByDay.keys(), ...diapersByDay.keys()]),
+  )
+  keys.sort((a, b) => dayStart.get(a)!.getTime() - dayStart.get(b)!.getTime())
+
+  return keys.map((key) => {
+    const sleeps = sleepsByDay.get(key) ?? []
+    const feedings = feedingsByDay.get(key) ?? []
+    const diapers = diapersByDay.get(key) ?? []
+    let totalSleepMs = 0
+    let sleepCount = 0
+    for (const s of sleeps) {
+      if (s.endTime) {
+        totalSleepMs += new Date(s.endTime).getTime() - new Date(s.startTime).getTime()
+        sleepCount += 1
+      }
+    }
+    return {
+      dayKey: key,
+      date: dayStart.get(key)!,
+      sleepCount,
+      sleepTotal: formatDuration(totalSleepMs),
+      feedCount: feedings.length,
+      bottleCount: feedings.filter((f) => f.type === 'bottle').length,
+      breastCount: feedings.filter((f) => f.type === 'breast').length,
+      solidsCount: feedings.filter((f) => f.type === 'solids').length,
+      bottleTotal: describeBottleTotal(feedings, units.bottle),
+      solidsTotal: describeSolidsTotal(feedings, units.solids),
+      diaperCount: diapers.length,
+      wet: diapers.filter((d) => d.type === 'wet').length,
+      dirty: diapers.filter((d) => d.type === 'dirty').length,
+      both: diapers.filter((d) => d.type === 'both').length,
+    }
+  })
 }
 
 export function buildReportSummary(records: ReportRecords, units: SnapshotUnits): ReportSummary {
@@ -139,6 +228,32 @@ export function buildReportPdf(
   doc.setFontSize(9)
   doc.setTextColor(...MUTED)
   doc.text('Detailed reports follow for Sleep, Feeding, and Diaper.', 14, y0 + 3 * (ch + gap) + 2)
+
+  const dailyTotals = buildDailyTotals(records, units)
+  doc.setFontSize(12)
+  doc.setTextColor(...INK)
+  doc.setFont('helvetica', 'bold')
+  doc.text('Daily totals', 14, y0 + 3 * (ch + gap) + 14)
+  const dailyRows = dailyTotals.length
+    ? dailyTotals.map((d) => [
+        fmtDate(d.date.toISOString()),
+        `${d.sleepCount} · ${d.sleepTotal}`,
+        String(d.feedCount),
+        d.bottleTotal || '—',
+        d.solidsTotal || '—',
+        String(d.diaperCount),
+      ])
+    : [['—', '—', '—', '—', '—', 'No records in period']]
+  autoTable(doc, {
+    startY: y0 + 3 * (ch + gap) + 20,
+    head: [['Day', 'Sleep', 'Feeds', 'Bottle', 'Solids', 'Diapers']],
+    body: dailyRows,
+    theme: 'grid',
+    styles: { textColor: INK, fontSize: 9, cellPadding: 2.5 },
+    headStyles: { fillColor: PRIMARY, textColor: 255, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: ALT },
+    margin: { left: 14, right: 14 },
+  })
 
   // ---- Sleep report (own page) ----
   doc.addPage()
