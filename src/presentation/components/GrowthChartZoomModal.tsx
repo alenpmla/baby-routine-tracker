@@ -237,7 +237,7 @@ export default function GrowthChartZoomModal({
                 dataKey?: string
               }>
               const series = [
-                { key: 'baby', label: 'Baby', color: '#3b82f6' },
+                { key: 'baby', label: 'Baby', color: 'var(--baby-line)' },
                 { key: 'p50', label: 'Median', color: 'var(--md-primary)' },
                 { key: 'p3', label: 'P3', color: 'var(--md-on-surface-variant)' },
                 { key: 'p97', label: 'P97', color: 'var(--md-on-surface-variant)' },
@@ -305,7 +305,7 @@ export default function GrowthChartZoomModal({
           />
           <Area
             dataKey="baby"
-            stroke="#3b82f6"
+            stroke="var(--baby-line)"
             strokeWidth={2.5}
             fill="none"
             strokeLinejoin="round"
