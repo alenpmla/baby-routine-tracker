@@ -227,20 +227,56 @@ export default function GrowthChartZoomModal({
           <Tooltip
             cursor={{ stroke: 'var(--md-outline)', strokeDasharray: '3 3' }}
             wrapperStyle={{ pointerEvents: 'none', outline: 'none' }}
-            contentStyle={{
-              background: 'var(--md-surface-container-high)',
-              border: '1px solid var(--md-outline-variant)',
-              borderRadius: 8,
-              color: 'var(--md-on-surface)',
-              padding: '3px 7px',
-              fontSize: 10,
-              lineHeight: 1.3,
-              boxShadow: 'var(--elevation-1)',
-            }}
-            labelFormatter={(label) => `${label}m`}
-            formatter={(value) => {
-              const n = Number(value)
-              return Number.isFinite(n) ? `${Math.round(n * 10) / 10}${metric.unit}` : String(value)
+            content={({ active, payload, label }) => {
+              if (!active || !payload || payload.length === 0) {
+                return null
+              }
+              const rows = payload as unknown as Array<{
+                name?: string
+                value?: number | string
+                dataKey?: string
+              }>
+              const series = [
+                { key: 'baby', label: 'Baby', color: 'var(--accent-weight-fg)' },
+                { key: 'p50', label: 'Median', color: 'var(--md-primary)' },
+                { key: 'p3', label: 'P3', color: 'var(--md-on-surface-variant)' },
+                { key: 'p97', label: 'P97', color: 'var(--md-on-surface-variant)' },
+              ]
+              const fmt = (v: number | string | undefined) => {
+                const n = Number(v)
+                return Number.isFinite(n) ? `${Math.round(n * 10) / 10}${metric.unit}` : String(v ?? '—')
+              }
+              return (
+                <div
+                  className="zoom-tooltip"
+                  style={{
+                    background: 'var(--md-surface-container-high)',
+                    border: '1px solid var(--md-outline-variant)',
+                    borderRadius: 10,
+                    padding: '6px 10px',
+                    fontSize: 12,
+                    boxShadow: 'var(--elevation-2)',
+                    color: 'var(--md-on-surface)',
+                  }}
+                >
+                  <div className="zoom-tooltip-month">{label}m</div>
+                  {series.map((s) => {
+                    const item = rows.find((r) => r.dataKey === s.key || r.name === s.label)
+                    if (!item) {
+                      return null
+                    }
+                    return (
+                      <div key={s.key} className="zoom-tooltip-row">
+                        <span className="zoom-tooltip-dot" style={{ background: s.color }} />
+                        <span className="zoom-tooltip-name" style={{ color: s.color }}>
+                          {s.label}
+                        </span>
+                        <span className="zoom-tooltip-value">{fmt(item.value)}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              )
             }}
           />
           <Area

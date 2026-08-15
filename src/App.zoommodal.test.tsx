@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { render, screen, fireEvent, cleanup } from '@testing-library/react'
+import { render, screen, fireEvent, cleanup, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from './App'
 import { setupApi } from './test/setupApi'
@@ -101,8 +101,10 @@ describe('Growth chart zoom modal', () => {
     await user.click(screen.getByRole('button', { name: /open weight chart zoom/i }))
     expect(await screen.findByRole('dialog', { name: /weight progress/i })).toBeInTheDocument()
 
-    // Simulate the hardware/browser back button.
-    window.history.back()
+    // Simulate the hardware/browser back button firing popstate.
+    act(() => {
+      window.dispatchEvent(new PopStateEvent('popstate'))
+    })
     await new Promise((r) => setTimeout(r, 50))
     expect(screen.queryByRole('dialog', { name: /weight progress/i })).not.toBeInTheDocument()
   })

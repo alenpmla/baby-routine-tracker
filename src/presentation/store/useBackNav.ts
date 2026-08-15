@@ -14,6 +14,10 @@ export interface NavState {
 
 const HOME: NavState = { tab: 'home', settings: false }
 
+function isNavState(v: unknown): v is NavState {
+  return !!v && typeof v === 'object' && typeof (v as NavState).tab === 'string'
+}
+
 /**
  * Optional handler registered by an open overlay/modal: when set, the browser
  * back button calls it (to close the modal) instead of popping the nav stack.
@@ -24,14 +28,35 @@ export function registerBackOverlay(fn: (() => void) | null): void {
   activeOverlay = fn
 }
 
+// sessionStorage key for the nav stack. Survives a reload (pull-to-refresh /
+// refresh) so you land back where you were, but is per-browser — never synced
+// to the server, so another device's tabs cannot affect this one.
+const STORAGE_KEY = 'bt-nav'
+
+function readSavedStack(): NavState[] | null {
+  try {
+    const raw = window.sessionStorage.getItem(STORAGE_KEY)
+    if (!raw) {
+      return null
+    }
+    const arr = JSON.parse(raw) as unknown
+    if (Array.isArray(arr) && arr.length >= 1 && arr.every(isNavState)) {
+      return arr as NavState[]
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
 /**
  * App navigation + back-button handling.
  *
- * The nav stack lives purely in memory; browser history is only used as a
- * "back trap" (a single sentinel entry we re-push after each back) so the
- * hardware/browser back button always fires popstate. This makes behaviour
- * predictable and keeps reloads deterministic (we always start at Home, so a
- * pull-to-refresh never jumps to a random tab).
+ * Every in-app forward navigation pushes one browser-history entry and one
+ * in-memory stack entry, so the two always mirror each other. The browser back
+ * button pops one stack level; at the root (Home) it exits the app natively.
+ * The stack is persisted to sessionStorage so a reload restores the current
+ * page (and its back depth).
  *
  * Back semantics:
  *  - an open overlay/modal → closes it (does not navigate),
@@ -40,56 +65,94 @@ export function registerBackOverlay(fn: (() => void) | null): void {
  *  - Home → exit the app.
  */
 export function useBackNav() {
-  const stackRef = useRef<NavState[]>([HOME])
+  const stackRef = useRef<NavState[]>([])
+  if (stackRef.current.length === 0) {
+    stackRef.current = [HOME]
+  }
   const [current, setCurrent] = useState<NavState>(HOME)
+  // Counter of back() calls we initiated ourselves so the popstate handler
+  // does not double-pop when an on-screen back arrow calls history.back().
+  const pendingBacks = useRef(0)
+
+  // Restore a persisted stack once (after a reload).
+  const restoredRef = useRef(false)
 
   useEffect(() => {
-    // Trap the back button: a sentinel entry so the first back press pops.
-    window.history.pushState({ bt: 'root' }, '')
+    if (restoredRef.current) {
+      return
+    }
+    restoredRef.current = true
+    const saved = readSavedStack()
+    if (saved && saved.length > 0) {
+      stackRef.current = saved
+      setCurrent(saved[saved.length - 1])
+      // Mirror the restored depth in browser history so back works after reload.
+      const depth = saved.length - 1
+      for (let i = 0; i < depth; i += 1) {
+        window.history.pushState({ bt: 'app' }, '')
+      }
+    }
 
     const onPop = () => {
+      if (pendingBacks.current > 0) {
+        pendingBacks.current -= 1
+        return
+      }
       if (activeOverlay) {
         activeOverlay()
-        window.history.pushState({ bt: 'root' }, '')
+        window.history.pushState({ bt: 'app' }, '')
         return
       }
       const s = stackRef.current
       if (s.length <= 1) {
-        // At the root: do not re-push, so the next back exits the app.
+        // At the root: let the browser exit on the next back press.
         return
       }
       stackRef.current = s.slice(0, -1)
       setCurrent(stackRef.current[stackRef.current.length - 1])
-      // Re-arm so the next back press fires popstate again.
-      window.history.pushState({ bt: 'root' }, '')
     }
     window.addEventListener('popstate', onPop)
     return () => window.removeEventListener('popstate', onPop)
   }, [])
 
+  // Persist the stack so a reload restores the current page + depth.
+  useEffect(() => {
+    try {
+      window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(stackRef.current))
+    } catch {
+      /* ignore quota/private-mode errors */
+    }
+  }, [current])
+
   const navigate = useCallback((next: NavState, replace = false) => {
-    const s = stackRef.current
     if (replace) {
-      stackRef.current = [...s.slice(0, -1), next]
+      stackRef.current = [...stackRef.current.slice(0, -1), next]
+      window.history.replaceState({ bt: 'app' }, '')
     } else {
-      stackRef.current = [...s, next]
+      stackRef.current = [...stackRef.current, next]
+      window.history.pushState({ bt: 'app' }, '')
     }
     setCurrent(next)
   }, [])
 
   const goToTab = useCallback((tab: Tab) => {
     if (tab === 'home') {
+      const depth = stackRef.current.length - 1
       stackRef.current = [HOME]
       setCurrent(HOME)
+      if (depth > 0) {
+        window.history.go(-depth)
+      }
       return
     }
     const next: NavState = { tab, settings: false }
     const s = stackRef.current
     if (s.length === 1) {
       stackRef.current = [...s, next]
+      window.history.pushState({ bt: 'app' }, '')
     } else {
-      // Tab hops replace the previous tab so back from any tab returns to Home.
       stackRef.current = [...s.slice(0, -1), next]
+      window.history.replaceState({ bt: 'app' }, '')
     }
     setCurrent(next)
   }, [])
@@ -103,6 +166,8 @@ export function useBackNav() {
     }
     stackRef.current = s.slice(0, -1)
     setCurrent(stackRef.current[stackRef.current.length - 1])
+    pendingBacks.current += 1
+    window.history.back()
   }, [])
 
   return { current, navigate, goToTab, goBack }

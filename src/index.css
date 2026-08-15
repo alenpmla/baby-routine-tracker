@@ -1960,6 +1960,46 @@ button.event-link:active {
   font-style: italic;
 }
 
+/* Chart tooltip (custom content, larger + readable in both themes). */
+.zoom-tooltip {
+  font-family: inherit;
+}
+
+.zoom-tooltip-month {
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--md-on-surface);
+  margin-bottom: 4px;
+}
+
+.zoom-tooltip-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.zoom-tooltip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.zoom-tooltip-name {
+  font-weight: 600;
+  min-width: 42px;
+}
+
+.zoom-tooltip-value {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  color: var(--md-on-surface);
+  font-weight: 600;
+}
+
+
 
 .growth-legend {
   display: flex;
@@ -1974,6 +2014,11 @@ button.event-link:active {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+}
+
+.zoom-modal .growth-key:has(.growth-swatch-baby) {
+  color: var(--accent-weight-fg);
+  font-weight: 600;
 }
 
 .growth-swatch {

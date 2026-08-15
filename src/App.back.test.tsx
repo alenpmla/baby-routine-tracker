@@ -29,6 +29,7 @@ describe('Physical back button', () => {
     window.localStorage.removeItem('bt.theme')
     window.localStorage.removeItem('bt.snapshotUnits')
     window.localStorage.removeItem('bt.reportUnits')
+    window.sessionStorage.clear()
     document.documentElement.removeAttribute('data-theme')
   })
 

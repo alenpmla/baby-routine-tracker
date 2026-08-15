@@ -72,8 +72,10 @@ describe('Phase 3: sync server', () => {
     )
     first.unmount()
 
-    // Device B opens the app fresh and sees the same data (profile already on the server)
+    // Device B opens the app fresh (no local nav state) and sees the same data
+    // (profile already on the server)
     window.history.replaceState(null, '')
+    window.sessionStorage.clear()
     render(<App />)
     expect(await screen.findByRole('heading', { name: /hi, avery/i })).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Diaper' }))
@@ -91,6 +93,7 @@ describe('Phase 3: sync server', () => {
 
     // Go offline, then open the app again on a device with no cache
     window.localStorage.clear()
+    window.sessionStorage.clear()
     api.setOffline(true)
     render(<App />)
     await screen.findByLabelText(/name/i)
@@ -125,6 +128,7 @@ describe('Phase 3: sync server', () => {
 
     // A device that was offline when it loaded: no cache, SSE never connected yet.
     window.localStorage.clear()
+    window.sessionStorage.clear()
     api.setOffline(true)
     render(<App />)
     await screen.findByLabelText(/name/i)
@@ -161,6 +165,7 @@ describe('Phase 3: sync server', () => {
 
     // Load offline (no cache, SSE never connected) and queue a feed.
     window.localStorage.clear()
+    window.sessionStorage.clear()
     api.setOffline(true)
     render(<App />)
     await screen.findByLabelText(/name/i)
@@ -213,15 +218,12 @@ describe('Phase 3: sync server', () => {
     await user.click(screen.getByRole('button', { name: 'Wet' }))
     first.unmount()
 
-    // Now offline: reload uses the localStorage cache (profile + data intact).
-    // A reload always starts at Home; navigate to Diaper to confirm the data.
+    // Same-device reload: the nav stack is restored (Diaper) and the offline
+    // reload uses the localStorage cache (profile + data intact).
     api.setOffline(true)
     render(<App />)
-    expect(await screen.findByRole('heading', { name: /hi, avery/i })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Diaper' })).toBeInTheDocument()
     expect(screen.getByTestId('offline-banner')).toHaveTextContent(/offline/i)
-    const nav2 = () => within(screen.getByRole('navigation', { name: /primary/i }))
-    await user.click(nav2().getByRole('button', { name: 'Diaper' }))
-    expect(screen.getByRole('heading', { name: 'Diaper' })).toBeInTheDocument()
     expect(within(screen.getByRole('group', { name: 'Changes' })).getByText('1')).toBeInTheDocument()
   })
 

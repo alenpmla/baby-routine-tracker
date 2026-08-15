@@ -25,6 +25,7 @@ describe('Back exits app from Home', () => {
     vi.unstubAllGlobals()
     document.documentElement.removeAttribute('data-theme')
     window.localStorage.clear()
+    window.sessionStorage.clear()
   })
 
   it('does not navigate when back is pressed on Home (app exits instead)', async () => {
