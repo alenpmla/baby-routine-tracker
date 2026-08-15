@@ -2017,7 +2017,7 @@ button.event-link:active {
 }
 
 .zoom-modal .growth-key:has(.growth-swatch-baby) {
-  color: var(--accent-weight-fg);
+  color: #3b82f6;
   font-weight: 600;
 }
 
@@ -2038,7 +2038,7 @@ button.event-link:active {
 }
 
 .growth-swatch-baby {
-  background: var(--accent-weight-fg);
+  background: #3b82f6;
   height: 4px;
   border-radius: 2px;
 }
