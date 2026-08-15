@@ -1,14 +1,23 @@
 import { useState } from 'react'
 import type { SleepSession } from '../../domain/model/SleepSession'
+import { sleepKind } from '../../domain/model/SleepSession'
 import { useTracker } from '../store/TrackerProvider'
 import { useWakeStatus } from '../store/useWakeStatus'
-import { formatClock, formatDayLabel, formatDuration, startOfDay } from '../utils/time'
+import {
+  formatClock,
+  formatDayLabel,
+  formatDuration,
+  isSameDay,
+  shiftDays,
+  startOfDay,
+} from '../utils/time'
 import { EditIcon, MoonIcon } from '../components/icons'
 import DayNav from '../components/DayNav'
 import Modal from '../components/Modal'
 import StatTile from '../components/StatTile'
 import { SleepBackfillForm, type SleepBackfillSubmit } from '../components/BackfillForms'
 import SwipeableRow from '../components/SwipeableRow'
+import WakeWindowLine from '../components/WakeWindowLine'
 
 type SleepModal = { mode: 'add' } | { mode: 'edit'; record: SleepSession }
 
@@ -24,6 +33,7 @@ export default function SleepScreen() {
     logPastSleep,
     updateSleepRecord,
     dailyAverages,
+    getPeriodRecords,
   } = useTracker()
   const wake = useWakeStatus()
   const [error, setError] = useState<string | null>(null)
@@ -31,28 +41,16 @@ export default function SleepScreen() {
   const [backfillError, setBackfillError] = useState<string | null>(null)
   const dayLabel = formatDayLabel(selectedDay, startOfDay(now))
 
-  const totalSlept = day.sleeps.reduce((acc, s) => {
-    if (!s.endTime) {
-      return acc
-    }
-    return acc + new Date(s.endTime).getTime() - new Date(s.startTime).getTime()
-  }, 0)
+  const dayEnd = startOfDay(shiftDays(selectedDay, 1))
+  const boundarySleeps = getPeriodRecords(selectedDay, dayEnd).sleeps.filter(
+    (s) =>
+      s.endTime !== null &&
+      new Date(s.startTime).getTime() < dayEnd.getTime() &&
+      new Date(s.endTime).getTime() > dayEnd.getTime(),
+  )
+  const isToday = isSameDay(selectedDay, startOfDay(now))
 
-  // Night sleep = a completed sleep that starts during the night window
-  // (7pm–9am local); everything else is a nap.
-  const isNightSleep = (s: SleepSession): boolean => {
-    if (!s.endTime) {
-      return false
-    }
-    const hour = new Date(s.startTime).getHours()
-    return hour >= 19 || hour < 9
-  }
-  const totalNapsMs = day.sleeps.reduce((acc, s) => {
-    if (!s.endTime || isNightSleep(s)) {
-      return acc
-    }
-    return acc + new Date(s.endTime).getTime() - new Date(s.startTime).getTime()
-  }, 0)
+  const { nightMs, napMs, nightCount, napCount } = day.sleepTotals
 
   function handleStop() {
     try {
@@ -76,11 +74,11 @@ export default function SleepScreen() {
     setBackfillError(null)
     try {
       if (sleepModal?.mode === 'edit') {
-        updateSleepRecord(sleepModal.record.id, value.start, value.kind === 'ongoing' ? null : value.end)
+        updateSleepRecord(sleepModal.record.id, value.start, value.kind === 'ongoing' ? null : value.end, value.sleepKind)
       } else if (value.kind === 'ongoing') {
-        startSleepTimer(value.start)
+        startSleepTimer(value.start, value.sleepKind)
       } else {
-        logPastSleep(value.start, value.end)
+        logPastSleep(value.start, value.end, value.sleepKind)
       }
       setSleepModal(null)
     } catch (err) {
@@ -96,9 +94,24 @@ export default function SleepScreen() {
       </header>
 
       <div className="stat-row">
-        <StatTile accent="sleep" Icon={MoonIcon} label="Total slept" value={formatDuration(totalSlept)} />
-        {totalNapsMs > 0 && (
-          <StatTile accent="sleep" Icon={MoonIcon} label="Total naps" value={formatDuration(totalNapsMs)} />
+        <StatTile accent="sleep" Icon={MoonIcon} label="Total slept" value={formatDuration(day.sleepTotals.totalMs)} />
+        {nightCount > 0 && (
+          <StatTile
+            accent="sleep"
+            Icon={MoonIcon}
+            label="Night sleep"
+            value={formatDuration(nightMs)}
+            detail={`${nightCount} ${nightCount === 1 ? 'session' : 'sessions'}`}
+          />
+        )}
+        {napCount > 0 && (
+          <StatTile
+            accent="sleep"
+            Icon={MoonIcon}
+            label="Naps"
+            value={formatDuration(napMs)}
+            detail={`${napCount} ${napCount === 1 ? 'nap' : 'naps'}`}
+          />
         )}
         {dailyAverages.avgSleepMs > 0 && (
           <StatTile
@@ -146,6 +159,13 @@ export default function SleepScreen() {
         )}
       </div>
 
+      <WakeWindowLine
+        sleeps={day.sleeps}
+        boundarySleeps={boundarySleeps}
+        nowMs={Date.now()}
+        live={isToday && activeSleep === null}
+      />
+
       <section className="timeline">
         <h2>{dayLabel}</h2>
         {day.sleeps.length === 0 ? (
@@ -165,7 +185,10 @@ export default function SleepScreen() {
                   <MoonIcon size={18} />
                 </span>
                 <span className="event-body">
-                  <span className="event-title">{s.endTime ? 'Sleep' : 'Sleeping'}</span>
+                  <span className="event-title sleep-title">
+                    {s.endTime ? 'Sleep' : 'Sleeping'}
+                    <span className={`sleep-kind sleep-kind-${sleepKind(s)}`}>{sleepKind(s) === 'night' ? 'Night' : 'Nap'}</span>
+                  </span>
                   <span className="event-meta">
                     {formatClock(s.startTime)}
                     {s.endTime
@@ -203,6 +226,7 @@ export default function SleepScreen() {
                   ? {
                       start: new Date(sleepModal.record.startTime),
                       end: sleepModal.record.endTime ? new Date(sleepModal.record.endTime) : null,
+                      kind: sleepKind(sleepModal.record),
                     }
                   : undefined
               }

@@ -139,4 +139,50 @@ describe('sleep use cases', () => {
     const s = startSleep(repo)
     expect(() => updateSleep(repo, s.id, { start: new Date(Date.now() + HOUR) })).toThrow(/future/i)
   })
+
+  it('startSleep stores an explicit kind', () => {
+    const repo = new MemorySleepRepo()
+    const session = startSleep(repo, new Date(Date.now() - HOUR), 'night')
+    expect(session.kind).toBe('night')
+  })
+
+  it('startSleep leaves kind unset for a legacy record', () => {
+    const repo = new MemorySleepRepo()
+    const session = startSleep(repo, new Date(Date.now() - HOUR))
+    expect(session.kind).toBeUndefined()
+  })
+
+  it('stopSleep preserves the session kind', () => {
+    const repo = new MemorySleepRepo()
+    const session = startSleep(repo, new Date(Date.now() - 2 * HOUR), 'nap')
+    const stopped = stopSleep(repo, session.id, new Date(Date.now() - HOUR))
+    expect(stopped.kind).toBe('nap')
+  })
+
+  it('logCompletedSleep stores an explicit kind', () => {
+    const repo = new MemorySleepRepo()
+    const session = logCompletedSleep(repo, new Date(Date.now() - 2 * HOUR), new Date(Date.now() - HOUR), 'night')
+    expect(session.kind).toBe('night')
+  })
+
+  it('updateSleep preserves kind when not provided and changes it when provided', () => {
+    const repo = new MemorySleepRepo()
+    const s = startSleep(repo, new Date(Date.now() - 2 * HOUR), 'nap')
+    const unchanged = updateSleep(repo, s.id, {})
+    expect(unchanged.kind).toBe('nap')
+    const changed = updateSleep(repo, s.id, { kind: 'night' })
+    expect(changed.kind).toBe('night')
+    expect(repo.getAll()[0].kind).toBe('night')
+  })
+
+  it('updateSleep preserves kind on a completed sleep edit', () => {
+    const repo = new MemorySleepRepo()
+    const s = startSleep(repo, new Date(Date.now() - 3 * HOUR), 'night')
+    stopSleep(repo, s.id, new Date(Date.now() - 2 * HOUR))
+    const updated = updateSleep(repo, s.id, {
+      start: new Date(Date.now() - 5 * HOUR),
+      end: new Date(Date.now() - 4 * HOUR),
+    })
+    expect(updated.kind).toBe('night')
+  })
 })

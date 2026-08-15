@@ -6,6 +6,7 @@ export interface SnapshotUnits {
   solids: SolidsUnit
 }
 export type AveragesDays = 7 | 15 | 30 | 60
+export type HomeLogView = 'list' | 'timeline'
 
 export interface AppSettings {
   foodSuggestions: string[]
@@ -15,6 +16,7 @@ export interface AppSettings {
   averagesDays?: AveragesDays
   wakeWindowEnabled?: boolean
   wakeWindowMinutes?: number
+  homeLogView?: HomeLogView
 }
 
 export const DEFAULT_SNAPSHOT_UNITS: SnapshotUnits = { bottle: 'ml', solids: 'g' }

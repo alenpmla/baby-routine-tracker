@@ -55,6 +55,65 @@ describe('backup export/import', () => {
     expect(data.weights).toHaveLength(1)
   })
 
+  it('exports every collection, including the newer health/milestone collections', async () => {
+    const { api, repos } = makeRepos()
+    api.state.baby = { id: 'b1', name: 'Ciara', dob: '2025-10-30', notes: '' }
+    api.state.sleeps.push({ id: 's1', startTime: '2026-08-14T10:00:00Z', endTime: '2026-08-14T11:00:00Z' })
+    api.state.feedings.push({ id: 'f1', type: 'bottle', time: '2026-08-14T10:30:00Z', amount: 120, unit: 'ml' })
+    api.state.diapers.push({ id: 'd1', type: 'wet', time: '2026-08-14T09:00:00Z' })
+    api.state.weights.push({ id: 'w1', time: '2026-08-14T08:00:00Z', weight: 7.5, unit: 'kg' })
+    api.state.headCircumferences.push({ id: 'h1', time: '2026-08-14T08:30:00Z', value: 42, unit: 'cm' })
+    api.state.medications.push({ id: 'm1', time: '2026-08-14T09:30:00Z', name: 'Paracetamol', amount: 120, unit: 'mg' })
+    api.state.temperatures.push({ id: 't1', time: '2026-08-14T09:40:00Z', temp: 37.4, unit: 'c', location: 'rectal' })
+    api.state.milestones.push({ id: 'ms1', time: '2026-08-14T12:00:00Z', milestone: 'Crawl' })
+    api.state.teeth.push({ id: 'th1', time: '2026-08-14T13:00:00Z', tooth: 'Lower central incisor' })
+    api.state.teethingDays.push({ id: 'td1', day: '2026-08-14', symptoms: ['Drooling'] })
+
+    const data = await repos.exportData()
+    expect(data.sleeps).toHaveLength(1)
+    expect(data.feedings).toHaveLength(1)
+    expect(data.diapers).toHaveLength(1)
+    expect(data.weights).toHaveLength(1)
+    expect(data.headCircumferences).toHaveLength(1)
+    expect(data.medications).toHaveLength(1)
+    expect(data.temperatures).toHaveLength(1)
+    expect(data.milestones).toHaveLength(1)
+    expect(data.teeth).toHaveLength(1)
+    expect(data.teethingDays).toHaveLength(1)
+  })
+
+  it('imports a full backup with every collection, replacing server state', async () => {
+    const { api, repos } = makeRepos()
+    await repos.importData({
+      version: 1,
+      exportedAt: 'x',
+      baby: { id: 'b1', name: 'Ciara', dob: '2025-10-30', notes: '' },
+      sleeps: [{ id: 's1', startTime: '2026-08-14T10:00:00Z', endTime: '2026-08-14T11:00:00Z' }],
+      feedings: [{ id: 'f1', type: 'bottle', time: '2026-08-14T10:30:00Z', amount: 120, unit: 'ml' }],
+      diapers: [{ id: 'd1', type: 'wet', time: '2026-08-14T09:00:00Z' }],
+      weights: [{ id: 'w1', time: '2026-08-14T08:00:00Z', weight: 7.5, unit: 'kg' }],
+      headCircumferences: [{ id: 'h1', time: '2026-08-14T08:30:00Z', value: 42, unit: 'cm' }],
+      medications: [{ id: 'm1', time: '2026-08-14T09:30:00Z', name: 'Paracetamol', amount: 120, unit: 'mg' }],
+      temperatures: [{ id: 't1', time: '2026-08-14T09:40:00Z', temp: 37.4, unit: 'c', location: 'rectal' }],
+      milestones: [{ id: 'ms1', time: '2026-08-14T12:00:00Z', milestone: 'Crawl' }],
+      teeth: [{ id: 'th1', time: '2026-08-14T13:00:00Z', tooth: 'Lower central incisor' }],
+      teethingDays: [{ id: 'td1', day: '2026-08-14', symptoms: ['Drooling'] }],
+      settings: { foodSuggestions: ['carrot'] },
+    })
+
+    expect(api.state.baby?.name).toBe('Ciara')
+    expect(api.state.sleeps).toHaveLength(1)
+    expect(api.state.feedings).toHaveLength(1)
+    expect(api.state.diapers).toHaveLength(1)
+    expect(api.state.weights).toHaveLength(1)
+    expect(api.state.headCircumferences).toHaveLength(1)
+    expect(api.state.medications).toHaveLength(1)
+    expect(api.state.temperatures).toHaveLength(1)
+    expect(api.state.milestones).toHaveLength(1)
+    expect(api.state.teeth).toHaveLength(1)
+    expect(api.state.teethingDays).toHaveLength(1)
+  })
+
   it('imports a backup, replacing the server state', async () => {
     const { api, repos } = makeRepos()
     api.state.baby = { id: 'old', name: 'Old', dob: '2020-01-01', notes: '' }

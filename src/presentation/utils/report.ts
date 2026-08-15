@@ -5,6 +5,8 @@ import type { FeedingSession } from '../../domain/model/FeedingSession'
 import { foodsOf } from '../../domain/model/FeedingSession'
 import type { DiaperChange } from '../../domain/model/DiaperChange'
 import type { SleepSession } from '../../domain/model/SleepSession'
+import { sleepKind } from '../../domain/model/SleepSession'
+import { sleepTotalsByKind } from '../../domain/usecase/sleep'
 import { formatDuration, startOfDay, toInputDate } from './time'
 import { describeBottleTotal, describeSolidsTotal, describeAmount, type SnapshotUnits } from './feeding'
 
@@ -23,6 +25,10 @@ export interface ReportRecords {
 export interface ReportSummary {
   sleepCount: number
   totalSleep: string
+  nightCount: number
+  napCount: number
+  nightSleep: string
+  napSleep: string
   feedCount: number
   bottleCount: number
   breastCount: number
@@ -42,6 +48,10 @@ export interface DayTotals {
   date: Date
   sleepCount: number
   sleepTotal: string
+  nightCount: number
+  napCount: number
+  nightSleep: string
+  napSleep: string
   feedCount: number
   bottleCount: number
   breastCount: number
@@ -105,11 +115,16 @@ export function buildDailyTotals(records: ReportRecords, units: SnapshotUnits): 
         sleepCount += 1
       }
     }
+    const split = sleepTotalsByKind(sleeps)
     return {
       dayKey: key,
       date: dayStart.get(key)!,
       sleepCount,
       sleepTotal: formatDuration(totalSleepMs),
+      nightCount: split.nightCount,
+      napCount: split.napCount,
+      nightSleep: formatDuration(split.nightMs),
+      napSleep: formatDuration(split.napMs),
       feedCount: feedings.length,
       bottleCount: feedings.filter((f) => f.type === 'bottle').length,
       breastCount: feedings.filter((f) => f.type === 'breast').length,
@@ -131,9 +146,14 @@ export function buildReportSummary(records: ReportRecords, units: SnapshotUnits)
       totalSleepMs += new Date(s.endTime).getTime() - new Date(s.startTime).getTime()
     }
   }
+  const split = sleepTotalsByKind(records.sleeps)
   return {
     sleepCount: records.sleeps.length,
     totalSleep: formatDuration(totalSleepMs),
+    nightCount: split.nightCount,
+    napCount: split.napCount,
+    nightSleep: formatDuration(split.nightMs),
+    napSleep: formatDuration(split.napMs),
     feedCount: records.feedings.length,
     bottleCount: records.feedings.filter((f) => f.type === 'bottle').length,
     breastCount: records.feedings.filter((f) => f.type === 'breast').length,
@@ -238,15 +258,16 @@ export function buildReportPdf(
     ? dailyTotals.map((d) => [
         fmtDate(d.date.toISOString()),
         `${d.sleepCount} · ${d.sleepTotal}`,
+        `${d.nightSleep} · ${d.napSleep}`,
         String(d.feedCount),
         d.bottleTotal || '—',
         d.solidsTotal || '—',
         String(d.diaperCount),
       ])
-    : [['—', '—', '—', '—', '—', 'No records in period']]
+    : [['—', '—', '—', '—', '—', '—', 'No records in period']]
   autoTable(doc, {
     startY: y0 + 3 * (ch + gap) + 20,
-    head: [['Day', 'Sleep', 'Feeds', 'Bottle', 'Solids', 'Diapers']],
+    head: [['Day', 'Sleep', 'Night · Nap', 'Feeds', 'Bottle', 'Solids', 'Diapers']],
     body: dailyRows,
     theme: 'grid',
     styles: { textColor: INK, fontSize: 9, cellPadding: 2.5 },
@@ -258,16 +279,21 @@ export function buildReportPdf(
   // ---- Sleep report (own page) ----
   doc.addPage()
   pageHeader(doc, 'Sleep Report', `${name}  ·  ${periodLabel}`)
+  doc.setFontSize(9)
+  doc.setTextColor(...MUTED)
+  doc.setFont('helvetica', 'normal')
+  doc.text(`Night ${summary.nightSleep} (${summary.nightCount}) · Naps ${summary.napSleep} (${summary.napCount})`, 14, 31)
   const sleepRows = records.sleeps.map((s) => [
     fmtDate(s.startTime),
     fmtClock(s.startTime),
     s.endTime ? fmtClock(s.endTime) : '—',
     s.endTime ? formatDuration(new Date(s.endTime).getTime() - new Date(s.startTime).getTime()) : 'ongoing',
+    sleepKind(s) === 'night' ? 'Night' : 'Nap',
   ])
   autoTable(doc, {
-    startY: 34,
-    head: [['Date', 'Start', 'End', 'Duration']],
-    body: sleepRows.length ? sleepRows : [['—', '—', '—', 'No sleep recorded']],
+    startY: 35,
+    head: [['Date', 'Start', 'End', 'Duration', 'Kind']],
+    body: sleepRows.length ? sleepRows : [['—', '—', '—', '—', 'No sleep recorded']],
     theme: 'grid',
     styles: { textColor: INK, fontSize: 9, cellPadding: 2.5 },
     headStyles: { fillColor: PRIMARY, textColor: 255, fontStyle: 'bold' },

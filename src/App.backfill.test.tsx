@@ -135,7 +135,7 @@ describe('Phase 2: backfill + day navigation', () => {
     await user.click(nav().getByRole('button', { name: 'Sleep' }))
 
     expect(within(screen.getByRole('group', { name: 'Total slept' })).getByText('12h 30m')).toBeInTheDocument()
-    expect(within(screen.getByRole('group', { name: 'Total naps' })).getByText('6h 30m')).toBeInTheDocument()
+    expect(within(screen.getByRole('group', { name: 'Naps' })).getByText('6h 30m')).toBeInTheDocument()
   })
 
   it('backfills a completed sleep; rejects end-before-start', async () => {

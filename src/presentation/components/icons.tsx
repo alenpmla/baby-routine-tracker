@@ -227,3 +227,56 @@ export function ChevronDownIcon({ size = 20 }: IconProps) {
     </svg>
   )
 }
+
+export function HealthIcon({ size = 22 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M19 14c1.5-1.5 3-3.3 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.8 0-3 .5-4.5 2-1.5-1.5-2.7-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.2 1.5 4 3 5.5l7 7Z" />
+      <path d="M7.5 11.5h2.5l1.5-3 2 5 1.5-2h2.5" />
+    </svg>
+  )
+}
+
+export function RulerIcon({ size = 22 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="2" y="9" width="20" height="6" rx="1" />
+      <path d="M6.5 9v2M10 9v3M13.5 9v2M17 9v3" />
+    </svg>
+  )
+}
+
+export function SmileIcon({ size = 22 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M8.5 10.5h.01M15.5 10.5h.01" />
+      <path d="M8.5 14.5a4.5 4.5 0 0 0 7 0" />
+    </svg>
+  )
+}
+
+export function PillIcon({ size = 22 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M10.5 5.5 18.5 13.5a3.5 3.5 0 0 1-5 5L5.5 10.5a3.5 3.5 0 0 1 5-5Z" />
+      <path d="M7 9l8 8" />
+    </svg>
+  )
+}
+
+export function ThermoIcon({ size = 22 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M14 14.76V4a2 2 0 0 0-4 0v10.76a4 4 0 1 0 4 0Z" />
+    </svg>
+  )
+}
+
+export function StarIcon({ size = 22 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="m12 3 2.7 5.6 6.1.8-4.5 4.3 1.1 6-5.4-3-5.4 3 1.1-6L3.2 9.4l6.1-.8L12 3Z" />
+    </svg>
+  )
+}

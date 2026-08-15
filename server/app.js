@@ -1,7 +1,13 @@
 import express from 'express'
 import path from 'node:path'
 
-const KEYS = ['sleeps', 'feedings', 'diapers', 'weights']
+const KEYS = ['sleeps', 'feedings', 'diapers', 'weights', 'headCircumferences', 'medications', 'temperatures', 'milestones', 'teeth', 'teethingDays']
+
+// Backups created before a collection existed do not carry its array. The
+// original collections stay required; new collections are optional on import
+// so pre-existing exports still import (forward-compat), defaulting to [].
+const IMPORT_REQUIRED_KEYS = ['sleeps', 'feedings', 'diapers', 'weights']
+const IMPORT_OPTIONAL_KEYS = ['headCircumferences', 'medications', 'temperatures', 'milestones', 'teeth', 'teethingDays']
 
 export function createApp(store, staticDir, caFile) {
   const app = express()
@@ -82,8 +88,13 @@ export function createApp(store, staticDir, caFile) {
     if (!d || typeof d !== 'object') {
       return res.status(400).json({ error: 'invalid import body' })
     }
-    for (const key of KEYS) {
+    for (const key of IMPORT_REQUIRED_KEYS) {
       if (!Array.isArray(d[key])) {
+        return res.status(400).json({ error: `${key} must be an array` })
+      }
+    }
+    for (const key of IMPORT_OPTIONAL_KEYS) {
+      if (d[key] !== undefined && !Array.isArray(d[key])) {
         return res.status(400).json({ error: `${key} must be an array` })
       }
     }

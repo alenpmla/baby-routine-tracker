@@ -3,10 +3,13 @@ import type {
   FeedingRepository,
   SleepRepository,
 } from '../repository/repositories'
+import { isNightSleep } from '../model/SleepSession'
 
 export interface DailyAverages {
   days: number
   avgSleepMs: number
+  avgNightSleepMs: number
+  avgNapSleepMs: number
   avgSolidsGram: number
   avgDiapers: number
 }
@@ -41,16 +44,26 @@ export function getDailyAverages(
   }
 
   let sleepMs = 0
+  let nightSleepMs = 0
+  let napSleepMs = 0
   for (const s of sleepRepo.getAll()) {
     if (!s.endTime || !inWindow(s.startTime)) {
       continue
     }
-    sleepMs += new Date(s.endTime).getTime() - new Date(s.startTime).getTime()
+    const duration = new Date(s.endTime).getTime() - new Date(s.startTime).getTime()
+    sleepMs += duration
+    if (isNightSleep(s)) {
+      nightSleepMs += duration
+    } else {
+      napSleepMs += duration
+    }
   }
 
   return {
     days,
     avgSleepMs: sleepMs / days,
+    avgNightSleepMs: nightSleepMs / days,
+    avgNapSleepMs: napSleepMs / days,
     avgSolidsGram: solidsGram / days,
     avgDiapers: diapers / days,
   }

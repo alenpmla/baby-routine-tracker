@@ -1,1 +1,1 @@
-export type Tab = 'home' | 'sleep' | 'feeding' | 'diaper' | 'weight'
+export type Tab = 'home' | 'sleep' | 'feeding' | 'diaper' | 'health'

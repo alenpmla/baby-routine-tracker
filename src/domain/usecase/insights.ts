@@ -1,5 +1,6 @@
 import type { FeedingRepository, SleepRepository } from '../repository/repositories'
 import type { FeedingSession } from '../model/FeedingSession'
+import { isNightSleep } from '../model/SleepSession'
 
 export type Insight =
   | {
@@ -18,6 +19,8 @@ export type Insight =
   | {
       id: 'sleep_total'
       todayMs: number
+      todayNightMs: number
+      todayNapMs: number
       avgDayMs: number
     }
 
@@ -107,6 +110,8 @@ function sleepTotalInsight(sleepRepo: SleepRepository, now: Date): Insight | nul
   const windowStart = todayStart - (AVERAGE_DAYS - 1) * DAY_MS
 
   let todayMs = 0
+  let todayNightMs = 0
+  let todayNapMs = 0
   let windowMs = 0
   for (const s of sleepRepo.getAll()) {
     if (!s.endTime) {
@@ -121,7 +126,13 @@ function sleepTotalInsight(sleepRepo: SleepRepository, now: Date): Insight | nul
     const overlapStart = Math.max(start, todayStart)
     const overlapEnd = Math.min(end, now.getTime())
     if (overlapStart < overlapEnd && overlapEnd <= todayEnd) {
-      todayMs += overlapEnd - overlapStart
+      const overlap = overlapEnd - overlapStart
+      todayMs += overlap
+      if (isNightSleep(s)) {
+        todayNightMs += overlap
+      } else {
+        todayNapMs += overlap
+      }
     }
 
     if (start >= windowStart && start < todayEnd) {
@@ -136,6 +147,8 @@ function sleepTotalInsight(sleepRepo: SleepRepository, now: Date): Insight | nul
   return {
     id: 'sleep_total',
     todayMs,
+    todayNightMs,
+    todayNapMs,
     avgDayMs: windowMs / AVERAGE_DAYS,
   }
 }

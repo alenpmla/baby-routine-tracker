@@ -132,6 +132,39 @@ describe('getInsights', () => {
       }
     })
 
+    it('counts only the today overlap of a night sleep that spans midnight and splits it as night', () => {
+      // start 20:00 yesterday, end 06:00 today -> inferred night; only the 6h
+      // inside today counts, while the full 10h counts toward the window average.
+      const sleeps: SleepSession[] = [
+        { id: 'overnight', startTime: ms(-16 * HOUR), endTime: ms(-6 * HOUR) },
+      ]
+      const insights = getInsights(sleepRepo(sleeps), feedingRepo([]), NOW)
+      const sleep = insights.find((i) => i.id === 'sleep_total')
+      expect(sleep).toBeDefined()
+      if (sleep?.id === 'sleep_total') {
+        expect(sleep.todayMs).toBe(6 * HOUR)
+        expect(sleep.todayNightMs).toBe(6 * HOUR)
+        expect(sleep.todayNapMs).toBe(0)
+        expect(sleep.avgDayMs).toBeCloseTo((10 * HOUR) / 30, 4)
+      }
+    })
+
+    it('splits today sleep into night vs nap by kind', () => {
+      const sleeps: SleepSession[] = [
+        { id: 'night', startTime: ms(-4 * HOUR), endTime: ms(-2 * HOUR) }, // start 08:00 local -> night, 2h
+        { id: 'nap', startTime: ms(-90 * 60 * 1000), endTime: ms(-30 * 60 * 1000) }, // start 10:30 local -> nap, 1h
+        { id: 'explicit', startTime: ms(-3 * HOUR), endTime: ms(-2 * HOUR), kind: 'nap' }, // explicit nap, 1h
+      ]
+      const insights = getInsights(sleepRepo(sleeps), feedingRepo([]), NOW)
+      const sleep = insights.find((i) => i.id === 'sleep_total')
+      expect(sleep).toBeDefined()
+      if (sleep?.id === 'sleep_total') {
+        expect(sleep.todayMs).toBe(4 * HOUR)
+        expect(sleep.todayNightMs).toBe(2 * HOUR)
+        expect(sleep.todayNapMs).toBe(2 * HOUR)
+      }
+    })
+
     it('omits the insight when nothing was slept today', () => {
       const sleeps: SleepSession[] = [
         { id: 's1', startTime: new Date(NOW.getTime() - 2 * DAY).toISOString(), endTime: new Date(NOW.getTime() - 2 * DAY + 2 * HOUR).toISOString() },

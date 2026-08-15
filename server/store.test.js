@@ -29,6 +29,12 @@ describe('json store', () => {
       feedings: [],
       diapers: [],
       weights: [],
+      headCircumferences: [],
+      medications: [],
+      temperatures: [],
+      milestones: [],
+      teeth: [],
+      teethingDays: [],
       settings: { foodSuggestions: DEFAULT_FOOD_SUGGESTIONS },
     })
   })
@@ -66,6 +72,30 @@ describe('json store', () => {
     expect(store.get().weights[0].weight).toBe(7.5)
   })
 
+  it('stores and removes head circumference entries', () => {
+    store.add('headCircumferences', { id: 'h1', time: 't', value: 42, unit: 'cm' })
+    expect(store.get().headCircumferences).toHaveLength(1)
+    expect(store.get().headCircumferences[0].value).toBe(42)
+    store.remove('headCircumferences', 'h1')
+    expect(store.get().headCircumferences).toHaveLength(0)
+  })
+
+  it('stores and removes teeth entries', () => {
+    store.add('teeth', { id: 't1', time: 't', tooth: 'Lower central incisor' })
+    expect(store.get().teeth).toHaveLength(1)
+    expect(store.get().teeth[0].tooth).toBe('Lower central incisor')
+    store.remove('teeth', 't1')
+    expect(store.get().teeth).toHaveLength(0)
+  })
+
+  it('stores and removes teething days', () => {
+    store.add('teethingDays', { id: 'td1', day: '2026-08-14', symptoms: ['Drooling', 'Fussy'] })
+    expect(store.get().teethingDays).toHaveLength(1)
+    expect(store.get().teethingDays[0].symptoms).toContain('Fussy')
+    store.remove('teethingDays', 'td1')
+    expect(store.get().teethingDays).toHaveLength(0)
+  })
+
   it('migrates legacy single-food records to foods on read', () => {
     store.add('feedings', { id: 'f1', time: 'a', type: 'solids', food: 'Banana', amount: 2, unit: 'oz' })
     const fresh = createStore(dataFile)
@@ -95,15 +125,22 @@ describe('json store', () => {
       feedings: [{ id: 'f1', time: 'a', type: 'solids', food: 'Banana', amount: 2, unit: 'oz' }],
       diapers: [{ id: 'd1', time: 't', type: 'wet' }],
       weights: [{ id: 'w1', time: 't', weight: 8, unit: 'kg' }],
+      headCircumferences: [{ id: 'h1', time: 't', value: 43, unit: 'cm' }],
+      teeth: [{ id: 't1', time: 't', tooth: 'Upper central incisor' }],
+      teethingDays: [{ id: 'td1', day: '2026-08-14', symptoms: ['Drooling'] }],
       settings: { foodSuggestions: ['carrot'] },
     })
     expect(replaced.sleeps).toEqual([{ id: 's1', startTime: 'a', endTime: null }])
     expect(replaced.feedings[0].foods).toEqual(['Banana'])
     expect(replaced.baby.name).toBe('New')
+    expect(replaced.headCircumferences).toHaveLength(1)
 
     const fresh = createStore(dataFile)
     expect(fresh.get().sleeps).toHaveLength(1)
     expect(fresh.get().weights).toHaveLength(1)
+    expect(fresh.get().headCircumferences).toHaveLength(1)
+    expect(fresh.get().teeth).toHaveLength(1)
+    expect(fresh.get().teethingDays).toHaveLength(1)
   })
 
   it('replace() drops invalid collection shapes and keeps settings defaults', () => {
@@ -213,6 +250,45 @@ describe('REST API', () => {
     expect(res.status).toBe(400)
   })
 
+  it('round-trips head circumferences via GET/POST/DELETE', async () => {
+    const add = await request(server, 'POST', '/api/headCircumferences', { id: 'h1', time: 't', value: 42, unit: 'cm' })
+    expect(add.status).toBe(200)
+    expect(add.json.headCircumferences).toHaveLength(1)
+
+    const list = await request(server, 'GET', '/api/headCircumferences')
+    expect(list.json.headCircumferences[0].id).toBe('h1')
+
+    const del = await request(server, 'DELETE', '/api/headCircumferences/h1')
+    expect(del.status).toBe(200)
+    expect(store.get().headCircumferences).toHaveLength(0)
+  })
+
+  it('round-trips teeth via GET/POST/DELETE', async () => {
+    const add = await request(server, 'POST', '/api/teeth', { id: 't1', time: 't', tooth: 'Lower central incisor' })
+    expect(add.status).toBe(200)
+    expect(add.json.teeth).toHaveLength(1)
+
+    const list = await request(server, 'GET', '/api/teeth')
+    expect(list.json.teeth[0].id).toBe('t1')
+
+    const del = await request(server, 'DELETE', '/api/teeth/t1')
+    expect(del.status).toBe(200)
+    expect(store.get().teeth).toHaveLength(0)
+  })
+
+  it('round-trips teething days via GET/POST/DELETE', async () => {
+    const add = await request(server, 'POST', '/api/teethingDays', { id: 'td1', day: '2026-08-14', symptoms: ['Drooling', 'Fussy'] })
+    expect(add.status).toBe(200)
+    expect(add.json.teethingDays).toHaveLength(1)
+
+    const list = await request(server, 'GET', '/api/teethingDays')
+    expect(list.json.teethingDays[0].id).toBe('td1')
+
+    const del = await request(server, 'DELETE', '/api/teethingDays/td1')
+    expect(del.status).toBe(200)
+    expect(store.get().teethingDays).toHaveLength(0)
+  })
+
   it('bulk-imports a full backup atomically', async () => {
     const backup = {
       baby: { id: 'b1', name: 'Ciara', dob: '2025-10-30', notes: '' },
@@ -220,6 +296,9 @@ describe('REST API', () => {
       feedings: [{ id: 'f1', time: 'a', type: 'solids', food: 'Banana', amount: 2, unit: 'oz' }],
       diapers: [{ id: 'd1', time: 't', type: 'wet' }],
       weights: [{ id: 'w1', time: 't', weight: 8, unit: 'kg' }],
+      headCircumferences: [{ id: 'h1', time: 't', value: 43, unit: 'cm' }],
+      teeth: [{ id: 't1', time: 't', tooth: 'Upper central incisor' }],
+      teethingDays: [{ id: 'td1', day: '2026-08-14', symptoms: ['Drooling', 'Poor sleep'] }],
       settings: { foodSuggestions: ['carrot'] },
     }
     const res = await request(server, 'POST', '/api/import', backup)
@@ -232,7 +311,101 @@ describe('REST API', () => {
     expect(state.feedings[0].foods).toEqual(['Banana'])
     expect(state.diapers).toHaveLength(1)
     expect(state.weights[0].weight).toBe(8)
+    expect(state.headCircumferences).toHaveLength(1)
+    expect(state.teeth).toHaveLength(1)
+    expect(state.teethingDays).toHaveLength(1)
     expect(state.settings.foodSuggestions).toEqual(['carrot'])
+  })
+
+  it('accepts a pre-existing backup that lacks the headCircumferences collection', async () => {
+    store.add('headCircumferences', { id: 'h-old', time: 't', value: 40, unit: 'cm' })
+    const backup = {
+      baby: { id: 'b1', name: 'Ciara', dob: '2025-10-30', notes: '' },
+      sleeps: [],
+      feedings: [],
+      diapers: [],
+      weights: [],
+      settings: { foodSuggestions: ['carrot'] },
+    }
+    const res = await request(server, 'POST', '/api/import', backup)
+    expect(res.status).toBe(200)
+    expect(res.json.ok).toBe(true)
+    expect(store.get().headCircumferences).toEqual([])
+    expect(store.get().baby.name).toBe('Ciara')
+  })
+
+  it('accepts a pre-existing backup that lacks the headCircumferences collection', async () => {
+    store.add('teeth', { id: 't-old', time: 't', tooth: 'Lower central incisor' })
+    store.add('teethingDays', { id: 'td-old', day: '2026-08-14', symptoms: ['Drooling'] })
+    const backup = {
+      baby: { id: 'b1', name: 'Ciara', dob: '2025-10-30', notes: '' },
+      sleeps: [],
+      feedings: [],
+      diapers: [],
+      weights: [],
+      headCircumferences: [],
+      settings: { foodSuggestions: ['carrot'] },
+    }
+    const res = await request(server, 'POST', '/api/import', backup)
+    expect(res.status).toBe(200)
+    expect(res.json.ok).toBe(true)
+    expect(store.get().teeth).toEqual([])
+    expect(store.get().teethingDays).toEqual([])
+    expect(store.get().baby.name).toBe('Ciara')
+  })
+
+  it('rejects an import with a malformed headCircumferences field', async () => {
+    const res = await request(server, 'POST', '/api/import', {
+      baby: null,
+      sleeps: [],
+      feedings: [],
+      diapers: [],
+      weights: [],
+      headCircumferences: 'nope',
+      settings: { foodSuggestions: ['carrot'] },
+    })
+    expect(res.status).toBe(400)
+  })
+
+  it('tolerates unknown/legacy collection fields on import (ignored, not rejected)', async () => {
+    const res = await request(server, 'POST', '/api/import', {
+      baby: null,
+      sleeps: [],
+      feedings: [],
+      diapers: [],
+      weights: [],
+      legacyCollection: [{ id: 'n1', time: 't', fromNaps: 3, toNaps: 2 }],
+      settings: { foodSuggestions: ['carrot'] },
+    })
+    expect(res.status).toBe(200)
+    expect(res.json.ok).toBe(true)
+    expect(store.get().legacyCollection).toBeUndefined()
+  })
+
+  it('rejects an import with a malformed teeth field', async () => {
+    const res = await request(server, 'POST', '/api/import', {
+      baby: null,
+      sleeps: [],
+      feedings: [],
+      diapers: [],
+      weights: [],
+      teeth: 'nope',
+      settings: { foodSuggestions: ['carrot'] },
+    })
+    expect(res.status).toBe(400)
+  })
+
+  it('rejects an import with a malformed teethingDays field', async () => {
+    const res = await request(server, 'POST', '/api/import', {
+      baby: null,
+      sleeps: [],
+      feedings: [],
+      diapers: [],
+      weights: [],
+      teethingDays: 'nope',
+      settings: { foodSuggestions: ['carrot'] },
+    })
+    expect(res.status).toBe(400)
   })
 
   it('rejects a bulk import with missing collections', async () => {

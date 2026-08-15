@@ -33,6 +33,19 @@ describe('baby use cases', () => {
     expect(baby.birthWeightKg).toBeUndefined()
   })
 
+  it('saves and reads back the sex', () => {
+    const repo = new MemoryBabyRepo()
+    const baby = saveBabyProfile(repo, { name: 'Avery', dob: '2026-01-15', sex: 'male' })
+    expect(baby.sex).toBe('male')
+    expect(getBabyProfile(repo)?.sex).toBe('male')
+  })
+
+  it('keeps sex optional', () => {
+    const repo = new MemoryBabyRepo()
+    const baby = saveBabyProfile(repo, { name: 'Avery', dob: '2026-01-15' })
+    expect(baby.sex).toBeUndefined()
+  })
+
   it('preserves the id when updating an existing profile', () => {
     const repo = new MemoryBabyRepo()
     const first = saveBabyProfile(repo, { name: 'Avery', dob: '2026-01-15' })

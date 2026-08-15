@@ -75,6 +75,30 @@ describe('Physical back button', () => {
     expect(await screen.findByRole('heading', { name: /hi, avery/i })).toBeInTheDocument()
   })
 
+  it('returns to the Health menu when back is pressed in a Health sub-screen', async () => {
+    const user = userEvent.setup()
+    await onboard(user)
+    const nav = () => within(screen.getByRole('navigation', { name: /primary/i }))
+    await user.click(nav().getByRole('button', { name: 'Health' }))
+    await user.click(screen.getByRole('button', { name: /^weight/i }))
+    expect(screen.getByRole('heading', { name: 'Weight' })).toBeInTheDocument()
+
+    backTo({ tab: 'health', settings: false })
+    expect(await screen.findByRole('heading', { name: 'Health' })).toBeInTheDocument()
+  })
+
+  it('returns to the Health menu when back is pressed in the teeth sub-menu', async () => {
+    const user = userEvent.setup()
+    await onboard(user)
+    const nav = () => within(screen.getByRole('navigation', { name: /primary/i }))
+    await user.click(nav().getByRole('button', { name: 'Health' }))
+    await user.click(screen.getByRole('button', { name: /teeth & teething/i }))
+    expect(screen.getByRole('heading', { name: 'Teeth & teething' })).toBeInTheDocument()
+
+    backTo({ tab: 'health', settings: false })
+    expect(await screen.findByRole('heading', { name: 'Health' })).toBeInTheDocument()
+  })
+
   it('on-screen sub-screen back arrow matches physical back', async () => {
     const user = userEvent.setup()
     await onboard(user)

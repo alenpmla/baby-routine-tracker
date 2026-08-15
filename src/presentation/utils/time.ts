@@ -90,6 +90,22 @@ export function formatDayLabel(date: Date, today: Date): string {
   return date.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })
 }
 
+export function formatDate(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) {
+    return ''
+  }
+  return d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+export function formatDayMonth(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) {
+    return ''
+  }
+  return d.toLocaleDateString([], { month: 'short', day: 'numeric' })
+}
+
 export function toInputDate(d: Date): string {
   const y = d.getFullYear()
   const m = String(d.getMonth() + 1).padStart(2, '0')

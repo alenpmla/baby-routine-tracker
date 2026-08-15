@@ -12,8 +12,14 @@ import type { Baby } from '../../domain/model/Baby'
 import type { AppSettings } from '../../domain/model/AppSettings'
 import type { DiaperChange, DiaperType } from '../../domain/model/DiaperChange'
 import type { FeedingSession, FeedingType } from '../../domain/model/FeedingSession'
-import type { SleepSession } from '../../domain/model/SleepSession'
+import type { SleepSession, SleepKind } from '../../domain/model/SleepSession'
 import type { WeightEntry, WeightUnit } from '../../domain/model/WeightEntry'
+import type { HeadCircumferenceEntry, HeadCircumferenceUnit } from '../../domain/model/HeadCircumferenceEntry'
+import type { MedicationEntry, MedicationUnit } from '../../domain/model/MedicationEntry'
+import type { MilestoneEntry } from '../../domain/model/MilestoneEntry'
+import type { TeethingDay, TeethingSymptom } from '../../domain/model/TeethingDay'
+import type { TemperatureEntry, TemperatureLocation, TemperatureUnit } from '../../domain/model/TemperatureEntry'
+import type { ToothEntry, ToothName } from '../../domain/model/ToothEntry'
 import type { DayTimeline } from '../../domain/usecase/timeline'
 import {
   deleteDiaperChange,
@@ -31,6 +37,46 @@ import {
 } from '../../domain/usecase/sleep'
 import { updateSleep as updateSleepUseCase } from '../../domain/usecase/sleep'
 import { deleteWeight, recordWeight, updateWeight, latestWeight } from '../../domain/usecase/weight'
+import {
+  deleteMedication,
+  recordMedication,
+  updateMedication,
+  type UpdateMedicationInput,
+} from '../../domain/usecase/medication'
+import {
+  deleteTemperature,
+  latestTemperature,
+  recordTemperature,
+  updateTemperature,
+  type UpdateTemperatureInput,
+} from '../../domain/usecase/temperature'
+import {
+  deleteMilestone,
+  firstMilestones,
+  recordMilestone,
+  updateMilestone,
+  type MilestoneFirst,
+  type UpdateMilestoneInput,
+} from '../../domain/usecase/milestone'
+import {
+  deleteHeadCircumference,
+  recordHeadCircumference,
+  updateHeadCircumference,
+  latestHeadCircumference,
+} from '../../domain/usecase/headCircumference'
+import {
+  deleteTooth,
+  eruptedTeeth as eruptedTeethUseCase,
+  recordTooth,
+  updateTooth,
+  type UpdateToothInput,
+} from '../../domain/usecase/teeth'
+import {
+  deleteTeethingDay,
+  recordTeethingDay,
+  updateTeethingDay,
+  type UpdateTeethingDayInput,
+} from '../../domain/usecase/teething'
 import { getDayTimeline } from '../../domain/usecase/timeline'
 import { saveBabyProfile } from '../../domain/usecase/baby'
 import type { SaveBabyInput } from '../../domain/usecase/baby'
@@ -39,6 +85,7 @@ import { getDailyAverages, type DailyAverages } from '../../domain/usecase/avera
 import { getInsights, type Insight } from '../../domain/usecase/insights'
 import { getFoodVariety, type FoodVariety } from '../../domain/usecase/foodVariety'
 import { getMostUsedFoods } from '../../domain/usecase/foodFrequency'
+import { getTeethingSleepCorrelation, type TeethingSleepCorrelation } from '../../domain/usecase/sleepCorrelation'
 import { DEFAULT_AVERAGES_DAYS } from '../../domain/model/AppSettings'
 import { createSyncRepositories, type SyncRepositories } from '../../data/repositories'
 import type { BackupData } from '../../data/repositories/RemoteRepositories'
@@ -52,12 +99,20 @@ export interface TrackerState {
   activeSleep: SleepSession | null
   selectedDay: Date
   day: DayTimeline
-  dayCounts: { sleeps: number; feeds: number; diapers: number }
+  dayCounts: {
+    sleeps: number
+    feeds: number
+    diapers: number
+    headCircumferences: number
+    teeth: number
+    teethingDays: number
+  }
   foodSuggestions: string[]
   dailyAverages: DailyAverages
   insights: Insight[]
   foodVariety: FoodVariety | null
   mostUsedFoods: string[]
+  teethingSleepCorrelation: TeethingSleepCorrelation | null
   lastWakeEndMs: number | null
   settings: AppSettings
   now: Date
@@ -66,15 +121,15 @@ export interface TrackerState {
 export interface TrackerActions {
   saveProfile: (input: SaveBabyInput) => Baby
   updateSettings: (patch: Partial<AppSettings>) => void
-  startSleepTimer: (at?: Date) => SleepSession
+  startSleepTimer: (at?: Date, kind?: SleepKind) => SleepSession
   stopSleepTimer: () => SleepSession
-  logPastSleep: (start: Date, end: Date) => SleepSession
+  logPastSleep: (start: Date, end: Date, kind?: SleepKind) => SleepSession
   removeSleep: (id: string) => void
   addFeeding: (type: FeedingType, at?: Date, details?: FeedingDetails) => FeedingSession
   removeFeeding: (id: string) => void
   addDiaper: (type: DiaperType, at?: Date) => DiaperChange
   removeDiaper: (id: string) => void
-  updateSleepRecord: (id: string, start: Date, end: Date | null) => SleepSession
+  updateSleepRecord: (id: string, start: Date, end: Date | null, kind?: SleepKind) => SleepSession
   updateFeedingRecord: (id: string, type: FeedingType, at: Date, details?: FeedingDetails) => FeedingSession
   updateDiaperRecord: (id: string, type: DiaperType, at: Date) => DiaperChange
   addWeight: (weight: number, unit: WeightUnit, at?: Date) => WeightEntry
@@ -82,6 +137,35 @@ export interface TrackerActions {
   updateWeightRecord: (id: string, weight: number, unit: WeightUnit, at: Date) => WeightEntry
   latestWeight: () => WeightEntry | null
   allWeights: () => WeightEntry[]
+  addHeadCircumference: (value: number, unit: HeadCircumferenceUnit, at?: Date) => HeadCircumferenceEntry
+  removeHeadCircumference: (id: string) => void
+  updateHeadCircumferenceRecord: (
+    id: string,
+    value: number,
+    unit: HeadCircumferenceUnit,
+    at: Date,
+  ) => HeadCircumferenceEntry
+  latestHeadCircumference: () => HeadCircumferenceEntry | null
+  allHeadCircumferences: () => HeadCircumferenceEntry[]
+  addMedication: (name: string, at?: Date, amount?: number, unit?: MedicationUnit, notes?: string) => MedicationEntry
+  removeMedication: (id: string) => void
+  updateMedicationRecord: (id: string, input: UpdateMedicationInput) => MedicationEntry
+  addTemperature: (temp: number, unit: TemperatureUnit, at?: Date, location?: TemperatureLocation, notes?: string) => TemperatureEntry
+  removeTemperature: (id: string) => void
+  updateTemperatureRecord: (id: string, input: UpdateTemperatureInput) => TemperatureEntry
+  latestTemperature: () => TemperatureEntry | null
+  addMilestone: (milestone: string, at?: Date, notes?: string) => MilestoneEntry
+  removeMilestone: (id: string) => void
+  updateMilestoneRecord: (id: string, input: UpdateMilestoneInput) => MilestoneEntry
+  allMilestones: () => MilestoneEntry[]
+  firstMilestones: () => MilestoneFirst[]
+  addTooth: (tooth: ToothName, at?: Date, notes?: string) => ToothEntry
+  removeTooth: (id: string) => void
+  updateToothRecord: (id: string, input: UpdateToothInput) => ToothEntry
+  eruptedTeeth: () => ToothName[]
+  addTeethingDay: (day: string, symptoms: TeethingSymptom[], notes?: string) => TeethingDay
+  removeTeethingDay: (id: string) => void
+  updateTeethingDayRecord: (id: string, input: UpdateTeethingDayInput) => TeethingDay
   prevDay: () => void
   nextDay: () => void
   goToToday: () => void
@@ -249,6 +333,12 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
         repos.current.feeding,
         repos.current.diaper,
         repos.current.weight,
+        repos.current.headCircumference,
+        repos.current.medication,
+        repos.current.temperature,
+        repos.current.milestone,
+        repos.current.tooth,
+        repos.current.teethingDay,
         start,
         end,
       ),
@@ -274,6 +364,17 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
   )
 
   const foodVariety = useMemo(() => getFoodVariety(repos.current.feeding), [version])
+
+  const teethingSleepCorrelation = useMemo(
+    () =>
+      getTeethingSleepCorrelation(
+        repos.current.teethingDay.getAll(),
+        repos.current.sleep.getAll(),
+        settings.averagesDays ?? DEFAULT_AVERAGES_DAYS,
+        now,
+      ),
+    [version, settings, now],
+  )
 
   const mostUsedFoods = useMemo(
     () => getMostUsedFoods(repos.current.feeding, foodSuggestions),
@@ -335,8 +436,8 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
   )
 
   const startSleepTimer = useCallback(
-    (at?: Date): SleepSession => {
-      const session = startSleep(repos.current.sleep, at)
+    (at?: Date, kind?: SleepKind): SleepSession => {
+      const session = startSleep(repos.current.sleep, at, kind)
       refresh()
       return session
     },
@@ -354,8 +455,8 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
   }, [refresh])
 
   const logPastSleep = useCallback(
-    (start: Date, end: Date): SleepSession => {
-      const session = logCompletedSleep(repos.current.sleep, start, end)
+    (start: Date, end: Date, kind?: SleepKind): SleepSession => {
+      const session = logCompletedSleep(repos.current.sleep, start, end, kind)
       refresh()
       return session
     },
@@ -405,8 +506,12 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
   )
 
   const updateSleepRecord = useCallback(
-    (id: string, start: Date, end: Date | null): SleepSession => {
-      const updated = updateSleepUseCase(repos.current.sleep, id, end === null ? { start } : { start, end })
+    (id: string, start: Date, end: Date | null, kind?: SleepKind): SleepSession => {
+      const updated = updateSleepUseCase(
+        repos.current.sleep,
+        id,
+        end === null ? { start, ...(kind ? { kind } : {}) } : { start, end, ...(kind ? { kind } : {}) },
+      )
       refresh()
       return updated
     },
@@ -461,6 +566,186 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
 
   const allWeights = useCallback(() => repos.current.weight.getAll(), [version])
 
+  const addHeadCircumference = useCallback(
+    (value: number, unit: HeadCircumferenceUnit, at?: Date): HeadCircumferenceEntry => {
+      const entry = recordHeadCircumference(repos.current.headCircumference, value, unit, at)
+      refresh()
+      return entry
+    },
+    [refresh],
+  )
+
+  const removeHeadCircumference = useCallback(
+    (id: string) => {
+      deleteHeadCircumference(repos.current.headCircumference, id)
+      refresh()
+    },
+    [refresh],
+  )
+
+  const updateHeadCircumferenceRecord = useCallback(
+    (id: string, value: number, unit: HeadCircumferenceUnit, at: Date): HeadCircumferenceEntry => {
+      const updated = updateHeadCircumference(repos.current.headCircumference, id, { value, unit, time: at })
+      refresh()
+      return updated
+    },
+    [refresh],
+  )
+
+  const latestHC = useCallback(
+    () => latestHeadCircumference(repos.current.headCircumference),
+    [version],
+  )
+
+  const allHeadCircumferences = useCallback(
+    () => repos.current.headCircumference.getAll(),
+    [version],
+  )
+
+  const addMedication = useCallback(
+    (name: string, at?: Date, amount?: number, unit?: MedicationUnit, notes?: string): MedicationEntry => {
+      const entry = recordMedication(repos.current.medication, name, at, amount, unit, notes)
+      refresh()
+      return entry
+    },
+    [refresh],
+  )
+
+  const removeMedication = useCallback(
+    (id: string) => {
+      deleteMedication(repos.current.medication, id)
+      refresh()
+    },
+    [refresh],
+  )
+
+  const updateMedicationRecord = useCallback(
+    (id: string, input: UpdateMedicationInput): MedicationEntry => {
+      const updated = updateMedication(repos.current.medication, id, input)
+      refresh()
+      return updated
+    },
+    [refresh],
+  )
+
+  const addTemperature = useCallback(
+    (temp: number, unit: TemperatureUnit, at?: Date, location?: TemperatureLocation, notes?: string): TemperatureEntry => {
+      const entry = recordTemperature(repos.current.temperature, temp, unit, at, location, notes)
+      refresh()
+      return entry
+    },
+    [refresh],
+  )
+
+  const removeTemperature = useCallback(
+    (id: string) => {
+      deleteTemperature(repos.current.temperature, id)
+      refresh()
+    },
+    [refresh],
+  )
+
+  const updateTemperatureRecord = useCallback(
+    (id: string, input: UpdateTemperatureInput): TemperatureEntry => {
+      const updated = updateTemperature(repos.current.temperature, id, input)
+      refresh()
+      return updated
+    },
+    [refresh],
+  )
+
+  const latestTemp = useCallback(
+    () => latestTemperature(repos.current.temperature),
+    [version],
+  )
+
+  const addMilestone = useCallback(
+    (milestone: string, at?: Date, notes?: string): MilestoneEntry => {
+      const entry = recordMilestone(repos.current.milestone, milestone, at, notes)
+      refresh()
+      return entry
+    },
+    [refresh],
+  )
+
+  const removeMilestone = useCallback(
+    (id: string) => {
+      deleteMilestone(repos.current.milestone, id)
+      refresh()
+    },
+    [refresh],
+  )
+
+  const updateMilestoneRecord = useCallback(
+    (id: string, input: UpdateMilestoneInput): MilestoneEntry => {
+      const updated = updateMilestone(repos.current.milestone, id, input)
+      refresh()
+      return updated
+    },
+    [refresh],
+  )
+
+  const allMilestones = useCallback(() => repos.current.milestone.getAll(), [version])
+
+  const firsts = useCallback(
+    () => firstMilestones(repos.current.milestone, baby?.dob ?? ''),
+    [version, baby],
+  )
+
+  const addTooth = useCallback(
+    (tooth: ToothName, at?: Date, notes?: string): ToothEntry => {
+      const entry = recordTooth(repos.current.tooth, tooth, at, notes)
+      refresh()
+      return entry
+    },
+    [refresh],
+  )
+
+  const removeTooth = useCallback(
+    (id: string) => {
+      deleteTooth(repos.current.tooth, id)
+      refresh()
+    },
+    [refresh],
+  )
+
+  const updateToothRecord = useCallback(
+    (id: string, input: UpdateToothInput): ToothEntry => {
+      const updated = updateTooth(repos.current.tooth, id, input)
+      refresh()
+      return updated
+    },
+    [refresh],
+  )
+
+  const erupted = useCallback(() => eruptedTeethUseCase(repos.current.tooth), [version])
+
+  const addTeethingDay = useCallback(
+    (day: string, symptoms: TeethingSymptom[], notes?: string): TeethingDay => {
+      const entry = recordTeethingDay(repos.current.teethingDay, day, symptoms, notes)
+      refresh()
+      return entry
+    },
+    [refresh],
+  )
+
+  const removeTeethingDay = useCallback(
+    (id: string) => {
+      deleteTeethingDay(repos.current.teethingDay, id)
+      refresh()
+    },
+    [refresh],
+  )
+
+  const updateTeethingDayRecord = useCallback(
+    (id: string, input: UpdateTeethingDayInput): TeethingDay => {
+      const updated = updateTeethingDay(repos.current.teethingDay, id, input)
+      refresh()
+      return updated
+    },
+    [refresh],
+  )
+
   const value: UseTracker = {
     ready,
     offline,
@@ -472,6 +757,9 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
       sleeps: day.sleeps.length,
       feeds: day.feedings.length,
       diapers: day.diapers.length,
+      headCircumferences: day.headCircumferences.length,
+      teeth: day.teeth.length,
+      teethingDays: day.teethingDays.length,
     },
     foodSuggestions,
     now,
@@ -479,6 +767,7 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
     insights,
     foodVariety,
     mostUsedFoods,
+    teethingSleepCorrelation,
     lastWakeEndMs,
     settings,
     saveProfile,
@@ -499,6 +788,30 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
     updateWeightRecord,
     latestWeight: latest,
     allWeights,
+    addHeadCircumference,
+    removeHeadCircumference,
+    updateHeadCircumferenceRecord,
+    latestHeadCircumference: latestHC,
+    allHeadCircumferences,
+    addMedication,
+    removeMedication,
+    updateMedicationRecord,
+    addTemperature,
+    removeTemperature,
+    updateTemperatureRecord,
+    latestTemperature: latestTemp,
+    addMilestone,
+    removeMilestone,
+    updateMilestoneRecord,
+    allMilestones,
+    firstMilestones: firsts,
+    addTooth,
+    removeTooth,
+    updateToothRecord,
+    eruptedTeeth: erupted,
+    addTeethingDay,
+    removeTeethingDay,
+    updateTeethingDayRecord,
     prevDay,
     nextDay,
     goToToday,

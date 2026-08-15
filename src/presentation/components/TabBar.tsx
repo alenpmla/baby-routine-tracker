@@ -1,12 +1,12 @@
 import type { Tab } from '../navigation'
-import { BottleIcon, DiaperIcon, HomeIcon, MoonIcon, ScaleIcon } from './icons'
+import { BottleIcon, DiaperIcon, HealthIcon, HomeIcon, MoonIcon } from './icons'
 
 const TABS: { id: Tab; label: string; Icon: (p: { size?: number }) => JSX.Element }[] = [
   { id: 'home', label: 'Home', Icon: HomeIcon },
   { id: 'sleep', label: 'Sleep', Icon: MoonIcon },
   { id: 'feeding', label: 'Feeding', Icon: BottleIcon },
   { id: 'diaper', label: 'Diaper', Icon: DiaperIcon },
-  { id: 'weight', label: 'Weight', Icon: ScaleIcon },
+  { id: 'health', label: 'Health', Icon: HealthIcon },
 ]
 
 interface TabBarProps {

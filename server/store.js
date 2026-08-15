@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 
-const KEYS = ['sleeps', 'feedings', 'diapers', 'weights']
+const KEYS = ['sleeps', 'feedings', 'diapers', 'weights', 'headCircumferences', 'medications', 'temperatures', 'milestones', 'teeth', 'teethingDays']
 
 export const DEFAULT_FOOD_SUGGESTIONS = [
   'porridge (with pears)',
@@ -34,6 +34,12 @@ export function createStore(filePath) {
     feedings: [],
     diapers: [],
     weights: [],
+    headCircumferences: [],
+    medications: [],
+    temperatures: [],
+    milestones: [],
+    teeth: [],
+    teethingDays: [],
     settings: { foodSuggestions: [...DEFAULT_FOOD_SUGGESTIONS] },
   })
 

@@ -67,6 +67,31 @@ describe('getDailyAverages', () => {
     expect(avg.avgSleepMs).toBeCloseTo((8 * HOUR + 1 * HOUR) / 30, 0)
   })
 
+  it('splits the sleep average into night vs nap by kind', () => {
+    const sleeps: SleepSession[] = [
+      { id: 'night1', startTime: at(0, 1), endTime: at(0, 9) }, // 8h, start 1am -> night
+      { id: 'nap1', startTime: at(0, 10), endTime: at(0, 11) }, // 1h, start 10am -> nap
+      { id: 'night2', startTime: at(0, 12), endTime: at(0, 14), kind: 'night' }, // explicit night overrides nap inference
+      { id: 'night3', startTime: at(5, 22), endTime: at(5, 23) }, // 1h, start 10pm -> night
+    ]
+    const avg = getDailyAverages(sleepRepo(sleeps), feedingRepo([]), diaperRepo([]), 30, NOW)
+    expect(avg.avgSleepMs).toBeCloseTo((8 * HOUR + 1 * HOUR + 2 * HOUR + 1 * HOUR) / 30, 0)
+    expect(avg.avgNightSleepMs).toBeCloseTo((8 * HOUR + 2 * HOUR + 1 * HOUR) / 30, 0)
+    expect(avg.avgNapSleepMs).toBeCloseTo(HOUR / 30, 0)
+  })
+
+  it('excludes an ongoing sleep from the night/nap split even when it has an explicit kind', () => {
+    const sleeps: SleepSession[] = [
+      { id: 'night', startTime: at(0, 1), endTime: at(0, 9), kind: 'night' }, // 8h explicit night
+      { id: 'ongoing', startTime: at(0, 22), endTime: null, kind: 'night' }, // ongoing night: excluded
+      { id: 'nap', startTime: at(0, 12), endTime: at(0, 13) }, // 1h inferred nap
+    ]
+    const avg = getDailyAverages(sleepRepo(sleeps), feedingRepo([]), diaperRepo([]), 30, NOW)
+    expect(avg.avgSleepMs).toBeCloseTo((9 * HOUR) / 30, 0)
+    expect(avg.avgNightSleepMs).toBeCloseTo((8 * HOUR) / 30, 0)
+    expect(avg.avgNapSleepMs).toBeCloseTo(HOUR / 30, 0)
+  })
+
   it('honours a custom window size', () => {
     const feedings: FeedingSession[] = [
       { id: 'f1', time: at(0), type: 'solids', foods: ['banana'], amount: 70, unit: 'gram' },

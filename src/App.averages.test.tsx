@@ -99,6 +99,20 @@ describe('Daily averages snapshot tiles', () => {
     expect(screen.queryByRole('group', { name: 'Avg/day' })).not.toBeInTheDocument()
   })
 
+  it('shows only the combined Avg/day tile on the Sleep screen (split tiles removed)', async () => {
+    // 12h night sleep (1am) + 3h nap (noon) 10 days ago → 30m/day avg
+    api.state.sleeps.push({ id: 's1', startTime: iso(10, 1), endTime: iso(10, 13) })
+    api.state.sleeps.push({ id: 's2', startTime: iso(10, 12), endTime: iso(10, 15) })
+    const user = userEvent.setup()
+    await onboard(user)
+    const nav = () => within(screen.getByRole('navigation', { name: /primary/i }))
+    await user.click(nav().getByRole('button', { name: 'Sleep' }))
+
+    expect(screen.getByRole('group', { name: 'Avg/day' })).toHaveTextContent('30m')
+    expect(screen.queryByRole('group', { name: 'Avg night/day' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: 'Avg naps/day' })).not.toBeInTheDocument()
+  })
+
   it('uses the configured averages window from Settings', async () => {
     window.localStorage.setItem('bt.averagesDays', '7')
     // 140g today → avg 20g/day over 7 days; the 7kg feed 20 days ago must be excluded

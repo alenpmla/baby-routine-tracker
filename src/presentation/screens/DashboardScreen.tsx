@@ -1,12 +1,14 @@
 import { useTracker } from '../store/TrackerProvider'
 import { useWakeStatus } from '../store/useWakeStatus'
-import { describeAge, formatClock, formatDayLabel, formatDuration, isSameDay, startOfDay } from '../utils/time'
+import { describeAge, formatClock, formatDayLabel, formatDuration, isSameDay, shiftDays, startOfDay } from '../utils/time'
 import { describeFeedingMeta, describeFeedingTitle } from '../utils/feeding'
+import { timelineTab, timelineWording } from '../utils/timeline'
 import { BottleIcon, DiaperIcon, DirtyDiaperIcon, MoonIcon, SettingsIcon } from '../components/icons'
-import GrowthChart from '../components/GrowthChart'
+import GrowthChart, { HEAD_CIRCUMFERENCE_METRIC, WEIGHT_METRIC } from '../components/GrowthChart'
 import InsightsSection from '../components/InsightsSection'
 import DayNav from '../components/DayNav'
 import type { Tab } from '../navigation'
+import type { TimelineEvent } from '../../domain/usecase/timeline'
 
 const KIND_TAB: Record<string, Tab> = { sleep: 'sleep', feeding: 'feeding', diaper: 'diaper' }
 
@@ -17,12 +19,30 @@ export default function DashboardScreen({
   onOpenSettings?: () => void
   onNavigate?: (tab: Tab) => void
 }) {
-  const { baby, day, dayCounts, activeSleep, selectedDay, now, allWeights } = useTracker()
+  const { baby, day, dayCounts, activeSleep, selectedDay, now, allWeights, allHeadCircumferences, settings, getPeriodRecords } =
+    useTracker()
   const wake = useWakeStatus()
   const name = baby?.name.split(' ')[0] ?? 'there'
   const viewingToday = isSameDay(selectedDay, startOfDay(now))
   const dayLabel = formatDayLabel(selectedDay, startOfDay(now))
   const weights = allWeights()
+  const headCircumferences = allHeadCircumferences()
+  const timelineMode = settings.homeLogView === 'timeline'
+
+  // Timeline-only: a night sleep that began in this day but ends after midnight
+  // is attributed to the *next* day by `day.events` (end-based). Add a start-side
+  // event here so the day's story closes with "Started night sleep at …".
+  const dayStart = startOfDay(selectedDay)
+  const dayEnd = startOfDay(shiftDays(selectedDay, 1))
+  const startedSleeps = timelineMode
+    ? getPeriodRecords(dayStart, dayEnd).sleeps.filter(
+        (s) => !s.endTime || new Date(s.endTime).getTime() >= dayEnd.getTime(),
+      )
+    : []
+  const timelineEvents: TimelineEvent[] = [
+    ...day.events,
+    ...startedSleeps.map<TimelineEvent>((s) => ({ kind: 'sleep', id: s.id, time: s.startTime, data: s, mode: 'start' })),
+  ]
 
   const cards = [
     { label: 'Sleep today', value: dayCounts.sleeps, Icon: MoonIcon, accent: 'accent-sleep', tab: 'sleep' as Tab },
@@ -93,7 +113,16 @@ export default function DashboardScreen({
         <section className="growth">
           <h2 className="growth-title">Weight progress</h2>
           <div className="card growth-card">
-            <GrowthChart dob={baby.dob} weights={weights} birthWeightKg={baby.birthWeightKg} />
+            <GrowthChart dob={baby.dob} points={weights} metric={WEIGHT_METRIC} sex={baby.sex} birthValue={baby.birthWeightKg} />
+          </div>
+        </section>
+      )}
+
+      {headCircumferences.length > 0 && baby?.dob && (
+        <section className="growth">
+          <h2 className="growth-title">Head circumference progress</h2>
+          <div className="card growth-card">
+            <GrowthChart dob={baby.dob} points={headCircumferences} metric={HEAD_CIRCUMFERENCE_METRIC} sex={baby.sex} />
           </div>
         </section>
       )}
@@ -105,6 +134,26 @@ export default function DashboardScreen({
             <p>Nothing recorded for this day.</p>
             <p className="empty-hint">Use the tabs below to add a sleep, feeding, or diaper change.</p>
           </div>
+        ) : timelineMode ? (
+          <ol className="tl">
+            {timelineEvents
+              .map((event) => ({ event, wording: timelineWording(event) }))
+              .sort((a, b) => new Date(a.wording.time).getTime() - new Date(b.wording.time).getTime())
+              .map(({ event, wording }) => (
+                <li key={`${event.kind}-${event.id}${event.kind === 'sleep' && event.mode === 'start' ? '-start' : ''}`} className="tl-item">
+                  <span className="tl-time">{formatClock(wording.time)}</span>
+                  <span className={`tl-node tl-node-${event.kind}`} aria-hidden="true" />
+                  <button
+                    type="button"
+                    className="tl-body"
+                    onClick={() => onNavigate?.(timelineTab(event))}
+                  >
+                    <span className="tl-word">{wording.headline}</span>
+                    {wording.meta && <span className="tl-meta">{wording.meta}</span>}
+                  </button>
+                </li>
+              ))}
+          </ol>
         ) : (
           <ul className="event-list">
             {day.events.map((event) => (

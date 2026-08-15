@@ -3,10 +3,13 @@ import type { Tab } from '../navigation'
 
 export type SettingsView = 'main' | 'profile' | 'suggestions' | 'units' | 'data' | 'notifications' | 'whatsnew'
 
+export type HealthView = 'weight' | 'headcircumference' | 'teethmenu' | 'teeth' | 'teething' | 'medication' | 'milestones'
+
 export interface NavState {
   tab: Tab
   settings: boolean
   settingsView?: Exclude<SettingsView, 'main'>
+  healthView?: HealthView
 }
 
 const HOME: NavState = { tab: 'home', settings: false }
@@ -39,7 +42,11 @@ export function useBackNav() {
       const target = isNavState(raw) ? (raw as NavState) : HOME
       const s = stackRef.current
       const idx = s.findIndex(
-        (n) => n.tab === target.tab && n.settings === target.settings && n.settingsView === target.settingsView,
+        (n) =>
+          n.tab === target.tab &&
+          n.settings === target.settings &&
+          n.settingsView === target.settingsView &&
+          n.healthView === target.healthView,
       )
       stackRef.current = idx >= 0 ? s.slice(0, idx + 1) : s.length > 1 ? s.slice(0, -1) : [HOME]
       setCurrent(stackRef.current[stackRef.current.length - 1])

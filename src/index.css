@@ -56,6 +56,8 @@
   --accent-diaper-fg: #2c7a67;
   --accent-weight-bg: #e3ecff;
   --accent-weight-fg: #3557c4;
+  --accent-health-bg: #e6f0e8;
+  --accent-health-fg: #2f6b46;
   --accent-iron-bg: #f9e3de;
   --accent-iron-fg: #9b3c1e;
   --accent-protein-bg: #fdf1d8;
@@ -214,6 +216,8 @@
   --accent-diaper-fg: #7fd8c0;
   --accent-weight-bg: #2b4570;
   --accent-weight-fg: #a9c6ff;
+  --accent-health-bg: #1d3a26;
+  --accent-health-fg: #9fd0b0;
   --accent-iron-bg: #4a2b1e;
   --accent-iron-fg: #ffb6a1;
   --accent-protein-bg: #4a3a10;
@@ -453,6 +457,11 @@ body.appbar-scrolled .screen-header {
   color: var(--accent-weight-fg);
 }
 
+.stat-health .stat-icon {
+  background: var(--accent-health-bg);
+  color: var(--accent-health-fg);
+}
+
 .stat-body {
   display: flex;
   flex-direction: column;
@@ -473,6 +482,11 @@ body.appbar-scrolled .screen-header {
   line-height: 1.1;
   color: var(--md-on-surface);
   white-space: nowrap;
+}
+
+.stat-detail {
+  font-size: var(--type-caption);
+  color: var(--md-on-surface-variant);
 }
 
 .link-btn {
@@ -531,6 +545,18 @@ body.appbar-scrolled .screen-header {
 
 .btn-primary:active {
   background: color-mix(in srgb, var(--md-primary) 78%, #000 22%);
+  box-shadow: none;
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: default;
+  box-shadow: none;
+}
+
+.btn-primary:disabled:hover,
+.btn-primary:disabled:active {
+  background: var(--md-primary);
   box-shadow: none;
 }
 
@@ -614,6 +640,240 @@ body.appbar-scrolled .screen-header {
   flex-direction: column;
   gap: 6px;
   min-width: 0;
+}
+
+.field-block {
+  width: 100%;
+}
+
+/* ---------- M3 quick-add card (Health tab) ---------- */
+
+.quick-add-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.quick-add-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.quick-add-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--shape-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.quick-add-health {
+  background: var(--accent-health-bg);
+  color: var(--accent-health-fg);
+}
+
+.quick-add-head-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.quick-add-title {
+  display: block;
+  font-size: var(--type-title);
+  font-weight: 700;
+}
+
+.quick-add-sub {
+  margin: 0;
+  font-size: var(--type-label);
+  color: var(--md-on-surface-variant);
+}
+
+.quick-add-row {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+@media (min-width: 480px) {
+  .quick-add-row {
+    flex-direction: row;
+    align-items: flex-end;
+  }
+
+  .quick-add-row > .field {
+    flex: 1;
+  }
+}
+
+.quick-add-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+@media (min-width: 480px) {
+  .quick-add-actions {
+    flex-direction: row;
+  }
+
+  .quick-add-actions .btn {
+    flex: 1;
+  }
+}
+
+.btn-outlined {
+  background: transparent;
+  color: var(--md-primary);
+  border: 1px solid var(--md-outline);
+}
+
+.btn-outlined:hover {
+  background: color-mix(in srgb, var(--md-primary) 8%, transparent);
+}
+
+.btn-outlined:active {
+  background: color-mix(in srgb, var(--md-primary) 14%, transparent);
+}
+
+.chip-row-wrap {
+  justify-content: flex-start;
+}
+
+.chip-small {
+  min-height: 36px;
+  padding: 0 14px;
+  font-size: var(--type-label);
+  border-radius: 999px;
+}
+
+/* ---------- Segmented button (M3) ---------- */
+
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--md-outline);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.segment {
+  min-height: 40px;
+  padding: 0 16px;
+  border: none;
+  background: transparent;
+  color: var(--md-on-surface);
+  font-weight: 600;
+  font-size: var(--type-label);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.segment:hover {
+  background: color-mix(in srgb, var(--md-on-surface) 6%, transparent);
+}
+
+.segment-selected {
+  background: var(--md-secondary-container);
+  color: var(--md-on-secondary-container);
+}
+
+.segment-selected:hover {
+  background: color-mix(in srgb, var(--md-secondary-container) 85%, var(--md-on-secondary-container) 15%);
+}
+
+/* ---------- Milestone firsts ---------- */
+
+.firsts-card {
+  margin-bottom: 16px;
+}
+
+.firsts-list {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.firsts-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--shape-md);
+  background: var(--md-surface-container);
+}
+
+.firsts-achieved {
+  background: color-mix(in srgb, var(--accent-health-bg) 30%, var(--md-surface-container));
+  border: 1px solid color-mix(in srgb, var(--accent-health-fg) 35%, var(--md-outline-variant));
+}
+
+.firsts-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: var(--type-label);
+  color: var(--md-on-surface);
+}
+
+.firsts-check {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent-health-bg);
+  border: 2px solid var(--accent-health-fg);
+  color: var(--accent-health-fg);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.firsts-value {
+  font-size: var(--type-caption);
+  color: var(--md-on-surface-variant);
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-end;
+}
+
+.firsts-time {
+  font-weight: 600;
+  color: var(--md-on-surface);
+  font-variant-numeric: tabular-nums;
+}
+
+.firsts-age {
+  color: var(--md-on-surface-variant);
+}
+
+.quick-add-preview {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: var(--shape-sm);
+  background: var(--md-surface-container-high);
+  font-size: var(--type-label);
+  color: var(--md-on-surface-variant);
+}
+
+.quick-add-preview strong {
+  color: var(--md-on-surface);
+}
+
+.quick-add-preview-muted {
+  color: var(--md-on-surface-variant);
 }
 
 .field-label {
@@ -1747,6 +2007,11 @@ button.event-link:active {
   color: var(--accent-weight-fg);
 }
 
+.event-health {
+  background: var(--accent-health-bg);
+  color: var(--accent-health-fg);
+}
+
 .event-body {
   display: flex;
   flex-direction: column;
@@ -1759,9 +2024,93 @@ button.event-link:active {
   text-transform: capitalize;
 }
 
+.sleep-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sleep-kind {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 8px;
+  min-height: 20px;
+  border-radius: 999px;
+  font-size: var(--type-caption);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: var(--md-surface-container-high);
+  color: var(--md-on-surface-variant);
+}
+
+.sleep-kind-night {
+  background: var(--accent-sleep-bg);
+  color: var(--accent-sleep-fg);
+}
+
 .event-meta {
   color: var(--md-on-surface-variant);
   font-size: var(--type-caption);
+}
+
+.wake-windows {
+  margin-top: 16px;
+}
+
+.wake-windows-title {
+  margin: 0 0 10px;
+  font-size: var(--type-label);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--md-on-surface-variant);
+}
+
+.wake-windows-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wake-window-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--type-caption);
+  color: var(--md-on-surface-variant);
+}
+
+.wake-window-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+  background: var(--md-tertiary);
+}
+
+.wake-window-live {
+  color: var(--md-tertiary);
+  font-weight: 700;
+}
+
+.btn-small {
+  min-height: 32px;
+  padding: 0 14px;
+  font-size: var(--type-label);
+  background: var(--md-secondary-container);
+  color: var(--md-on-secondary-container);
+}
+
+.btn-small:hover {
+  background: color-mix(in srgb, var(--md-secondary-container) 85%, var(--md-on-secondary-container) 15%);
+}
+
+.btn-small:active {
+  background: color-mix(in srgb, var(--md-secondary-container) 75%, var(--md-on-secondary-container) 25%);
 }
 
 .solids-food-names {
@@ -1928,6 +2277,100 @@ button.event-link:active {
   margin-top: 4px;
 }
 
+/* ---------- Home M3 timeline view ---------- */
+
+.tl {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* Vertical rail: a single continuous line running behind every node. The node
+   column is 20px starting at (72px + 12px gap) = 84px, so its center is 94px.
+   Nodes carry a surface ring that masks the line, making each dot sit centred
+   on the rail. */
+.tl::before {
+  content: '';
+  position: absolute;
+  top: 28px;
+  bottom: 28px;
+  left: 93px;
+  width: 2px;
+  background: var(--md-outline-variant);
+}
+
+.tl-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 72px 20px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 10px 0;
+}
+
+.tl-time {
+  font-size: var(--type-caption);
+  font-weight: 600;
+  color: var(--md-on-surface-variant);
+  text-align: right;
+  padding-top: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tl-node {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  margin-top: 8px;
+  display: inline-block;
+  border: 3px solid var(--md-surface);
+  box-shadow: var(--elevation-1);
+  z-index: 1;
+}
+
+.tl-node-sleep {
+  background: var(--accent-sleep-fg);
+}
+
+.tl-node-feeding {
+  background: var(--accent-feed-fg);
+}
+
+.tl-node-diaper {
+  background: var(--accent-diaper-fg);
+}
+
+.tl-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+  border: none;
+  background: var(--md-surface-container-low);
+  border-radius: var(--shape-md);
+  padding: 10px 14px;
+  min-height: 44px;
+  color: var(--md-on-surface);
+}
+
+.tl-body:hover {
+  background: var(--md-surface-container-high);
+}
+
+.tl-word {
+  font-weight: 600;
+  font-size: var(--type-body);
+  text-transform: capitalize;
+}
+
+.tl-meta {
+  font-size: var(--type-caption);
+  color: var(--md-on-surface-variant);
+}
+
 /* ---------- Sleep / feed / diaper action cards ---------- */
 
 .sleep-card,
@@ -1940,6 +2383,42 @@ button.event-link:active {
   gap: 10px;
   text-align: center;
   padding: clamp(20px, 3vw, 28px) 16px;
+}
+
+.teething-sleep-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.teething-sleep-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.teething-sleep-title {
+  margin: 0;
+  font-size: var(--type-label);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--md-on-surface-variant);
+}
+
+.teething-sleep-line {
+  margin: 0;
+  font-size: var(--type-caption);
+  color: var(--md-on-surface);
+}
+
+.teething-sleep-meta {
+  color: var(--md-on-surface-variant);
+}
+
+.teething-sleep-icon {
+  color: var(--md-secondary);
 }
 
 .sleep-label {
@@ -1995,6 +2474,60 @@ button.event-link:active {
 .chip-selected:hover,
 .chip-selected:active {
   background: var(--md-primary-container);
+}
+
+/* ---------- Tooth chart ---------- */
+
+.tooth-chart-card {
+  padding: 16px;
+}
+
+.tooth-chart-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.tooth-chart-header h2 {
+  font-size: 1.05rem;
+  margin: 2px 0 0;
+}
+
+.tooth-chart-count {
+  color: var(--md-on-surface-variant);
+  font-size: var(--type-label);
+}
+
+.tooth-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+.tooth-row {
+  display: flex;
+  gap: 8px;
+}
+
+.tooth-cell {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--md-outline-variant);
+  background: var(--md-surface-container-low);
+  color: var(--md-on-surface-variant);
+}
+
+.tooth-cell.tooth-erupted {
+  background: var(--md-primary-container);
+  border-color: var(--md-primary);
+  color: var(--md-on-primary-container);
 }
 
 /* ---------- Diaper buttons ---------- */

@@ -5,13 +5,13 @@ import { SnapshotPrefsProvider } from './presentation/store/SnapshotPrefsProvide
 import { SnackbarProvider } from './presentation/store/SnackbarProvider'
 import { NotificationPrefsProvider } from './presentation/store/NotificationPrefsProvider'
 import { useWakeWindowReminder } from './presentation/store/useWakeWindowReminder'
-import { useBackNav, type SettingsView } from './presentation/store/useBackNav'
+import { useBackNav, type SettingsView, type HealthView } from './presentation/store/useBackNav'
 import ProfileScreen from './presentation/screens/ProfileScreen'
 import DashboardScreen from './presentation/screens/DashboardScreen'
 import SleepScreen from './presentation/screens/SleepScreen'
 import FeedingScreen from './presentation/screens/FeedingScreen'
 import DiaperScreen from './presentation/screens/DiaperScreen'
-import WeightScreen from './presentation/screens/WeightScreen'
+import HealthScreen from './presentation/screens/HealthScreen'
 import SettingsScreen from './presentation/screens/SettingsScreen'
 import TabBar from './presentation/components/TabBar'
 import OfflineBanner from './presentation/components/OfflineBanner'
@@ -21,7 +21,7 @@ function Shell() {
   const { ready, offline, syncNow, baby, saveProfile } = useTracker()
   const { current, navigate, goToTab, goBack } = useBackNav()
   const { showSnackbar } = useSnackbar()
-  const { tab, settings, settingsView } = current
+  const { tab, settings, settingsView, healthView } = current
   useWakeWindowReminder()
 
   useEffect(() => {
@@ -93,7 +93,13 @@ function Shell() {
         {tab === 'sleep' && <SleepScreen />}
         {tab === 'feeding' && <FeedingScreen />}
         {tab === 'diaper' && <DiaperScreen />}
-        {tab === 'weight' && <WeightScreen />}
+        {tab === 'health' && (
+          <HealthScreen
+            view={healthView ?? 'main'}
+            onOpenView={(v: HealthView) => navigate({ tab, settings: false, healthView: v })}
+            onGoBack={goBack}
+          />
+        )}
       </main>
       <TabBar active={tab} onChange={goToTab} />
     </div>

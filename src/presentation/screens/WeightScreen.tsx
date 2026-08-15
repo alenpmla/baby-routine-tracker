@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { WeightEntry, WeightUnit } from '../../domain/model/WeightEntry'
 import { useTracker } from '../store/TrackerProvider'
 import { formatClock, formatDayLabel, startOfDay } from '../utils/time'
-import { CopyIcon, EditIcon, ScaleIcon } from '../components/icons'
+import { CopyIcon, EditIcon, BackIcon, ScaleIcon } from '../components/icons'
 import DayNav from '../components/DayNav'
 import Modal from '../components/Modal'
 import StatTile from '../components/StatTile'
@@ -11,7 +11,7 @@ import SwipeableRow from '../components/SwipeableRow'
 
 type WeightModal = { mode: 'add' } | { mode: 'edit'; record: WeightEntry } | { mode: 'duplicate'; record: WeightEntry }
 
-export default function WeightScreen() {
+export default function WeightScreen({ onBack }: { onBack?: () => void }) {
   const { day, addWeight, removeWeight, updateWeightRecord, latestWeight, selectedDay, now } = useTracker()
   const [error, setError] = useState<string | null>(null)
   const [value, setValue] = useState('')
@@ -48,7 +48,18 @@ export default function WeightScreen() {
   return (
     <div className="screen-content">
       <header className="screen-header">
-        <h1>Weight</h1>
+        {onBack ? (
+          <div className="header-row">
+            <div className="header-leading">
+              <button type="button" className="icon-btn back-btn" aria-label="Back" onClick={onBack}>
+                <BackIcon />
+              </button>
+              <h1>Weight</h1>
+            </div>
+          </div>
+        ) : (
+          <h1>Weight</h1>
+        )}
         <DayNav />
       </header>
 

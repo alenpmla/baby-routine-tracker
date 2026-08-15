@@ -57,6 +57,8 @@ describe('describeInsight', () => {
       {
         id: 'sleep_total',
         todayMs: 2 * HOUR + 30 * 60 * 1000,
+        todayNightMs: 2 * HOUR,
+        todayNapMs: 30 * 60 * 1000,
         avgDayMs: 4 * HOUR,
       },
       NOW,

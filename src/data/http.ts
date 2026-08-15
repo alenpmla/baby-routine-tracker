@@ -1,7 +1,10 @@
 export class HttpError extends Error {
-  constructor(message: string) {
+  readonly status?: number
+
+  constructor(message: string, status?: number) {
     super(message)
     this.name = 'HttpError'
+    this.status = status
   }
 }
 
@@ -50,7 +53,7 @@ export class FetchHttp implements Http {
         ).then(resolve, () => reject(new HttpError('Network request failed')))
       })
       if (!res.ok) {
-        throw new HttpError(`Request failed with status ${res.status}`)
+        throw new HttpError(`Request failed with status ${res.status}`, res.status)
       }
       return (await res.json()) as T
     } finally {

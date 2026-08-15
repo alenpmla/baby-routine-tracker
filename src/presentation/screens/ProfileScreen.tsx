@@ -1,10 +1,15 @@
 import { useState, type FormEvent } from 'react'
-import type { Baby } from '../../domain/model/Baby'
+import type { Baby, BabySex } from '../../domain/model/Baby'
 import type { SaveBabyInput } from '../../domain/usecase/baby'
 import type { WeightUnit } from '../../domain/model/WeightEntry'
 import { BackIcon, CheckIcon } from '../components/icons'
 
 const LB_TO_KG = 0.45359237
+
+const SEX_OPTIONS: { value: BabySex; label: string }[] = [
+  { value: 'female', label: 'Female' },
+  { value: 'male', label: 'Male' },
+]
 
 interface ProfileScreenProps {
   existing?: Baby | null
@@ -19,6 +24,7 @@ export default function ProfileScreen({ existing, onSubmit, onBack }: ProfileScr
   const [notes, setNotes] = useState(existing?.notes ?? '')
   const [birthWeight, setBirthWeight] = useState(existing?.birthWeightKg != null ? String(existing.birthWeightKg) : '')
   const [birthWeightUnit, setBirthWeightUnit] = useState<WeightUnit>('kg')
+  const [sex, setSex] = useState<BabySex | undefined>(existing?.sex)
   const [error, setError] = useState<string | null>(null)
 
   function handleSubmit(e: FormEvent) {
@@ -33,7 +39,7 @@ export default function ProfileScreen({ existing, onSubmit, onBack }: ProfileScr
       return
     }
     setError(null)
-    const input: SaveBabyInput = { name: trimmed, dob, notes }
+    const input: SaveBabyInput = { name: trimmed, dob, notes, sex }
     if (birthWeight.trim() !== '') {
       const value = Number(birthWeight)
       if (Number.isFinite(value) && value > 0) {
@@ -65,6 +71,31 @@ export default function ProfileScreen({ existing, onSubmit, onBack }: ProfileScr
           onChange={(e) => setDob(e.target.value)}
         />
       </label>
+
+      <div className="field">
+        <span className="field-label">Sex (optional)</span>
+        <div className="segmented segmented-3" role="group" aria-label="Sex">
+          {SEX_OPTIONS.map(({ value, label }) => (
+            <button
+              key={value}
+              type="button"
+              className={`seg${sex === value ? ' seg-selected' : ''}`}
+              aria-pressed={sex === value}
+              onClick={() => setSex(value)}
+            >
+              {label}
+            </button>
+          ))}
+          <button
+            type="button"
+            className={`seg${sex === undefined ? ' seg-selected' : ''}`}
+            aria-pressed={sex === undefined}
+            onClick={() => setSex(undefined)}
+          >
+            Not set
+          </button>
+        </div>
+      </div>
 
       <label className="field">
         <span className="field-label">Notes (optional)</span>

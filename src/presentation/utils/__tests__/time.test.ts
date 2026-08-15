@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest'
-import { formatClock, formatDuration, describeAge, getDayRange } from '../time'
+import {
+  formatClock,
+  formatDuration,
+  describeAge,
+  getDayRange,
+  formatDate,
+  formatDayMonth,
+} from '../time'
 
 describe('time utils', () => {
   it('formats a clock from ISO in local time', () => {
@@ -25,5 +32,21 @@ describe('time utils', () => {
   it('describes a baby age', () => {
     expect(describeAge('2026-01-15', new Date('2026-03-15'))).toContain('2 mo')
     expect(describeAge('2025-01-15', new Date('2026-01-15'))).toBe('1 yr')
+  })
+
+  it('formats a date in local time and returns empty for invalid input', () => {
+    const d = new Date('2026-08-03T12:00:00.000Z')
+    expect(formatDate('2026-08-03T12:00:00.000Z')).toBe(
+      d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }),
+    )
+    expect(formatDate('not-a-date')).toBe('')
+  })
+
+  it('formats a day-month in local time and returns empty for invalid input', () => {
+    const d = new Date('2026-08-03T12:00:00.000Z')
+    expect(formatDayMonth('2026-08-03T12:00:00.000Z')).toBe(
+      d.toLocaleDateString([], { month: 'short', day: 'numeric' }),
+    )
+    expect(formatDayMonth('not-a-date')).toBe('')
   })
 })

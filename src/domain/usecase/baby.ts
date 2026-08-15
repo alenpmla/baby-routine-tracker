@@ -1,4 +1,4 @@
-import type { Baby } from '../model/Baby'
+import type { Baby, BabySex } from '../model/Baby'
 import type { BabyRepository } from '../repository/repositories'
 import { newId } from '../util/id'
 
@@ -7,6 +7,7 @@ export interface SaveBabyInput {
   dob: string
   notes?: string
   birthWeightKg?: number
+  sex?: BabySex
 }
 
 export function getBabyProfile(repo: BabyRepository): Baby | null {
@@ -26,6 +27,7 @@ export function saveBabyProfile(repo: BabyRepository, input: SaveBabyInput, exis
     dob: input.dob,
     notes: input.notes?.trim() ?? '',
     birthWeightKg: input.birthWeightKg,
+    sex: input.sex,
   }
   repo.save(baby)
   return baby

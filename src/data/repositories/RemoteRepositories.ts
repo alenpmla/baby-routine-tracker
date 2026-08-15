@@ -3,17 +3,29 @@ import type { Baby } from '../../domain/model/Baby'
 import type { DiaperChange } from '../../domain/model/DiaperChange'
 import type { FeedingSession } from '../../domain/model/FeedingSession'
 import { normalizeFeeding } from '../../domain/model/FeedingSession'
+import type { HeadCircumferenceEntry } from '../../domain/model/HeadCircumferenceEntry'
+import type { MedicationEntry } from '../../domain/model/MedicationEntry'
+import type { MilestoneEntry } from '../../domain/model/MilestoneEntry'
 import type { SleepSession } from '../../domain/model/SleepSession'
+import type { TeethingDay } from '../../domain/model/TeethingDay'
+import type { TemperatureEntry } from '../../domain/model/TemperatureEntry'
+import type { ToothEntry } from '../../domain/model/ToothEntry'
 import type { WeightEntry } from '../../domain/model/WeightEntry'
 import type {
   BabyRepository,
   DiaperRepository,
   FeedingRepository,
+  HeadCircumferenceRepository,
+  MedicationRepository,
+  MilestoneRepository,
   SettingsRepository,
   SleepRepository,
+  TeethingDayRepository,
+  TemperatureRepository,
+  ToothRepository,
   WeightRepository,
 } from '../../domain/repository/repositories'
-import type { Http } from '../http'
+import { HttpError, type Http } from '../http'
 import type { Storage } from '../storage'
 
 const PENDING_KEY = 'pending'
@@ -23,8 +35,24 @@ const FEEDINGS_KEY = 'feedings'
 const DIAPERS_KEY = 'diapers'
 const SETTINGS_KEY = 'settings'
 const WEIGHTS_KEY = 'weights'
+const HEAD_CIRCUMFERENCES_KEY = 'headCircumferences'
+const MEDICATIONS_KEY = 'medications'
+const TEMPERATURES_KEY = 'temperatures'
+const MILESTONES_KEY = 'milestones'
+const TEETH_KEY = 'teeth'
+const TEETHING_DAYS_KEY = 'teethingDays'
 
-export type CollectionKey = 'sleeps' | 'feedings' | 'diapers' | 'weights'
+export type CollectionKey =
+  | 'sleeps'
+  | 'feedings'
+  | 'diapers'
+  | 'weights'
+  | 'headCircumferences'
+  | 'medications'
+  | 'temperatures'
+  | 'milestones'
+  | 'teeth'
+  | 'teethingDays'
 
 export interface BackupData {
   version: 1
@@ -34,6 +62,12 @@ export interface BackupData {
   feedings: FeedingSession[]
   diapers: DiaperChange[]
   weights?: WeightEntry[]
+  headCircumferences?: HeadCircumferenceEntry[]
+  medications?: MedicationEntry[]
+  temperatures?: TemperatureEntry[]
+  milestones?: MilestoneEntry[]
+  teeth?: ToothEntry[]
+  teethingDays?: TeethingDay[]
   settings: AppSettings
 }
 
@@ -49,6 +83,12 @@ export function isValidBackup(value: unknown): value is BackupData {
     Array.isArray(d.feedings) &&
     Array.isArray(d.diapers) &&
     (d.weights === undefined || Array.isArray(d.weights)) &&
+    (d.headCircumferences === undefined || Array.isArray(d.headCircumferences)) &&
+    (d.medications === undefined || Array.isArray(d.medications)) &&
+    (d.temperatures === undefined || Array.isArray(d.temperatures)) &&
+    (d.milestones === undefined || Array.isArray(d.milestones)) &&
+    (d.teeth === undefined || Array.isArray(d.teeth)) &&
+    (d.teethingDays === undefined || Array.isArray(d.teethingDays)) &&
     typeof d.settings === 'object' &&
     d.settings !== null
   )
@@ -66,6 +106,12 @@ interface Cache {
   feedings: FeedingSession[]
   diapers: DiaperChange[]
   weights: WeightEntry[]
+  headCircumferences: HeadCircumferenceEntry[]
+  medications: MedicationEntry[]
+  temperatures: TemperatureEntry[]
+  milestones: MilestoneEntry[]
+  teeth: ToothEntry[]
+  teethingDays: TeethingDay[]
   settings: AppSettings
 }
 
@@ -75,6 +121,12 @@ export interface Repositories {
   feeding: FeedingRepository
   diaper: DiaperRepository
   weight: WeightRepository
+  headCircumference: HeadCircumferenceRepository
+  medication: MedicationRepository
+  temperature: TemperatureRepository
+  milestone: MilestoneRepository
+  tooth: ToothRepository
+  teethingDay: TeethingDayRepository
   settings: SettingsRepository
 }
 
@@ -94,6 +146,12 @@ export class RemoteRepositories implements SyncRepositories {
     feedings: [],
     diapers: [],
     weights: [],
+    headCircumferences: [],
+    medications: [],
+    temperatures: [],
+    milestones: [],
+    teeth: [],
+    teethingDays: [],
     settings: { foodSuggestions: [] },
   }
   private offline = false
@@ -103,6 +161,12 @@ export class RemoteRepositories implements SyncRepositories {
   readonly feeding: FeedingRepository
   readonly diaper: DiaperRepository
   readonly weight: WeightRepository
+  readonly headCircumference: HeadCircumferenceRepository
+  readonly medication: MedicationRepository
+  readonly temperature: TemperatureRepository
+  readonly milestone: MilestoneRepository
+  readonly tooth: ToothRepository
+  readonly teethingDay: TeethingDayRepository
   readonly settings: SettingsRepository
 
   constructor(
@@ -190,6 +254,114 @@ export class RemoteRepositories implements SyncRepositories {
         })
       },
     }
+    this.headCircumference = {
+      getAll: () => this.cache.headCircumferences,
+      add: (entry) => {
+        void this.push({ kind: 'add', collection: 'headCircumferences', item: entry }, () => {
+          this.cache.headCircumferences.push(entry)
+        })
+      },
+      update: (entry) => {
+        void this.push({ kind: 'add', collection: 'headCircumferences', item: entry }, () => {
+          this.cache.headCircumferences = this.upsert(this.cache.headCircumferences, entry) as HeadCircumferenceEntry[]
+        })
+      },
+      delete: (id) => {
+        void this.push({ kind: 'delete', collection: 'headCircumferences', id }, () => {
+          this.cache.headCircumferences = this.cache.headCircumferences.filter((h) => h.id !== id)
+        })
+      },
+    }
+    this.medication = {
+      getAll: () => this.cache.medications,
+      add: (entry) => {
+        void this.push({ kind: 'add', collection: 'medications', item: entry }, () => {
+          this.cache.medications.push(entry)
+        })
+      },
+      update: (entry) => {
+        void this.push({ kind: 'add', collection: 'medications', item: entry }, () => {
+          this.cache.medications = this.upsert(this.cache.medications, entry) as MedicationEntry[]
+        })
+      },
+      delete: (id) => {
+        void this.push({ kind: 'delete', collection: 'medications', id }, () => {
+          this.cache.medications = this.cache.medications.filter((m) => m.id !== id)
+        })
+      },
+    }
+    this.temperature = {
+      getAll: () => this.cache.temperatures,
+      add: (entry) => {
+        void this.push({ kind: 'add', collection: 'temperatures', item: entry }, () => {
+          this.cache.temperatures.push(entry)
+        })
+      },
+      update: (entry) => {
+        void this.push({ kind: 'add', collection: 'temperatures', item: entry }, () => {
+          this.cache.temperatures = this.upsert(this.cache.temperatures, entry) as TemperatureEntry[]
+        })
+      },
+      delete: (id) => {
+        void this.push({ kind: 'delete', collection: 'temperatures', id }, () => {
+          this.cache.temperatures = this.cache.temperatures.filter((t) => t.id !== id)
+        })
+      },
+    }
+    this.milestone = {
+      getAll: () => this.cache.milestones,
+      add: (entry) => {
+        void this.push({ kind: 'add', collection: 'milestones', item: entry }, () => {
+          this.cache.milestones.push(entry)
+        })
+      },
+      update: (entry) => {
+        void this.push({ kind: 'add', collection: 'milestones', item: entry }, () => {
+          this.cache.milestones = this.upsert(this.cache.milestones, entry) as MilestoneEntry[]
+        })
+      },
+      delete: (id) => {
+        void this.push({ kind: 'delete', collection: 'milestones', id }, () => {
+          this.cache.milestones = this.cache.milestones.filter((m) => m.id !== id)
+        })
+      },
+    }
+    this.tooth = {
+      getAll: () => this.cache.teeth,
+      add: (entry) => {
+        void this.push({ kind: 'add', collection: 'teeth', item: entry }, () => {
+          this.cache.teeth.push(entry)
+        })
+      },
+      update: (entry) => {
+        void this.push({ kind: 'add', collection: 'teeth', item: entry }, () => {
+          this.cache.teeth = this.upsert(this.cache.teeth, entry) as ToothEntry[]
+        })
+      },
+      delete: (id) => {
+        void this.push({ kind: 'delete', collection: 'teeth', id }, () => {
+          this.cache.teeth = this.cache.teeth.filter((t) => t.id !== id)
+        })
+      },
+    }
+    this.teethingDay = {
+      getAll: () => this.cache.teethingDays,
+      add: (day) => {
+        void this.push({ kind: 'add', collection: 'teethingDays', item: day }, () => {
+          this.cache.teethingDays.push(day)
+        })
+      },
+      update: (day) => {
+        void this.push({ kind: 'add', collection: 'teethingDays', item: day }, () => {
+          this.cache.teethingDays = this.upsert(this.cache.teethingDays, day) as TeethingDay[]
+        })
+      },
+      delete: (id) => {
+        void this.push({ kind: 'delete', collection: 'teethingDays', id }, () => {
+          this.cache.teethingDays = this.cache.teethingDays.filter((d) => d.id !== id)
+        })
+      },
+    }
     this.settings = {
       get: () => this.cache.settings,
       save: (settings) => {
@@ -228,7 +400,33 @@ export class RemoteRepositories implements SyncRepositories {
     this.storage.set<FeedingSession[]>(FEEDINGS_KEY, this.cache.feedings)
     this.storage.set<DiaperChange[]>(DIAPERS_KEY, this.cache.diapers)
     this.storage.set<WeightEntry[]>(WEIGHTS_KEY, this.cache.weights)
+    this.storage.set<HeadCircumferenceEntry[]>(HEAD_CIRCUMFERENCES_KEY, this.cache.headCircumferences)
+    this.storage.set<MedicationEntry[]>(MEDICATIONS_KEY, this.cache.medications)
+    this.storage.set<TemperatureEntry[]>(TEMPERATURES_KEY, this.cache.temperatures)
+    this.storage.set<MilestoneEntry[]>(MILESTONES_KEY, this.cache.milestones)
+    this.storage.set<ToothEntry[]>(TEETH_KEY, this.cache.teeth)
+    this.storage.set<TeethingDay[]>(TEETHING_DAYS_KEY, this.cache.teethingDays)
     this.storage.set<AppSettings>(SETTINGS_KEY, this.cache.settings)
+  }
+
+  /**
+   * Fetches one collection. Returns `null` when the collection is not deployed
+   * server-side (HTTP 404) so callers can preserve local data instead of
+   * replacing it with an empty array. Any other error — including a hard
+   * network failure (HttpError with no `status`) — is rethrown so offline
+   * detection and the localStorage fallback still work.
+   */
+  private async fetchCollection<T>(key: CollectionKey): Promise<T[] | null> {
+    const path = `/api/${key}`
+    try {
+      const res = await this.http.get<{ [k: string]: T[] }>(path)
+      return res[key] ?? []
+    } catch (err) {
+      if (err instanceof HttpError && err.status === 404) {
+        return null
+      }
+      throw err
+    }
   }
 
   async loadAll(): Promise<void> {
@@ -236,20 +434,32 @@ export class RemoteRepositories implements SyncRepositories {
       if (typeof navigator !== 'undefined' && navigator.onLine === false) {
         throw new Error('offline')
       }
-      const [baby, sleeps, feedings, diapers, weights, settings] = await Promise.all([
+      const [baby, sleeps, feedings, diapers, weights, headCircumferences, medications, temperatures, milestones, teeth, teethingDays, settings] = await Promise.all([
         this.http.get<{ baby: Baby | null }>('/api/baby'),
-        this.http.get<{ sleeps: SleepSession[] }>('/api/sleeps'),
-        this.http.get<{ feedings: FeedingSession[] }>('/api/feedings'),
-        this.http.get<{ diapers: DiaperChange[] }>('/api/diapers'),
-        this.http.get<{ weights: WeightEntry[] }>('/api/weights'),
+        this.fetchCollection<SleepSession>('sleeps'),
+        this.fetchCollection<FeedingSession>('feedings'),
+        this.fetchCollection<DiaperChange>('diapers'),
+        this.fetchCollection<WeightEntry>('weights'),
+        this.fetchCollection<HeadCircumferenceEntry>('headCircumferences'),
+        this.fetchCollection<MedicationEntry>('medications'),
+        this.fetchCollection<TemperatureEntry>('temperatures'),
+        this.fetchCollection<MilestoneEntry>('milestones'),
+        this.fetchCollection<ToothEntry>('teeth'),
+        this.fetchCollection<TeethingDay>('teethingDays'),
         this.http.get<{ settings: AppSettings }>('/api/settings'),
       ])
       this.cache = {
         baby: baby.baby,
-        sleeps: sleeps.sleeps,
-        feedings: feedings.feedings.map(normalizeFeeding),
-        diapers: diapers.diapers,
-        weights: weights.weights,
+        sleeps: sleeps ?? this.storage.get<SleepSession[]>(SLEEPS_KEY) ?? [],
+        feedings: (feedings ?? this.storage.get<FeedingSession[]>(FEEDINGS_KEY) ?? []).map(normalizeFeeding),
+        diapers: diapers ?? this.storage.get<DiaperChange[]>(DIAPERS_KEY) ?? [],
+        weights: weights ?? this.storage.get<WeightEntry[]>(WEIGHTS_KEY) ?? [],
+        headCircumferences: headCircumferences ?? this.storage.get<HeadCircumferenceEntry[]>(HEAD_CIRCUMFERENCES_KEY) ?? [],
+        medications: medications ?? this.storage.get<MedicationEntry[]>(MEDICATIONS_KEY) ?? [],
+        temperatures: temperatures ?? this.storage.get<TemperatureEntry[]>(TEMPERATURES_KEY) ?? [],
+        milestones: milestones ?? this.storage.get<MilestoneEntry[]>(MILESTONES_KEY) ?? [],
+        teeth: teeth ?? this.storage.get<ToothEntry[]>(TEETH_KEY) ?? [],
+        teethingDays: teethingDays ?? this.storage.get<TeethingDay[]>(TEETHING_DAYS_KEY) ?? [],
         settings: settings.settings,
       }
       this.offline = false
@@ -262,6 +472,12 @@ export class RemoteRepositories implements SyncRepositories {
         feedings: (this.storage.get<FeedingSession[]>(FEEDINGS_KEY) ?? []).map(normalizeFeeding),
         diapers: this.storage.get<DiaperChange[]>(DIAPERS_KEY) ?? [],
         weights: this.storage.get<WeightEntry[]>(WEIGHTS_KEY) ?? [],
+        headCircumferences: this.storage.get<HeadCircumferenceEntry[]>(HEAD_CIRCUMFERENCES_KEY) ?? [],
+        medications: this.storage.get<MedicationEntry[]>(MEDICATIONS_KEY) ?? [],
+        temperatures: this.storage.get<TemperatureEntry[]>(TEMPERATURES_KEY) ?? [],
+        milestones: this.storage.get<MilestoneEntry[]>(MILESTONES_KEY) ?? [],
+        teeth: this.storage.get<ToothEntry[]>(TEETH_KEY) ?? [],
+        teethingDays: this.storage.get<TeethingDay[]>(TEETHING_DAYS_KEY) ?? [],
         settings: this.storage.get<AppSettings>(SETTINGS_KEY) ?? { foodSuggestions: [] },
       }
       this.offline = true
@@ -278,14 +494,43 @@ export class RemoteRepositories implements SyncRepositories {
         await this.http.put('/api/baby', op.baby)
       } else if (op.kind === 'setSettings') {
         await this.http.put('/api/settings', op.settings)
-      } else if (op.kind === 'add') {
-        await this.http.post(`/api/${op.collection}`, op.item)
-      } else {
-        await this.http.del(`/api/${op.collection}/${op.id}`)
+      } else if (op.kind === 'add' || op.kind === 'delete') {
+        // A 404 means the collection isn't deployed server-side: skip the op
+        // (dropped from the queue once replay completes) and keep going. Any
+        // other failure aborts replay so the caller keeps the queue and flips
+        // offline as today.
+        await this.sendCollectionOp(op)
       }
     }
     this.writePending([])
     this.offline = false
+  }
+
+  /**
+   * Sends a queued collection add/delete op to the server. Returns false when
+   * the server answers HTTP 404 — the collection is not deployed server-side —
+   * so callers can skip that op. Any other error, including a hard network
+   * failure (HttpError with no `status`), is rethrown so offline handling is
+   * preserved.
+   */
+  private async sendCollectionOp(
+    op:
+      | { kind: 'add'; collection: CollectionKey; item: { id: string } }
+      | { kind: 'delete'; collection: CollectionKey; id: string },
+  ): Promise<boolean> {
+    try {
+      if (op.kind === 'add') {
+        await this.http.post(`/api/${op.collection}`, op.item)
+      } else {
+        await this.http.del(`/api/${op.collection}/${op.id}`)
+      }
+      return true
+    } catch (err) {
+      if (err instanceof HttpError && err.status === 404) {
+        return false
+      }
+      throw err
+    }
   }
 
   private async push(op: PendingOp, applyLocal: () => void): Promise<void> {
@@ -295,10 +540,12 @@ export class RemoteRepositories implements SyncRepositories {
         await this.http.put('/api/baby', op.baby)
       } else if (op.kind === 'setSettings') {
         await this.http.put('/api/settings', op.settings)
-      } else if (op.kind === 'add') {
-        await this.http.post(`/api/${op.collection}`, op.item)
       } else {
-        await this.http.del(`/api/${op.collection}/${op.id}`)
+        // A 404 on a collection write means the collection isn't deployed
+        // server-side: the local cache already applied the op, so treat it as
+        // accepted — don't queue it and don't flip offline. Real failures
+        // (status undefined) still queue + go offline.
+        await this.sendCollectionOp(op)
       }
       this.offline = false
       this.writePending(this.readPending().filter((p) => p !== op))
@@ -333,20 +580,32 @@ export class RemoteRepositories implements SyncRepositories {
    */
   async refreshFromServer(): Promise<boolean> {
     try {
-      const [baby, sleeps, feedings, diapers, weights, settings] = await Promise.all([
+      const [baby, sleeps, feedings, diapers, weights, headCircumferences, medications, temperatures, milestones, teeth, teethingDays, settings] = await Promise.all([
         this.http.get<{ baby: Baby | null }>('/api/baby'),
-        this.http.get<{ sleeps: SleepSession[] }>('/api/sleeps'),
-        this.http.get<{ feedings: FeedingSession[] }>('/api/feedings'),
-        this.http.get<{ diapers: DiaperChange[] }>('/api/diapers'),
-        this.http.get<{ weights: WeightEntry[] }>('/api/weights'),
+        this.fetchCollection<SleepSession>('sleeps'),
+        this.fetchCollection<FeedingSession>('feedings'),
+        this.fetchCollection<DiaperChange>('diapers'),
+        this.fetchCollection<WeightEntry>('weights'),
+        this.fetchCollection<HeadCircumferenceEntry>('headCircumferences'),
+        this.fetchCollection<MedicationEntry>('medications'),
+        this.fetchCollection<TemperatureEntry>('temperatures'),
+        this.fetchCollection<MilestoneEntry>('milestones'),
+        this.fetchCollection<ToothEntry>('teeth'),
+        this.fetchCollection<TeethingDay>('teethingDays'),
         this.http.get<{ settings: AppSettings }>('/api/settings'),
       ])
       this.cache = {
         baby: baby.baby,
-        sleeps: sleeps.sleeps,
-        feedings: feedings.feedings.map(normalizeFeeding),
-        diapers: diapers.diapers,
-        weights: weights.weights,
+        sleeps: sleeps ?? this.cache.sleeps,
+        feedings: (feedings ?? this.cache.feedings).map(normalizeFeeding),
+        diapers: diapers ?? this.cache.diapers,
+        weights: weights ?? this.cache.weights,
+        headCircumferences: headCircumferences ?? this.cache.headCircumferences,
+        medications: medications ?? this.cache.medications,
+        temperatures: temperatures ?? this.cache.temperatures,
+        milestones: milestones ?? this.cache.milestones,
+        teeth: teeth ?? this.cache.teeth,
+        teethingDays: teethingDays ?? this.cache.teethingDays,
         settings: settings.settings,
       }
       this.offline = false
@@ -360,22 +619,34 @@ export class RemoteRepositories implements SyncRepositories {
 
   async exportData(): Promise<BackupData> {
     try {
-      const [baby, sleeps, feedings, diapers, weights, settings] = await Promise.all([
+      const [baby, sleeps, feedings, diapers, weights, headCircumferences, medications, temperatures, milestones, teeth, teethingDays, settings] = await Promise.all([
         this.http.get<{ baby: Baby | null }>('/api/baby'),
-        this.http.get<{ sleeps: SleepSession[] }>('/api/sleeps'),
-        this.http.get<{ feedings: FeedingSession[] }>('/api/feedings'),
-        this.http.get<{ diapers: DiaperChange[] }>('/api/diapers'),
-        this.http.get<{ weights: WeightEntry[] }>('/api/weights'),
+        this.fetchCollection<SleepSession>('sleeps'),
+        this.fetchCollection<FeedingSession>('feedings'),
+        this.fetchCollection<DiaperChange>('diapers'),
+        this.fetchCollection<WeightEntry>('weights'),
+        this.fetchCollection<HeadCircumferenceEntry>('headCircumferences'),
+        this.fetchCollection<MedicationEntry>('medications'),
+        this.fetchCollection<TemperatureEntry>('temperatures'),
+        this.fetchCollection<MilestoneEntry>('milestones'),
+        this.fetchCollection<ToothEntry>('teeth'),
+        this.fetchCollection<TeethingDay>('teethingDays'),
         this.http.get<{ settings: AppSettings }>('/api/settings'),
       ])
       return {
         version: 1,
         exportedAt: new Date().toISOString(),
         baby: baby.baby,
-        sleeps: sleeps.sleeps,
-        feedings: feedings.feedings,
-        diapers: diapers.diapers,
-        weights: weights.weights,
+        sleeps: sleeps ?? this.cache.sleeps,
+        feedings: feedings ?? this.cache.feedings,
+        diapers: diapers ?? this.cache.diapers,
+        weights: weights ?? this.cache.weights,
+        headCircumferences: headCircumferences ?? this.cache.headCircumferences,
+        medications: medications ?? this.cache.medications,
+        temperatures: temperatures ?? this.cache.temperatures,
+        milestones: milestones ?? this.cache.milestones,
+        teeth: teeth ?? this.cache.teeth,
+        teethingDays: teethingDays ?? this.cache.teethingDays,
         settings: settings.settings,
       }
     } catch {
@@ -387,6 +658,12 @@ export class RemoteRepositories implements SyncRepositories {
         feedings: this.cache.feedings,
         diapers: this.cache.diapers,
         weights: this.cache.weights,
+        headCircumferences: this.cache.headCircumferences,
+        medications: this.cache.medications,
+        temperatures: this.cache.temperatures,
+        milestones: this.cache.milestones,
+        teeth: this.cache.teeth,
+        teethingDays: this.cache.teethingDays,
         settings: this.cache.settings,
       }
     }

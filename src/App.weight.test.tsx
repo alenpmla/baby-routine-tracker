@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { render, screen, fireEvent, within, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, within, waitFor, cleanup } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from './App'
 import { setupApi } from './test/setupApi'
@@ -17,7 +17,8 @@ async function onboard(user: ReturnType<typeof userEvent.setup>) {
 
 async function goWeight(user: ReturnType<typeof userEvent.setup>) {
   const nav = () => within(screen.getByRole('navigation', { name: /primary/i }))
-  await user.click(nav().getByRole('button', { name: 'Weight' }))
+  await user.click(nav().getByRole('button', { name: 'Health' }))
+  await user.click(screen.getByRole('button', { name: /^weight/i }))
 }
 
 describe('Weight tracking', () => {
@@ -149,6 +150,40 @@ describe('Weight tracking', () => {
     expect(screen.queryByText('Weight progress')).not.toBeInTheDocument()
   })
 
+  it('applies the baby sex to the dashboard growth band (male vs female)', async () => {
+    const now = new Date()
+    const seedWeight = () =>
+      api.state.weights.push({
+        id: 'w1',
+        time: new Date(now.getTime() - 30 * 86400000).toISOString(),
+        weight: 5,
+        unit: 'kg',
+      })
+
+    const bandPath = async (sexLabel: string) => {
+      const user = userEvent.setup()
+      render(<App />)
+      await user.type(await screen.findByLabelText(/name/i), 'Avery')
+      fireEvent.change(screen.getByLabelText(/date of birth/i), { target: { value: '2026-01-15' } })
+      await user.click(screen.getByRole('button', { name: sexLabel }))
+      await user.click(screen.getByRole('button', { name: /continue/i }))
+      expect(await screen.findByText('Weight progress')).toBeInTheDocument()
+      const band = document.querySelector('.growth-chart path') as SVGPathElement | null
+      const d = band?.getAttribute('d') ?? ''
+      cleanup()
+      return d
+    }
+
+    seedWeight()
+    const male = await bandPath('Male')
+    api = setupApi()
+    seedWeight()
+    const female = await bandPath('Female')
+
+    expect(api.state.baby?.sex).toBe('female')
+    expect(male).not.toBe(female)
+  })
+
   it('saves the birth weight from onboarding and anchors the chart at birth', async () => {
     const user = userEvent.setup()
     render(<App />)
@@ -172,5 +207,74 @@ describe('Weight tracking', () => {
     await user.click(screen.getByRole('button', { name: /continue/i }))
 
     expect(api.state.baby?.birthWeightKg).toBeCloseTo(7.5 * 0.45359237, 5)
+  })
+})
+
+describe('Health tab navigation', () => {
+  beforeEach(() => {
+    api = setupApi()
+  })
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('shows 5 tabs with Health replacing Weight', async () => {
+    const user = userEvent.setup()
+    await onboard(user)
+    const nav = () => within(screen.getByRole('navigation', { name: /primary/i }))
+    for (const label of ['Home', 'Sleep', 'Feeding', 'Diaper', 'Health']) {
+      expect(nav().getByRole('button', { name: label })).toBeInTheDocument()
+    }
+    expect(nav().queryByRole('button', { name: 'Weight' })).not.toBeInTheDocument()
+  })
+
+  it('opens the Health sub-navigator menu with all four views', async () => {
+    const user = userEvent.setup()
+    await onboard(user)
+    const nav = () => within(screen.getByRole('navigation', { name: /primary/i }))
+    await user.click(nav().getByRole('button', { name: 'Health' }))
+    expect(screen.getByRole('heading', { name: 'Health' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^weight/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /head circumference/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /teeth & teething/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /medication & fever/i })).toBeInTheDocument()
+  })
+
+  it('back arrow in the Weight sub-view returns to the Health menu', async () => {
+    const user = userEvent.setup()
+    await onboard(user)
+    await goWeight(user)
+    expect(screen.getByRole('heading', { name: 'Weight' })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /^back/i }))
+    expect(await screen.findByRole('heading', { name: 'Health' })).toBeInTheDocument()
+  })
+
+  it('switching to another tab drops the Health sub-view back to the menu', async () => {
+    const user = userEvent.setup()
+    await onboard(user)
+    await goWeight(user)
+    expect(screen.getByRole('heading', { name: 'Weight' })).toBeInTheDocument()
+
+    const nav = () => within(screen.getByRole('navigation', { name: /primary/i }))
+    await user.click(nav().getByRole('button', { name: 'Sleep' }))
+    expect(screen.getByRole('heading', { name: 'Sleep' })).toBeInTheDocument()
+
+    await user.click(nav().getByRole('button', { name: 'Health' }))
+    expect(await screen.findByRole('heading', { name: 'Health' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^weight/i })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Weight' })).not.toBeInTheDocument()
+  })
+
+  it('the Teeth & teething menu opens a sub-menu with Teeth and Teething views', async () => {
+    const user = userEvent.setup()
+    await onboard(user)
+    const nav = () => within(screen.getByRole('navigation', { name: /primary/i }))
+    await user.click(nav().getByRole('button', { name: 'Health' }))
+    await user.click(screen.getByRole('button', { name: /teeth & teething/i }))
+    expect(screen.getByRole('heading', { name: 'Teeth & teething' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /teeth erupted teeth/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /teething day-by-day/i })).toBeInTheDocument()
+    expect(screen.queryByText(/coming soon/i)).not.toBeInTheDocument()
   })
 })

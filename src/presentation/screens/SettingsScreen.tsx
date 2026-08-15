@@ -1,6 +1,7 @@
 import { useTheme, type ThemePreference } from '../store/ThemeProvider'
 import { useTracker } from '../store/TrackerProvider'
 import { useSnapshotPrefs, type AveragesDays } from '../store/SnapshotPrefsProvider'
+import type { HomeLogView } from '../../domain/model/AppSettings'
 import ProfileScreen from './ProfileScreen'
 import FoodSuggestionsScreen from './FoodSuggestionsScreen'
 import UnitsScreen from './UnitsScreen'
@@ -26,8 +27,9 @@ export default function SettingsScreen({
   onGoBack: () => void
 }) {
   const { theme, setTheme } = useTheme()
-  const { baby, saveProfile } = useTracker()
+  const { baby, saveProfile, settings, updateSettings } = useTracker()
   const { averagesDays, setAveragesDays } = useSnapshotPrefs()
+  const homeLogView: HomeLogView = settings.homeLogView ?? 'list'
 
   if (view === 'profile') {
     return (
@@ -106,6 +108,22 @@ export default function SettingsScreen({
               onClick={() => setAveragesDays(days)}
             >
               {days} days
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="card">
+        <p className="settings-hint">Home log — how today&apos;s entries are presented on the Home page.</p>
+        <div className="segmented settings-theme" role="group" aria-label="Home log">
+          {(['list', 'timeline'] as HomeLogView[]).map((view) => (
+            <button
+              key={view}
+              type="button"
+              className={`seg${homeLogView === view ? ' seg-selected' : ''}`}
+              onClick={() => updateSettings({ homeLogView: view })}
+            >
+              {view === 'list' ? 'List' : 'Timeline'}
             </button>
           ))}
         </div>

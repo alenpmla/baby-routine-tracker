@@ -169,6 +169,102 @@ describe('report generator', () => {
     expect(days[1].both).toBe(1)
   })
 
+  it('splits the summary sleep totals by night and nap', () => {
+    const records = {
+      sleeps: [
+        { id: 's1', startTime: '2026-08-14T21:00:00.000Z', endTime: '2026-08-14T23:00:00.000Z', kind: 'night' as const },
+        { id: 's2', startTime: '2026-08-15T10:00:00.000Z', endTime: '2026-08-15T11:00:00.000Z', kind: 'nap' as const },
+      ],
+      feedings: [],
+      diapers: [],
+    }
+    const s = buildReportSummary(records, units)
+    expect(s.sleepCount).toBe(2)
+    expect(s.totalSleep).toBe('3h 0m')
+    expect(s.nightCount).toBe(1)
+    expect(s.napCount).toBe(1)
+    expect(s.nightSleep).toBe('2h 0m')
+    expect(s.napSleep).toBe('1h 0m')
+  })
+
+  it('classifies legacy sleeps (no kind) by inference in the report summary', () => {
+    const midnight = startOfDay(new Date('2026-08-14T12:00:00.000Z'))
+    const at = (hours: number) => new Date(midnight.getTime() + hours * 3600 * 1000).toISOString()
+    const records = {
+      sleeps: [
+        { id: 'night', startTime: at(2), endTime: at(6) }, // 2am local -> night, 4h
+        { id: 'nap', startTime: at(13), endTime: at(14) }, // 1pm local -> nap, 1h
+      ],
+      feedings: [],
+      diapers: [],
+    }
+    const s = buildReportSummary(records, units)
+    expect(s.sleepCount).toBe(2)
+    expect(s.totalSleep).toBe('5h 0m')
+    expect(s.nightCount).toBe(1)
+    expect(s.napCount).toBe(1)
+    expect(s.nightSleep).toBe('4h 0m')
+    expect(s.napSleep).toBe('1h 0m')
+  })
+
+  it('splits daily sleep totals into night and nap, excluding ongoing sleeps', () => {
+    const day1Midnight = startOfDay(new Date('2026-08-14T12:00:00.000Z'))
+    const at = (hours: number) => new Date(day1Midnight.getTime() + hours * 3600 * 1000).toISOString()
+    const records = {
+      sleeps: [
+        { id: 'n1', startTime: at(1), endTime: at(8), kind: 'night' as const }, // 7h night
+        { id: 'nap1', startTime: at(10), endTime: at(11), kind: 'nap' as const }, // 1h nap
+        { id: 'legacy', startTime: at(12), endTime: at(13) }, // local noon -> inferred nap, 1h
+        { id: 'ongoing', startTime: at(15), endTime: null }, // excluded
+      ],
+      feedings: [],
+      diapers: [],
+    }
+    const days = buildDailyTotals(records, units)
+    expect(days).toHaveLength(1)
+    const day = days[0]
+    expect(day.sleepCount).toBe(3)
+    expect(day.sleepTotal).toBe('9h 0m')
+    expect(day.nightCount).toBe(1)
+    expect(day.napCount).toBe(2)
+    expect(day.nightSleep).toBe('7h 0m')
+    expect(day.napSleep).toBe('2h 0m')
+  })
+
+  it('splits each day into Night/Nap at the 7pm–9am local boundary across multiple days', () => {
+    const day1Midnight = startOfDay(new Date('2026-08-14T12:00:00.000Z'))
+    const day2Midnight = startOfDay(new Date(day1Midnight.getTime() + 24 * 3600 * 1000))
+    const at = (midnight: Date, hours: number) => new Date(midnight.getTime() + hours * 3600 * 1000).toISOString()
+    const records = {
+      sleeps: [
+        { id: 'd1night', startTime: at(day1Midnight, 19), endTime: at(day1Midnight, 23) }, // 19:00 local -> night (boundary), 4h
+        { id: 'd1nap', startTime: at(day1Midnight, 9), endTime: at(day1Midnight, 10) }, // 09:00 local -> nap (boundary), 1h
+        { id: 'd2night', startTime: at(day2Midnight, 1), endTime: at(day2Midnight, 7), kind: 'night' as const }, // 6h explicit night
+        { id: 'd2nap', startTime: at(day2Midnight, 14), endTime: at(day2Midnight, 15), kind: 'nap' as const }, // 1h explicit nap
+      ],
+      feedings: [],
+      diapers: [],
+    }
+    const days = buildDailyTotals(records, units)
+    expect(days).toHaveLength(2)
+
+    const day1 = days[0]
+    expect(day1.sleepCount).toBe(2)
+    expect(day1.sleepTotal).toBe('5h 0m')
+    expect(day1.nightCount).toBe(1)
+    expect(day1.napCount).toBe(1)
+    expect(day1.nightSleep).toBe('4h 0m')
+    expect(day1.napSleep).toBe('1h 0m')
+
+    const day2 = days[1]
+    expect(day2.sleepCount).toBe(2)
+    expect(day2.sleepTotal).toBe('7h 0m')
+    expect(day2.nightCount).toBe(1)
+    expect(day2.napCount).toBe(1)
+    expect(day2.nightSleep).toBe('6h 0m')
+    expect(day2.napSleep).toBe('1h 0m')
+  })
+
   it('yields zero/placeholder-safe values for a day with no records in a category', () => {
     const records = {
       sleeps: [],
@@ -261,6 +357,31 @@ describe('report generator', () => {
       { id: 'b1', name: 'Ciara', dob: '2025-10-30', notes: '' },
       new Date(day1Midnight),
       new Date(day2Midnight.getTime() + 23 * 3600 * 1000),
+      records,
+      units,
+    )
+    const header = new TextDecoder().decode(new Uint8Array(bytes.slice(0, 4)))
+    expect(header).toBe('%PDF')
+    expect(bytes.byteLength).toBeGreaterThan(1000)
+  })
+
+  it('renders a valid PDF with a mixed nap/night day in the Night · Nap daily column', () => {
+    const midnight = startOfDay(new Date('2026-08-14T12:00:00.000Z'))
+    const at = (hours: number) => new Date(midnight.getTime() + hours * 3600 * 1000).toISOString()
+    const records = {
+      sleeps: [
+        { id: 'n1', startTime: at(1), endTime: at(8), kind: 'night' as const }, // 7h night
+        { id: 'nap1', startTime: at(10), endTime: at(11), kind: 'nap' as const }, // 1h nap
+        { id: 'legacy', startTime: at(13), endTime: at(14) }, // inferred nap, 1h
+        { id: 'ongoing', startTime: at(15), endTime: null }, // excluded from the split
+      ],
+      feedings: [],
+      diapers: [],
+    }
+    const bytes = buildReportPdf(
+      { id: 'b1', name: 'Ciara', dob: '2025-10-30', notes: '' },
+      new Date(midnight),
+      new Date(midnight.getTime() + 23 * 3600 * 1000),
       records,
       units,
     )

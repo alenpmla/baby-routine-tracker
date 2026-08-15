@@ -1,3 +1,5 @@
+export type BabySex = 'male' | 'female'
+
 export interface Baby {
   id: string
   name: string
@@ -6,4 +8,6 @@ export interface Baby {
   notes: string
   /** Birth weight in kilograms (optional). */
   birthWeightKg?: number
+  /** Assigned sex, used for WHO growth charts (optional). */
+  sex?: BabySex
 }

@@ -262,6 +262,51 @@ describe('Food suggestions', () => {
     expect(api.state.baby?.name).toBe('New Name')
   })
 
+  it('round-trips the baby sex through profile edit in Settings', async () => {
+    const user = userEvent.setup()
+    await onboard(user)
+    await user.click(screen.getByRole('button', { name: /settings/i }))
+    await user.click(screen.getByRole('button', { name: /edit profile/i }))
+
+    expect(screen.getByRole('button', { name: 'Not set' })).toHaveAttribute('aria-pressed', 'true')
+    await user.click(screen.getByRole('button', { name: 'Female' }))
+    await user.click(screen.getByRole('button', { name: /save changes/i }))
+
+    expect(api.state.baby?.sex).toBe('female')
+
+    // Re-open edit: the saved sex is pre-selected
+    await user.click(screen.getByRole('button', { name: /edit profile/i }))
+    expect(screen.getByRole('button', { name: 'Female' })).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('keeps sex optional when editing a profile without a sex set', async () => {
+    const user = userEvent.setup()
+    await onboard(user)
+    await user.click(screen.getByRole('button', { name: /settings/i }))
+    await user.click(screen.getByRole('button', { name: /edit profile/i }))
+    await user.click(screen.getByRole('button', { name: /save changes/i }))
+
+    expect(api.state.baby?.sex).toBeUndefined()
+  })
+
+  it('clears a saved sex back to Not set through Settings', async () => {
+    const user = userEvent.setup()
+    await onboard(user)
+    await user.click(screen.getByRole('button', { name: /settings/i }))
+    await user.click(screen.getByRole('button', { name: /edit profile/i }))
+
+    await user.click(screen.getByRole('button', { name: 'Female' }))
+    await user.click(screen.getByRole('button', { name: /save changes/i }))
+    expect(api.state.baby?.sex).toBe('female')
+
+    await user.click(screen.getByRole('button', { name: /edit profile/i }))
+    expect(screen.getByRole('button', { name: 'Female' })).toHaveAttribute('aria-pressed', 'true')
+    await user.click(screen.getByRole('button', { name: 'Not set' }))
+    await user.click(screen.getByRole('button', { name: /save changes/i }))
+
+    expect(api.state.baby?.sex).toBeUndefined()
+  })
+
   it('rejects an empty suggestion in Settings', async () => {
     const user = userEvent.setup()
     await onboard(user)
