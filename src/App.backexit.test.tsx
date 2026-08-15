@@ -1,8 +1,14 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
+import { render, screen, fireEvent, act, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from './App'
 import { setupApi } from './test/setupApi'
+
+function back() {
+  act(() => {
+    window.dispatchEvent(new PopStateEvent('popstate'))
+  })
+}
 
 async function onboard(user: ReturnType<typeof userEvent.setup>) {
   render(<App />)
@@ -21,17 +27,31 @@ describe('Back exits app from Home', () => {
     window.localStorage.clear()
   })
 
-  it('collapses history on Home so back exits on the first press', async () => {
+  it('does not navigate when back is pressed on Home (app exits instead)', async () => {
+    const user = userEvent.setup()
+    await onboard(user)
+    expect(screen.getByRole('heading', { name: /hi, avery/i })).toBeInTheDocument()
+
+    // The nav stack is at the root: back must not move to a different tab.
+    back()
+    await new Promise((r) => setTimeout(r, 20))
+    expect(screen.getByRole('heading', { name: /hi, avery/i })).toBeInTheDocument()
+  })
+
+  it('returns to Home on back from any tab, then stays on Home on the next back', async () => {
     const user = userEvent.setup()
     await onboard(user)
     const nav = () => within(screen.getByRole('navigation', { name: /primary/i }))
 
     await user.click(nav().getByRole('button', { name: 'Sleep' }))
-    expect(window.history.state).toEqual({ tab: 'sleep', settings: false })
+    expect(screen.getByRole('heading', { name: 'Sleep' })).toBeInTheDocument()
 
-    // Returning to Home collapses the history back to the root app entry,
-    // so the next back press exits the app instead of a silent no-op.
-    await user.click(nav().getByRole('button', { name: 'Home' }))
-    await waitFor(() => expect(window.history.state).toEqual({ tab: 'home', settings: false }))
+    back()
+    expect(await screen.findByRole('heading', { name: /hi, avery/i })).toBeInTheDocument()
+
+    // Now on Home: the next back exits (stays on Home in the app).
+    back()
+    await new Promise((r) => setTimeout(r, 20))
+    expect(screen.getByRole('heading', { name: /hi, avery/i })).toBeInTheDocument()
   })
 })

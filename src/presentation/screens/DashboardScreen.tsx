@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useTracker } from '../store/TrackerProvider'
 import { useWakeStatus } from '../store/useWakeStatus'
 import { describeAge, formatClock, formatDayLabel, formatDuration, isSameDay, shiftDays, startOfDay } from '../utils/time'
@@ -5,10 +6,12 @@ import { describeFeedingMeta, describeFeedingTitle } from '../utils/feeding'
 import { timelineAccent, timelineTab, timelineWording } from '../utils/timeline'
 import { BottleIcon, DiaperIcon, DirtyDiaperIcon, MoonIcon, SettingsIcon } from '../components/icons'
 import GrowthChart, { HEAD_CIRCUMFERENCE_METRIC, WEIGHT_METRIC } from '../components/GrowthChart'
+import GrowthChartZoomModal from '../components/GrowthChartZoomModal'
 import InsightsSection from '../components/InsightsSection'
 import DayNav from '../components/DayNav'
 import type { Tab } from '../navigation'
 import type { TimelineEvent } from '../../domain/usecase/timeline'
+import type { GrowthMetric, GrowthPoint } from '../components/GrowthChart'
 
 const KIND_TAB: Record<string, Tab> = { sleep: 'sleep', feeding: 'feeding', diaper: 'diaper' }
 
@@ -51,6 +54,13 @@ export default function DashboardScreen({
     { label: 'Feeds today', value: dayCounts.feeds, Icon: BottleIcon, accent: 'accent-feed', tab: 'feeding' as Tab },
     { label: 'Diapers today', value: dayCounts.diapers, Icon: DiaperIcon, accent: 'accent-diaper', tab: 'diaper' as Tab },
   ]
+
+  const [zoomModal, setZoomModal] = useState<{
+    title: string
+    metric: GrowthMetric
+    points: GrowthPoint[]
+    birthValue?: number
+  } | null>(null)
 
   return (
     <div className="screen-content">
@@ -114,18 +124,34 @@ export default function DashboardScreen({
       {(weights.length > 0 || baby?.birthWeightKg != null) && baby?.dob && (
         <section className="growth">
           <h2 className="growth-title">Weight progress</h2>
-          <div className="card growth-card">
+          <button
+            type="button"
+            className="card growth-card growth-open"
+            aria-label="Open weight chart zoom"
+            onClick={() =>
+              setZoomModal({ title: 'Weight progress', metric: WEIGHT_METRIC, points: weights, birthValue: baby.birthWeightKg })
+            }
+          >
             <GrowthChart dob={baby.dob} points={weights} metric={WEIGHT_METRIC} sex={baby.sex} birthValue={baby.birthWeightKg} />
-          </div>
+            <span className="growth-open-hint" aria-hidden="true">Tap to zoom</span>
+          </button>
         </section>
       )}
 
       {headCircumferences.length > 0 && baby?.dob && (
         <section className="growth">
           <h2 className="growth-title">Head circumference progress</h2>
-          <div className="card growth-card">
+          <button
+            type="button"
+            className="card growth-card growth-open"
+            aria-label="Open head circumference chart zoom"
+            onClick={() =>
+              setZoomModal({ title: 'Head circumference progress', metric: HEAD_CIRCUMFERENCE_METRIC, points: headCircumferences })
+            }
+          >
             <GrowthChart dob={baby.dob} points={headCircumferences} metric={HEAD_CIRCUMFERENCE_METRIC} sex={baby.sex} />
-          </div>
+            <span className="growth-open-hint" aria-hidden="true">Tap to zoom</span>
+          </button>
         </section>
       )}
 
@@ -211,6 +237,19 @@ export default function DashboardScreen({
           </ul>
         )}
       </section>
+
+      {zoomModal && baby?.dob && (
+        <GrowthChartZoomModal
+          open
+          title={zoomModal.title}
+          dob={baby.dob}
+          points={zoomModal.points}
+          metric={zoomModal.metric}
+          sex={baby.sex}
+          birthValue={zoomModal.birthValue}
+          onClose={() => setZoomModal(null)}
+        />
+      )}
     </div>
   )
 }

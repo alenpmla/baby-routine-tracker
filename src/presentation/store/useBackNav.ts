@@ -14,42 +14,54 @@ export interface NavState {
 
 const HOME: NavState = { tab: 'home', settings: false }
 
-function isNavState(v: unknown): v is NavState {
-  return !!v && typeof v === 'object' && typeof (v as NavState).tab === 'string'
+/**
+ * Optional handler registered by an open overlay/modal: when set, the browser
+ * back button calls it (to close the modal) instead of popping the nav stack.
+ */
+let activeOverlay: (() => void) | null = null
+
+export function registerBackOverlay(fn: (() => void) | null): void {
+  activeOverlay = fn
 }
 
+/**
+ * App navigation + back-button handling.
+ *
+ * The nav stack lives purely in memory; browser history is only used as a
+ * "back trap" (a single sentinel entry we re-push after each back) so the
+ * hardware/browser back button always fires popstate. This makes behaviour
+ * predictable and keeps reloads deterministic (we always start at Home, so a
+ * pull-to-refresh never jumps to a random tab).
+ *
+ * Back semantics:
+ *  - an open overlay/modal → closes it (does not navigate),
+ *  - deeper sub-screens (settings/health views) → previous screen,
+ *  - any tab → Home tab,
+ *  - Home → exit the app.
+ */
 export function useBackNav() {
-  const [current, setCurrent] = useState<NavState>(() => {
-    const st = window.history.state as unknown
-    return isNavState(st) ? (st as NavState) : HOME
-  })
-  const stackRef = useRef<NavState[]>([current])
-  const pendingBacks = useRef(0)
-  // Number of in-app history entries pushed above the root app entry.
-  const depthRef = useRef(0)
+  const stackRef = useRef<NavState[]>([HOME])
+  const [current, setCurrent] = useState<NavState>(HOME)
 
   useEffect(() => {
-    if (!window.history.state) {
-      window.history.replaceState(HOME, '')
-    }
-    const onPop = (e: PopStateEvent) => {
-      depthRef.current = Math.max(0, depthRef.current - 1)
-      if (pendingBacks.current > 0) {
-        pendingBacks.current -= 1
+    // Trap the back button: a sentinel entry so the first back press pops.
+    window.history.pushState({ bt: 'root' }, '')
+
+    const onPop = () => {
+      if (activeOverlay) {
+        activeOverlay()
+        window.history.pushState({ bt: 'root' }, '')
         return
       }
-      const raw = e.state as unknown
-      const target = isNavState(raw) ? (raw as NavState) : HOME
       const s = stackRef.current
-      const idx = s.findIndex(
-        (n) =>
-          n.tab === target.tab &&
-          n.settings === target.settings &&
-          n.settingsView === target.settingsView &&
-          n.healthView === target.healthView,
-      )
-      stackRef.current = idx >= 0 ? s.slice(0, idx + 1) : s.length > 1 ? s.slice(0, -1) : [HOME]
+      if (s.length <= 1) {
+        // At the root: do not re-push, so the next back exits the app.
+        return
+      }
+      stackRef.current = s.slice(0, -1)
       setCurrent(stackRef.current[stackRef.current.length - 1])
+      // Re-arm so the next back press fires popstate again.
+      window.history.pushState({ bt: 'root' }, '')
     }
     window.addEventListener('popstate', onPop)
     return () => window.removeEventListener('popstate', onPop)
@@ -59,35 +71,25 @@ export function useBackNav() {
     const s = stackRef.current
     if (replace) {
       stackRef.current = [...s.slice(0, -1), next]
-      window.history.replaceState(next, '')
     } else {
       stackRef.current = [...s, next]
-      window.history.pushState(next, '')
-      depthRef.current += 1
     }
     setCurrent(next)
   }, [])
 
   const goToTab = useCallback((tab: Tab) => {
     if (tab === 'home') {
-      // Collapse back to the root so the next back press exits the app.
-      const n = depthRef.current
       stackRef.current = [HOME]
       setCurrent(HOME)
-      if (n > 0) {
-        window.history.go(-n)
-      }
       return
     }
     const next: NavState = { tab, settings: false }
     const s = stackRef.current
     if (s.length === 1) {
       stackRef.current = [...s, next]
-      window.history.pushState(next, '')
-      depthRef.current += 1
     } else {
+      // Tab hops replace the previous tab so back from any tab returns to Home.
       stackRef.current = [...s.slice(0, -1), next]
-      window.history.replaceState(next, '')
     }
     setCurrent(next)
   }, [])
@@ -96,14 +98,11 @@ export function useBackNav() {
     const s = stackRef.current
     if (s.length <= 1) {
       stackRef.current = [HOME]
-      window.history.replaceState(HOME, '')
       setCurrent(HOME)
       return
     }
     stackRef.current = s.slice(0, -1)
     setCurrent(stackRef.current[stackRef.current.length - 1])
-    pendingBacks.current += 1
-    window.history.back()
   }, [])
 
   return { current, navigate, goToTab, goBack }

@@ -124,9 +124,12 @@ describe('Baby Tracker end-to-end flow', () => {
 
     first.unmount()
 
+    // A reload always starts at Home (predictable), with the data intact.
     render(<App />)
-    expect(await screen.findByRole('heading', { name: 'Diaper' })).toBeInTheDocument()
-    expect(screen.getByRole('navigation', { name: /primary/i })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: /hi, avery/i })).toBeInTheDocument()
+    const nav2 = () => within(screen.getByRole('navigation', { name: /primary/i }))
+    await user.click(nav2().getByRole('button', { name: 'Diaper' }))
+    expect(screen.getByRole('heading', { name: 'Diaper' })).toBeInTheDocument()
     expect(within(screen.getByRole('group', { name: 'Changes' })).getByText('1')).toBeInTheDocument()
   })
 })

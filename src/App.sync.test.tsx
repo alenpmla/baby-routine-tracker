@@ -213,11 +213,16 @@ describe('Phase 3: sync server', () => {
     await user.click(screen.getByRole('button', { name: 'Wet' }))
     first.unmount()
 
-    // Now offline: reload uses the localStorage cache, so the profile is still there
+    // Now offline: reload uses the localStorage cache (profile + data intact).
+    // A reload always starts at Home; navigate to Diaper to confirm the data.
     api.setOffline(true)
     render(<App />)
-    expect(await screen.findByRole('heading', { name: 'Diaper' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: /hi, avery/i })).toBeInTheDocument()
     expect(screen.getByTestId('offline-banner')).toHaveTextContent(/offline/i)
+    const nav2 = () => within(screen.getByRole('navigation', { name: /primary/i }))
+    await user.click(nav2().getByRole('button', { name: 'Diaper' }))
+    expect(screen.getByRole('heading', { name: 'Diaper' })).toBeInTheDocument()
+    expect(within(screen.getByRole('group', { name: 'Changes' })).getByText('1')).toBeInTheDocument()
   })
 
   it('does not report "Synced" when Retry is tapped while still offline with no pending ops', async () => {

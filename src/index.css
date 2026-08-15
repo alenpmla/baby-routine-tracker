@@ -1917,6 +1917,50 @@ button.event-link:active {
   height: auto;
 }
 
+.growth-open {
+  display: block;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  padding: 16px 12px;
+}
+
+.growth-open:hover {
+  border-color: var(--md-outline);
+  box-shadow: var(--elevation-2);
+}
+
+.growth-open-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  font-size: var(--type-caption);
+  color: var(--md-primary);
+  font-weight: 600;
+}
+
+.zoom-modal .modal-body {
+  overflow: auto;
+}
+
+.zoom-chart {
+  width: 100%;
+  min-width: 0;
+}
+
+.zoom-chart .recharts-wrapper {
+  font-family: inherit;
+}
+
+.zoom-hint {
+  margin: 0 0 10px;
+  font-size: var(--type-caption);
+  color: var(--md-on-surface-variant);
+  font-style: italic;
+}
+
+
 .growth-legend {
   display: flex;
   flex-wrap: wrap;
