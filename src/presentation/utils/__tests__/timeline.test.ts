@@ -13,7 +13,7 @@ describe('timelineTab', () => {
 })
 
 describe('timelineWording', () => {
-  it('completed sleep says "Woke up at {time}" with duration meta', () => {
+  it('completed sleep says "Woke up" (time lives on the rail) with duration meta', () => {
     const dayStart = new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate())
     const start = new Date(dayStart.getTime() - 5 * 3600 * 1000) // 19:00 previous local day (night)
     const end = new Date(dayStart.getTime() + 7 * 3600 * 1000) // 07:00 today local
@@ -24,11 +24,11 @@ describe('timelineWording', () => {
       data: { id: 's1', startTime: start.toISOString(), endTime: end.toISOString() },
     })
     const w = timelineWording(e)
-    expect(w.headline).toMatch(/^Woke up at /)
+    expect(w.headline).toBe('Woke up')
     expect(w.meta.length).toBeGreaterThan(0)
   })
 
-  it('running night sleep says "Started night sleep at {time}"', () => {
+  it('running night sleep says "Started night sleep"', () => {
     const dayStart = new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate())
     const start = new Date(dayStart.getTime() - 2 * 3600 * 1000) // 22:00 previous local day
     const e = event({
@@ -38,12 +38,12 @@ describe('timelineWording', () => {
       data: { id: 's1', startTime: start.toISOString(), endTime: null },
     })
     const w = timelineWording(e)
-    expect(w.headline).toMatch(/^Started night sleep at /)
+    expect(w.headline).toBe('Started night sleep')
     expect(w.meta).toBe('asleep now')
     expect(w.time).toBe(start.toISOString())
   })
 
-  it('running nap says "Started nap at {time}"', () => {
+  it('running nap says "Started nap"', () => {
     const noon = new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate(), 12, 0)
     const e = event({
       kind: 'sleep',
@@ -52,7 +52,7 @@ describe('timelineWording', () => {
       data: { id: 's1', startTime: noon.toISOString(), endTime: null },
     })
     const w = timelineWording(e)
-    expect(w.headline).toMatch(/^Started nap at /)
+    expect(w.headline).toBe('Started nap')
     expect(w.meta).toBe('asleep now')
   })
 
@@ -67,12 +67,12 @@ describe('timelineWording', () => {
       data: { id: 's1', startTime: start.toISOString(), endTime: end.toISOString() },
     })
     const w = timelineWording(e)
-    expect(w.headline).toMatch(/^Woke up at /)
+    expect(w.headline).toBe('Woke up')
     expect(w.meta).toMatch(/slept/)
     expect(w.time).toBe(end.toISOString())
   })
 
-  it('nap wording is "Napped start–end" anchored at the start', () => {
+  it('nap wording is "Napped" anchored at the start', () => {
     const noon = new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate(), 12, 0)
     const end = new Date(noon.getTime() + 90 * 60 * 1000)
     const e = event({
@@ -82,7 +82,7 @@ describe('timelineWording', () => {
       data: { id: 's1', startTime: noon.toISOString(), endTime: end.toISOString() },
     })
     const w = timelineWording(e)
-    expect(w.headline).toMatch(/^Napped /)
+    expect(w.headline).toBe('Napped')
     expect(w.time).toBe(noon.toISOString())
   })
 

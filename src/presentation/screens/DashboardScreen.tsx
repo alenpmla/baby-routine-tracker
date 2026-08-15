@@ -2,7 +2,7 @@ import { useTracker } from '../store/TrackerProvider'
 import { useWakeStatus } from '../store/useWakeStatus'
 import { describeAge, formatClock, formatDayLabel, formatDuration, isSameDay, shiftDays, startOfDay } from '../utils/time'
 import { describeFeedingMeta, describeFeedingTitle } from '../utils/feeding'
-import { timelineTab, timelineWording } from '../utils/timeline'
+import { timelineAccent, timelineTab, timelineWording } from '../utils/timeline'
 import { BottleIcon, DiaperIcon, DirtyDiaperIcon, MoonIcon, SettingsIcon } from '../components/icons'
 import GrowthChart, { HEAD_CIRCUMFERENCE_METRIC, WEIGHT_METRIC } from '../components/GrowthChart'
 import InsightsSection from '../components/InsightsSection'
@@ -32,11 +32,13 @@ export default function DashboardScreen({
   // Timeline-only: a night sleep that began in this day but ends after midnight
   // is attributed to the *next* day by `day.events` (end-based). Add a start-side
   // event here so the day's story closes with "Started night sleep at …".
+  // Running sleeps are already attributed to this day by start, so only completed
+  // sleeps that span past midnight are added (no duplicates).
   const dayStart = startOfDay(selectedDay)
   const dayEnd = startOfDay(shiftDays(selectedDay, 1))
   const startedSleeps = timelineMode
     ? getPeriodRecords(dayStart, dayEnd).sleeps.filter(
-        (s) => !s.endTime || new Date(s.endTime).getTime() >= dayEnd.getTime(),
+        (s) => s.endTime && new Date(s.endTime).getTime() >= dayEnd.getTime(),
       )
     : []
   const timelineEvents: TimelineEvent[] = [
@@ -145,11 +147,23 @@ export default function DashboardScreen({
                   <span className={`tl-node tl-node-${event.kind}`} aria-hidden="true" />
                   <button
                     type="button"
-                    className="tl-body"
+                    className={`tl-body tl-${timelineAccent(event)}`}
                     onClick={() => onNavigate?.(timelineTab(event))}
                   >
-                    <span className="tl-word">{wording.headline}</span>
-                    {wording.meta && <span className="tl-meta">{wording.meta}</span>}
+                    <span className="tl-icon" aria-hidden="true">
+                      {event.kind === 'sleep' && <MoonIcon size={16} />}
+                      {event.kind === 'feeding' && <BottleIcon size={16} />}
+                      {event.kind === 'diaper' &&
+                        (event.data.type === 'dirty' || event.data.type === 'both' ? (
+                          <DirtyDiaperIcon size={16} />
+                        ) : (
+                          <DiaperIcon size={16} />
+                        ))}
+                    </span>
+                    <span className="tl-text">
+                      <span className="tl-word">{wording.headline}</span>
+                      {wording.meta && <span className="tl-meta">{wording.meta}</span>}
+                    </span>
                   </button>
                 </li>
               ))}

@@ -48,7 +48,7 @@ describe('Home log timeline view', () => {
 
     const list = screen.getByRole('button', { name: /oats porridge/i })
     expect(list).toBeInTheDocument()
-    expect(screen.queryByText('Woke up at')).not.toBeInTheDocument()
+    expect(screen.queryByText('Woke up')).not.toBeInTheDocument()
   })
 
   it('persists the Timeline choice in Settings and renders natural-language wordings', async () => {
@@ -57,7 +57,7 @@ describe('Home log timeline view', () => {
     await onboard(user)
     await enableTimeline(user)
 
-    expect(screen.getByText(/^Woke up at /i)).toBeInTheDocument()
+    expect(screen.getByText(/^Woke up$/i)).toBeInTheDocument()
     expect(screen.getByText(/^Had Oats porridge, Banana$/i)).toBeInTheDocument()
     expect(screen.getByText('Wet diaper')).toBeInTheDocument()
     // The timeline entries are compact tappable rows, not the full card list rows
@@ -71,11 +71,37 @@ describe('Home log timeline view', () => {
     await enableTimeline(user)
 
     const rows = Array.from(document.querySelectorAll('.tl-item .tl-word')).map((el) => el.textContent ?? '')
-    expect(rows[0]).toMatch(/^Woke up at /)
-    expect(rows[1]).toMatch(/^Had Oats porridge, Banana$/)
-    expect(rows[2]).toMatch(/^Napped /)
+    expect(rows[0]).toBe('Woke up')
+    expect(rows[1]).toBe('Had Oats porridge, Banana')
+    expect(rows[2]).toBe('Napped')
     expect(rows[3]).toBe('Wet diaper')
-    expect(rows[rows.length - 1]).toMatch(/^Started night sleep at /)
+    expect(rows[rows.length - 1]).toBe('Started night sleep')
+  })
+
+  it('renders a category accent class and leading icon per timeline entry', async () => {
+    seedDay()
+    const user = userEvent.setup()
+    await onboard(user)
+    await enableTimeline(user)
+
+    const bodies = Array.from(document.querySelectorAll<HTMLElement>('.tl-body'))
+    expect(bodies.length).toBeGreaterThan(0)
+    expect(bodies.some((b) => b.classList.contains('tl-sleep'))).toBe(true)
+    expect(bodies.some((b) => b.classList.contains('tl-feeding'))).toBe(true)
+    expect(bodies.some((b) => b.classList.contains('tl-diaper'))).toBe(true)
+    expect(bodies.some((b) => b.querySelector('.tl-icon'))).toBe(true)
+  })
+
+  it('does not duplicate a running "sleeping now" night sleep in the timeline', async () => {
+    seedDay()
+    const user = userEvent.setup()
+    await onboard(user)
+    await enableTimeline(user)
+
+    const starts = Array.from(document.querySelectorAll('.tl-item .tl-word')).filter((el) =>
+      el.textContent === 'Started night sleep',
+    )
+    expect(starts).toHaveLength(1)
   })
 
   it('survives reload (persisted setting)', async () => {
@@ -83,12 +109,12 @@ describe('Home log timeline view', () => {
     const user = userEvent.setup()
     await onboard(user)
     await enableTimeline(user)
-    expect(screen.getByText(/^Woke up at /i)).toBeInTheDocument()
+    expect(screen.getByText(/^Woke up$/i)).toBeInTheDocument()
 
     // reload: re-mount with same server settings
     vi.unstubAllGlobals()
     render(<App />)
-    await waitFor(() => expect(screen.getByText(/^Woke up at /i)).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText(/^Woke up$/i)).toBeInTheDocument())
   })
 
   it('tapping a timeline entry navigates to the matching tab', async () => {

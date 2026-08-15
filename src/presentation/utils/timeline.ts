@@ -9,6 +9,11 @@ export function timelineTab(event: TimelineEvent): 'sleep' | 'feeding' | 'diaper
   return event.kind
 }
 
+/** Category accent key used for the timeline icon tint + edge strip. */
+export function timelineAccent(event: TimelineEvent): string {
+  return event.kind
+}
+
 /** Night vs nap for a sleep, incl. running sleeps (inferred from start hour). */
 function isNight(s: SleepSession): boolean {
   if (s.endTime) {
@@ -39,17 +44,18 @@ export function timelineWording(event: TimelineEvent): TimelineWording {
   if (event.kind === 'sleep') {
     const startClock = formatClock(event.data.startTime)
     // Start-side of a sleep (used for a night sleep that began in this day but
-    // ends after it): the day closes with "Started night sleep at …".
+    // ends after it): the day closes with "Started night sleep". The rail clock
+    // already shows the time, so the headline carries no redundant time.
     if (event.mode === 'start') {
       return isNight(event.data)
-        ? { headline: `Started night sleep at ${startClock}`, meta: 'asleep', time: event.data.startTime }
-        : { headline: `Started nap at ${startClock}`, meta: 'asleep', time: event.data.startTime }
+        ? { headline: 'Started night sleep', meta: 'asleep', time: event.data.startTime }
+        : { headline: 'Started nap', meta: 'asleep', time: event.data.startTime }
     }
     if (!event.data.endTime) {
       // Running sleep: the day (or night) is still going.
       return isNight(event.data)
-        ? { headline: `Started night sleep at ${startClock}`, meta: 'asleep now', time: event.data.startTime }
-        : { headline: `Started nap at ${startClock}`, meta: 'asleep now', time: event.data.startTime }
+        ? { headline: 'Started night sleep', meta: 'asleep now', time: event.data.startTime }
+        : { headline: 'Started nap', meta: 'asleep now', time: event.data.startTime }
     }
     const endClock = formatClock(event.data.endTime)
     const duration = formatDuration(
@@ -59,14 +65,14 @@ export function timelineWording(event: TimelineEvent): TimelineWording {
       // A completed night sleep spans the evening→morning; the headline is the
       // wake-up, so anchor it at the end time (the morning).
       return {
-        headline: `Woke up at ${endClock}`,
+        headline: 'Woke up',
         meta: `slept ${startClock}–${endClock} · ${duration}`,
         time: event.data.endTime,
       }
     }
     return {
-      headline: `Napped ${startClock}–${endClock}`,
-      meta: duration,
+      headline: 'Napped',
+      meta: `${startClock}–${endClock} · ${duration}`,
       time: event.data.startTime,
     }
   }
