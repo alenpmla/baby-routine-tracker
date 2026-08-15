@@ -237,7 +237,7 @@ export default function GrowthChartZoomModal({
                 dataKey?: string
               }>
               const series = [
-                { key: 'baby', label: 'Baby', color: 'var(--baby-line)' },
+                { key: 'baby', label: 'Baby', color: '#7c4dff' },
                 { key: 'p50', label: 'Median', color: 'var(--md-primary)' },
                 { key: 'p3', label: 'P3', color: 'var(--md-on-surface-variant)' },
                 { key: 'p97', label: 'P97', color: 'var(--md-on-surface-variant)' },
@@ -268,9 +268,7 @@ export default function GrowthChartZoomModal({
                     return (
                       <div key={s.key} className="zoom-tooltip-row">
                         <span className="zoom-tooltip-dot" style={{ background: s.color }} />
-                        <span className="zoom-tooltip-name" style={{ color: s.color }}>
-                          {s.label}
-                        </span>
+                        <span className="zoom-tooltip-name">{s.label}</span>
                         <span className="zoom-tooltip-value">{fmt(item.value)}</span>
                       </div>
                     )
@@ -305,7 +303,7 @@ export default function GrowthChartZoomModal({
           />
           <Area
             dataKey="baby"
-            stroke="var(--baby-line)"
+            stroke="#7c4dff"
             strokeWidth={2.5}
             fill="none"
             strokeLinejoin="round"
@@ -369,7 +367,11 @@ export default function GrowthChartZoomModal({
               <span className="growth-swatch growth-swatch-median" /> Median (P50)
             </span>
             <span className="growth-key">
-              <span className="growth-swatch growth-swatch-baby" /> Baby
+              <span
+                className="growth-swatch growth-swatch-baby"
+                style={{ background: '#7c4dff' }}
+              />{' '}
+              Baby
             </span>
           </div>
           <p className="growth-note">{metric.note}</p>

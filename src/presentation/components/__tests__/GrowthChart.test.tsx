@@ -86,7 +86,7 @@ describe('GrowthChart head circumference metric', () => {
       />,
     )
     expect(container.querySelectorAll('svg circle')).toHaveLength(2)
-    expect(container.querySelector('svg path[stroke="var(--accent-weight-fg)"]')).toBeTruthy()
+    expect(container.querySelector('svg path[stroke="#7c4dff"]')).toBeTruthy()
   })
 })
 

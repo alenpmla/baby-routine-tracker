@@ -56,7 +56,6 @@
   --accent-diaper-fg: #2c7a67;
   --accent-weight-bg: #e3ecff;
   --accent-weight-fg: #3557c4;
-  --baby-line: #2f54d0;
   --accent-health-bg: #e6f0e8;
   --accent-health-fg: #2f6b46;
   --accent-iron-bg: #f9e3de;
@@ -217,7 +216,6 @@
   --accent-diaper-fg: #7fd8c0;
   --accent-weight-bg: #2b4570;
   --accent-weight-fg: #a9c6ff;
-  --baby-line: #82b1ff;
   --accent-health-bg: #1d3a26;
   --accent-health-fg: #9fd0b0;
   --accent-iron-bg: #4a2b1e;
@@ -2018,11 +2016,6 @@ button.event-link:active {
   gap: 6px;
 }
 
-.zoom-modal .growth-key:has(.growth-swatch-baby) {
-  color: var(--baby-line);
-  font-weight: 600;
-}
-
 .growth-swatch {
   width: 14px;
   height: 6px;
@@ -2040,7 +2033,7 @@ button.event-link:active {
 }
 
 .growth-swatch-baby {
-  background: var(--baby-line);
+  background: #7c4dff;
   height: 4px;
   border-radius: 2px;
 }

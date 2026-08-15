@@ -170,7 +170,7 @@ export default function GrowthChart({
         <path d={linePath(series.p50)} fill="none" stroke="var(--md-primary)" strokeWidth="2" />
 
         {valuePath && (
-          <path d={valuePath} fill="none" stroke="var(--accent-weight-fg)" strokeWidth="2.5" strokeLinejoin="round" />
+          <path d={valuePath} fill="none" stroke="#7c4dff" strokeWidth="2.5" strokeLinejoin="round" />
         )}
         {data.map((p, i) => (
           <circle
@@ -179,7 +179,7 @@ export default function GrowthChart({
             cy={y(p.value)}
             r="4"
             fill="var(--accent-weight-bg)"
-            stroke="var(--accent-weight-fg)"
+            stroke="#7c4dff"
             strokeWidth="2"
           />
         ))}
@@ -192,7 +192,11 @@ export default function GrowthChart({
           <span className="growth-swatch growth-swatch-median" /> Median (P50)
         </span>
         <span className="growth-key">
-          <span className="growth-swatch growth-swatch-baby" /> Baby
+          <span
+            className="growth-swatch growth-swatch-baby"
+            style={{ background: '#7c4dff' }}
+          />{' '}
+          Baby
         </span>
       </div>
       <p className="growth-note">{metric.note}</p>
