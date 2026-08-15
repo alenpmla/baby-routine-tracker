@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { MilestoneEntry } from '../../domain/model/MilestoneEntry'
 import { MILESTONES } from '../../domain/model/MilestoneEntry'
 import { useTracker } from '../store/TrackerProvider'
-import { describeAge, formatClock, formatDayLabel, startOfDay } from '../utils/time'
+import { describeAge, formatClock, formatDate, formatDayLabel, startOfDay } from '../utils/time'
 import { BackIcon, CheckIcon, CopyIcon, EditIcon, StarIcon } from '../components/icons'
 import DayNav from '../components/DayNav'
 import Modal from '../components/Modal'
@@ -176,7 +176,7 @@ export default function MilestonesScreen({ onBack }: { onBack?: () => void }) {
               <span className="firsts-value">
                 {f.achieved && f.time ? (
                   <>
-                    <span className="firsts-time">{formatClock(f.time)}</span>
+                    <span className="firsts-time">{formatDate(f.time)}</span>
                     <span className="firsts-age">{describeAge(dob, new Date(f.time))} old</span>
                   </>
                 ) : (
