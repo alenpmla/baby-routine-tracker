@@ -318,10 +318,21 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
       const ms = new Date(iso).getTime()
       return ms >= start.getTime() && ms <= end.getTime()
     }
+    const inDay = (day: string) => {
+      const ms = new Date(`${day}T00:00:00`).getTime()
+      return ms >= start.getTime() && ms <= end.getTime()
+    }
     return {
       sleeps: repos.current.sleep.getAll().filter((s) => inPeriod(s.startTime)),
       feedings: repos.current.feeding.getAll().filter((f) => inPeriod(f.time)),
       diapers: repos.current.diaper.getAll().filter((d) => inPeriod(d.time)),
+      medications: repos.current.medication.getAll().filter((m) => inPeriod(m.time)),
+      temperatures: repos.current.temperature.getAll().filter((t) => inPeriod(t.time)),
+      weights: repos.current.weight.getAll().filter((w) => inPeriod(w.time)),
+      headCircumferences: repos.current.headCircumference.getAll().filter((h) => inPeriod(h.time)),
+      teeth: repos.current.tooth.getAll().filter((t) => inPeriod(t.time)),
+      teethingDays: repos.current.teethingDay.getAll().filter((d) => inDay(d.day)),
+      milestones: repos.current.milestone.getAll().filter((m) => inPeriod(m.time)),
     }
   }, [])
 

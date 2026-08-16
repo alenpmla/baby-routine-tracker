@@ -10,7 +10,9 @@ export const WHATS_NEW: WhatNewEntry[] = [
     version: '0.1.9',
     date: '2026-08-16',
     items: [
-      'PDF report asks which sections to include (Summary, Daily totals, Sleep, Feeding, Diaper) and remembers your choice',
+      'PDF report asks which sections to include — Summary, Daily totals, Sleep, Feeding, Diaper, Medication, Temperature, Weight, Head circumference, Teeth, Teething, and Milestones — and remembers your choice',
+      'PDF report sections with no data in the chosen period are disabled so empty sections are not included',
+      'PDF report date picker offers quick presets — This month, Last month, Past 3 months, Last 7 days, and Last 30 days — that fill the From/To dates automatically',
     ],
   },
   {

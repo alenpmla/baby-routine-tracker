@@ -118,3 +118,20 @@ export function toInputTime(d: Date): string {
   const min = String(d.getMinutes()).padStart(2, '0')
   return `${h}:${min}`
 }
+
+export function firstOfMonth(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), 1)
+}
+
+export function lastOfMonth(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth() + 1, 0)
+}
+
+export function monthBack(date: Date, n: number): Date {
+  const monthIndex = date.getMonth() - n
+  const targetYear = date.getFullYear() + Math.floor(monthIndex / 12)
+  const targetMonth = ((monthIndex % 12) + 12) % 12
+  const lastDay = new Date(targetYear, targetMonth + 1, 0).getDate()
+  const day = Math.min(date.getDate(), lastDay)
+  return new Date(targetYear, targetMonth, day)
+}

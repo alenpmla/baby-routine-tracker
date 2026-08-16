@@ -9,10 +9,34 @@ import {
   DEFAULT_REPORT_SECTIONS,
   REPORT_SECTION_LABELS,
   hasAnySection,
+  sectionsWithData,
   type ReportSections,
 } from '../utils/reportSections'
+import type { ReportRecords } from '../utils/report'
+import {
+  firstOfMonth,
+  lastOfMonth,
+  monthBack,
+  shiftDays,
+  toInputDate,
+  type DayRange,
+} from '../utils/time'
 
 const REPORT_SECTIONS_KEY = 'bt.reportSections'
+
+const REPORT_PRESETS: { label: string; range: (now: Date) => DayRange }[] = [
+  { label: 'This month', range: (now) => ({ start: firstOfMonth(now), end: lastOfMonth(now) }) },
+  {
+    label: 'Last month',
+    range: (now) => {
+      const lastMonth = monthBack(now, 1)
+      return { start: firstOfMonth(lastMonth), end: lastOfMonth(lastMonth) }
+    },
+  },
+  { label: 'Past 3 months', range: (now) => ({ start: monthBack(now, 3), end: now }) },
+  { label: 'Last 7 days', range: (now) => ({ start: shiftDays(now, -6), end: now }) },
+  { label: 'Last 30 days', range: (now) => ({ start: shiftDays(now, -29), end: now }) },
+]
 
 function readStoredSections(): ReportSections {
   try {
@@ -51,6 +75,8 @@ export default function DataReportsScreen({ onBack }: { onBack: () => void }) {
   const [reportError, setReportError] = useState<string | null>(null)
   const [reportSections, setReportSections] = useState<ReportSections>(readStoredSections)
   const [showSectionPicker, setShowSectionPicker] = useState(false)
+  const [periodRecords, setPeriodRecords] = useState<ReportRecords | null>(null)
+  const [availableSections, setAvailableSections] = useState<ReportSections | null>(null)
 
   async function handleExport() {
     setDataError(null)
@@ -116,6 +142,18 @@ export default function DataReportsScreen({ onBack }: { onBack: () => void }) {
     reader.readAsText(file)
   }
 
+  function applyPreset(label: string) {
+    const preset = REPORT_PRESETS.find((p) => p.label === label)
+    if (!preset) {
+      return
+    }
+    const range = preset.range(new Date())
+    setPeriodStart(toInputDate(range.start))
+    setPeriodEnd(toInputDate(range.end))
+    setReportStatus(null)
+    setReportError(null)
+  }
+
   async function handleReport() {
     setReportError(null)
     if (!periodStart || !periodEnd) {
@@ -128,20 +166,29 @@ export default function DataReportsScreen({ onBack }: { onBack: () => void }) {
       setReportError('End date must be after start date')
       return
     }
+    const records = getPeriodRecords(start, end)
+    setPeriodRecords(records)
+    setAvailableSections(sectionsWithData(records))
     setShowSectionPicker(true)
   }
 
   async function handleDownload(sections: ReportSections) {
     setReportError(null)
     setShowSectionPicker(false)
-    setReportSections(sections)
-    storeSections(sections)
+    const effectiveSections: ReportSections = availableSections
+      ? REPORT_SECTION_LABELS.reduce<ReportSections>(
+          (acc, { key }) => ({ ...acc, [key]: sections[key] && availableSections[key] }),
+          { ...sections },
+        )
+      : sections
+    setReportSections(effectiveSections)
+    storeSections(effectiveSections)
     const start = new Date(`${periodStart}T00:00:00`)
     const end = new Date(`${periodEnd}T23:59:59`)
     try {
-      const records = getPeriodRecords(start, end)
+      const records = periodRecords ?? getPeriodRecords(start, end)
       const { downloadReportPdf } = await import('../utils/report')
-      downloadReportPdf(baby, start, end, records, reportUnits, sections)
+      downloadReportPdf(baby, start, end, records, reportUnits, effectiveSections)
       setReportStatus('Report downloaded')
     } catch {
       setReportError('Could not generate the report')
@@ -151,6 +198,13 @@ export default function DataReportsScreen({ onBack }: { onBack: () => void }) {
   function toggleSection(key: keyof ReportSections) {
     setReportSections((prev) => ({ ...prev, [key]: !prev[key] }))
   }
+
+  const effectiveSections: ReportSections = availableSections
+    ? REPORT_SECTION_LABELS.reduce<ReportSections>(
+        (acc, { key }) => ({ ...acc, [key]: reportSections[key] && availableSections[key] }),
+        { ...reportSections },
+      )
+    : reportSections
 
   return (
     <div className="screen-content">
@@ -207,6 +261,13 @@ export default function DataReportsScreen({ onBack }: { onBack: () => void }) {
 
       <div className="card">
         <p className="settings-hint">Report — export a professional PDF for a date range.</p>
+        <div className="chip-row chip-row-wrap report-preset-row" role="group" aria-label="Quick date range">
+          {REPORT_PRESETS.map((p) => (
+            <button key={p.label} type="button" className="chip chip-small" onClick={() => applyPreset(p.label)}>
+              {p.label}
+            </button>
+          ))}
+        </div>
         <div className="backfill-datetime settings-units">
           <label className="field">
             <span className="field-label">From</span>
@@ -244,16 +305,23 @@ export default function DataReportsScreen({ onBack }: { onBack: () => void }) {
       >
         <p className="dialog-message">Choose what to include in the PDF.</p>
         <div className="report-sections" role="group" aria-label="Report sections">
-          {REPORT_SECTION_LABELS.map(({ key, label }) => (
-            <label key={key} className="report-section-option">
-              <input
-                type="checkbox"
-                checked={reportSections[key]}
-                onChange={() => toggleSection(key)}
-              />
-              <span>{label}</span>
-            </label>
-          ))}
+          {REPORT_SECTION_LABELS.map(({ key, label }) => {
+            const disabled = availableSections !== null && !availableSections[key]
+            return (
+              <label
+                key={key}
+                className={`report-section-option${disabled ? ' report-section-option-disabled' : ''}`}
+              >
+                <input
+                  type="checkbox"
+                  checked={reportSections[key] && !disabled}
+                  disabled={disabled}
+                  onChange={() => toggleSection(key)}
+                />
+                <span>{label}</span>
+              </label>
+            )
+          })}
         </div>
         <div className="dialog-actions">
           <button type="button" className="btn" onClick={() => setShowSectionPicker(false)}>
@@ -262,7 +330,7 @@ export default function DataReportsScreen({ onBack }: { onBack: () => void }) {
           <button
             type="button"
             className="btn"
-            disabled={!hasAnySection(reportSections)}
+            disabled={!hasAnySection(effectiveSections)}
             onClick={() => void handleDownload(reportSections)}
           >
             Download

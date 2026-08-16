@@ -745,11 +745,15 @@ body.appbar-scrolled .screen-header {
   justify-content: flex-start;
 }
 
-.chip-small {
+.chip.chip-small {
   min-height: 36px;
   padding: 0 14px;
   font-size: var(--type-label);
   border-radius: 999px;
+}
+
+.report-preset-row {
+  margin-top: 12px;
 }
 
 /* ---------- Segmented button (M3) ---------- */
@@ -2979,6 +2983,15 @@ button.event-link:active {
 .report-section-option span {
   font-size: var(--type-body);
   color: var(--md-on-surface);
+}
+
+.report-section-option-disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.report-section-option-disabled:hover {
+  background: none;
 }
 
 .dialog-actions .btn:disabled {

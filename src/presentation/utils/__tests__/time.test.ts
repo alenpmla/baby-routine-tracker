@@ -6,6 +6,10 @@ import {
   getDayRange,
   formatDate,
   formatDayMonth,
+  firstOfMonth,
+  lastOfMonth,
+  monthBack,
+  toInputDate,
 } from '../time'
 
 describe('time utils', () => {
@@ -48,5 +52,89 @@ describe('time utils', () => {
       d.toLocaleDateString([], { month: 'short', day: 'numeric' }),
     )
     expect(formatDayMonth('not-a-date')).toBe('')
+  })
+})
+
+describe('month boundary helpers', () => {
+  it('firstOfMonth returns local midnight of day 1 of the calendar month', () => {
+    const result = firstOfMonth(new Date(2026, 7, 16))
+    expect(result.getFullYear()).toBe(2026)
+    expect(result.getMonth()).toBe(7)
+    expect(result.getDate()).toBe(1)
+    expect(result.getHours()).toBe(0)
+    expect(result.getMinutes()).toBe(0)
+    expect(toInputDate(result)).toBe('2026-08-01')
+  })
+
+  it('firstOfMonth handles January boundaries', () => {
+    const result = firstOfMonth(new Date(2026, 0, 16))
+    expect(toInputDate(result)).toBe('2026-01-01')
+  })
+
+  it('lastOfMonth returns the last day of the calendar month', () => {
+    const result = lastOfMonth(new Date(2026, 7, 16))
+    expect(result.getFullYear()).toBe(2026)
+    expect(result.getMonth()).toBe(7)
+    expect(result.getDate()).toBe(31)
+    expect(result.getHours()).toBe(0)
+    expect(result.getMinutes()).toBe(0)
+    expect(toInputDate(result)).toBe('2026-08-31')
+  })
+
+  it('lastOfMonth returns 28 for non-leap February', () => {
+    const result = lastOfMonth(new Date(2026, 1, 5))
+    expect(toInputDate(result)).toBe('2026-02-28')
+  })
+
+  it('lastOfMonth returns 29 for a leap-year February', () => {
+    const result = lastOfMonth(new Date(2028, 1, 29))
+    expect(result.getFullYear()).toBe(2028)
+    expect(result.getMonth()).toBe(1)
+    expect(result.getDate()).toBe(29)
+    expect(toInputDate(result)).toBe('2028-02-29')
+  })
+
+  it('monthBack keeps the same day-of-month', () => {
+    const result = monthBack(new Date(2026, 7, 14), 3)
+    expect(toInputDate(result)).toBe('2026-05-14')
+  })
+
+  it('monthBack clamps to the target month last day', () => {
+    const result = monthBack(new Date(2026, 4, 31), 1)
+    expect(toInputDate(result)).toBe('2026-04-30')
+  })
+
+  it('monthBack keeps the same day when the target month is long enough', () => {
+    const result = monthBack(new Date(2026, 7, 31), 3)
+    expect(toInputDate(result)).toBe('2026-05-31')
+  })
+
+  it('monthBack crosses a year boundary', () => {
+    const result = monthBack(new Date(2026, 0, 15), 1)
+    expect(toInputDate(result)).toBe('2025-12-15')
+  })
+
+  it('monthBack returns the same date for n of zero', () => {
+    const result = monthBack(new Date(2026, 7, 16), 0)
+    expect(toInputDate(result)).toBe('2026-08-16')
+  })
+
+  it('this month range spans first to last of the month', () => {
+    const start = firstOfMonth(new Date(2026, 7, 14))
+    const end = lastOfMonth(new Date(2026, 7, 14))
+    expect(toInputDate(start)).toBe('2026-08-01')
+    expect(toInputDate(end)).toBe('2026-08-31')
+  })
+
+  it('last month range spans first to last of the previous month', () => {
+    const start = firstOfMonth(monthBack(new Date(2026, 7, 14), 1))
+    const end = lastOfMonth(monthBack(new Date(2026, 7, 14), 1))
+    expect(toInputDate(start)).toBe('2026-07-01')
+    expect(toInputDate(end)).toBe('2026-07-31')
+  })
+
+  it('past 3 months starts today minus 3 calendar months', () => {
+    const start = monthBack(new Date(2026, 7, 14), 3)
+    expect(toInputDate(start)).toBe('2026-05-14')
   })
 })

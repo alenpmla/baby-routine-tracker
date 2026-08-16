@@ -6,6 +6,13 @@ import { foodsOf } from '../../domain/model/FeedingSession'
 import type { DiaperChange } from '../../domain/model/DiaperChange'
 import type { SleepSession } from '../../domain/model/SleepSession'
 import { sleepKind } from '../../domain/model/SleepSession'
+import type { MedicationEntry } from '../../domain/model/MedicationEntry'
+import type { TemperatureEntry } from '../../domain/model/TemperatureEntry'
+import type { WeightEntry } from '../../domain/model/WeightEntry'
+import type { HeadCircumferenceEntry } from '../../domain/model/HeadCircumferenceEntry'
+import type { ToothEntry } from '../../domain/model/ToothEntry'
+import type { TeethingDay } from '../../domain/model/TeethingDay'
+import type { MilestoneEntry } from '../../domain/model/MilestoneEntry'
 import { sleepTotalsByKind } from '../../domain/usecase/sleep'
 import { formatDuration, startOfDay, toInputDate } from './time'
 import { describeBottleTotal, describeSolidsTotal, describeAmount, type SnapshotUnits } from './feeding'
@@ -21,9 +28,16 @@ export interface ReportRecords {
   sleeps: SleepSession[]
   feedings: FeedingSession[]
   diapers: DiaperChange[]
+  medications: MedicationEntry[]
+  temperatures: TemperatureEntry[]
+  weights: WeightEntry[]
+  headCircumferences: HeadCircumferenceEntry[]
+  teeth: ToothEntry[]
+  teethingDays: TeethingDay[]
+  milestones: MilestoneEntry[]
 }
 
-export { DEFAULT_REPORT_SECTIONS, hasAnySection } from './reportSections'
+export { DEFAULT_REPORT_SECTIONS, hasAnySection, sectionsWithData } from './reportSections'
 export type { ReportSections } from './reportSections'
 
 export interface ReportSummary {
@@ -214,6 +228,30 @@ function statCard(doc: jsPDF, x: number, y: number, w: number, h: number, value:
   doc.text(label, x + 5, y + 14.5)
 }
 
+function reportTable(
+  doc: jsPDF,
+  head: string[],
+  body: string[][],
+  empty: string[],
+  opts: { startY?: number; columnStyles?: Record<number, { cellWidth: number }> } = {},
+) {
+  autoTable(doc, {
+    startY: opts.startY ?? 34,
+    head: [head],
+    body: body.length ? body : [empty],
+    theme: 'grid',
+    styles: { textColor: INK, fontSize: 9, cellPadding: 2.5 },
+    headStyles: { fillColor: PRIMARY, textColor: 255, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: ALT },
+    columnStyles: opts.columnStyles,
+    margin: { left: 14, right: 14 },
+  })
+}
+
+function fmtDayKey(day: string): string {
+  return fmtDate(`${day}T00:00:00`)
+}
+
 export function buildReportPdf(
   baby: Baby | null,
   start: Date,
@@ -387,6 +425,86 @@ export function buildReportPdf(
       alternateRowStyles: { fillColor: ALT },
       margin: { left: 14, right: 14 },
     })
+  }
+
+  // ---- Medication report (own page) ----
+  if (sections.medication) {
+    beginPage()
+    pageHeader(doc, 'Medication Report', `${name}  ·  ${periodLabel}`)
+    const rows = [...records.medications]
+      .sort((a, b) => a.time.localeCompare(b.time))
+      .map((m) => [
+        fmtDateTime(m.time),
+        m.name,
+        m.amount !== undefined ? `${m.amount} ${m.unit}`.trim() : '—',
+        m.notes ?? '',
+      ])
+    reportTable(doc, ['Date & time', 'Medication', 'Amount', 'Notes'], rows, ['—', '—', '—', 'No medication recorded'])
+  }
+
+  // ---- Temperature report (own page) ----
+  if (sections.temperature) {
+    beginPage()
+    pageHeader(doc, 'Temperature Report', `${name}  ·  ${periodLabel}`)
+    const rows = [...records.temperatures]
+      .sort((a, b) => a.time.localeCompare(b.time))
+      .map((t) => [
+        fmtDateTime(t.time),
+        `${t.temp} °${t.unit === 'c' ? 'C' : 'F'}`,
+        t.location ?? '—',
+        t.notes ?? '',
+      ])
+    reportTable(doc, ['Date & time', 'Temperature', 'Location', 'Notes'], rows, ['—', '—', '—', 'No temperature recorded'])
+  }
+
+  // ---- Weight report (own page) ----
+  if (sections.weight) {
+    beginPage()
+    pageHeader(doc, 'Weight Report', `${name}  ·  ${periodLabel}`)
+    const rows = [...records.weights]
+      .sort((a, b) => a.time.localeCompare(b.time))
+      .map((w) => [fmtDateTime(w.time), `${w.weight} ${w.unit}`])
+    reportTable(doc, ['Date & time', 'Weight'], rows, ['—', 'No weight recorded'])
+  }
+
+  // ---- Head circumference report (own page) ----
+  if (sections.headCircumference) {
+    beginPage()
+    pageHeader(doc, 'Head Circumference Report', `${name}  ·  ${periodLabel}`)
+    const rows = [...records.headCircumferences]
+      .sort((a, b) => a.time.localeCompare(b.time))
+      .map((h) => [fmtDateTime(h.time), `${h.value} ${h.unit}`])
+    reportTable(doc, ['Date & time', 'Head circumference'], rows, ['—', 'No head circumference recorded'])
+  }
+
+  // ---- Teeth report (own page) ----
+  if (sections.teeth) {
+    beginPage()
+    pageHeader(doc, 'Teeth Report', `${name}  ·  ${periodLabel}`)
+    const rows = [...records.teeth]
+      .sort((a, b) => a.time.localeCompare(b.time))
+      .map((t) => [fmtDate(t.time), t.tooth, t.notes ?? ''])
+    reportTable(doc, ['Date', 'Tooth', 'Notes'], rows, ['—', '—', 'No teeth recorded'])
+  }
+
+  // ---- Teething report (own page) ----
+  if (sections.teething) {
+    beginPage()
+    pageHeader(doc, 'Teething Report', `${name}  ·  ${periodLabel}`)
+    const rows = [...records.teethingDays]
+      .sort((a, b) => a.day.localeCompare(b.day))
+      .map((d) => [fmtDayKey(d.day), d.symptoms.join(', '), d.notes ?? ''])
+    reportTable(doc, ['Day', 'Symptoms', 'Notes'], rows, ['—', '—', 'No teething days recorded'])
+  }
+
+  // ---- Milestones report (own page) ----
+  if (sections.milestones) {
+    beginPage()
+    pageHeader(doc, 'Milestones Report', `${name}  ·  ${periodLabel}`)
+    const rows = [...records.milestones]
+      .sort((a, b) => a.time.localeCompare(b.time))
+      .map((m) => [fmtDate(m.time), m.milestone, m.notes ?? ''])
+    reportTable(doc, ['Date', 'Milestone', 'Notes'], rows, ['—', '—', 'No milestones recorded'])
   }
 
   const out = doc.output('arraybuffer')

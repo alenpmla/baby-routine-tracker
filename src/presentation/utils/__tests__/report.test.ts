@@ -1,9 +1,41 @@
 import { describe, it, expect } from 'vitest'
-import { buildDailyTotals, buildReportPdf, buildReportSummary, DEFAULT_REPORT_SECTIONS } from '../report'
+import { buildDailyTotals, buildReportPdf, buildReportSummary, DEFAULT_REPORT_SECTIONS, sectionsWithData } from '../report'
+import type { ReportRecords } from '../report'
 import type { ReportSections } from '../reportSections'
 import { startOfDay, toInputDate } from '../time'
 
 const units = { bottle: 'ml', solids: 'g' } as const
+
+const EMPTY_RECORDS: ReportRecords = {
+  sleeps: [],
+  feedings: [],
+  diapers: [],
+  medications: [],
+  temperatures: [],
+  weights: [],
+  headCircumferences: [],
+  teeth: [],
+  teethingDays: [],
+  milestones: [],
+}
+
+function sections(overrides: Partial<ReportSections> = {}): ReportSections {
+  return {
+    summary: false,
+    dailyTotals: false,
+    sleep: false,
+    feeding: false,
+    diaper: false,
+    medication: false,
+    temperature: false,
+    weight: false,
+    headCircumference: false,
+    teeth: false,
+    teething: false,
+    milestones: false,
+    ...overrides,
+  }
+}
 
 function pageCount(bytes: ArrayBuffer): number {
   const s = new TextDecoder('latin1').decode(bytes)
@@ -13,7 +45,7 @@ function pageCount(bytes: ArrayBuffer): number {
 
 describe('report generator', () => {
   it('builds summary totals from records', () => {
-    const records = {
+    const records: ReportRecords = { ...EMPTY_RECORDS,
       sleeps: [
         {
           id: 's1',
@@ -45,7 +77,7 @@ describe('report generator', () => {
     const sleepStart = '2026-08-14T20:00:00.000Z'
     const feedTime = '2026-08-16T08:30:00.000Z'
     const diaperTime = '2026-08-12T10:00:00.000Z'
-    const records = {
+    const records: ReportRecords = { ...EMPTY_RECORDS,
       sleeps: [{ id: 's1', startTime: sleepStart, endTime: '2026-08-14T21:30:00.000Z' }],
       feedings: [{ id: 'f1', time: feedTime, type: 'bottle' as const, amount: 120, unit: 'ml' as const }],
       diapers: [{ id: 'd1', time: diaperTime, type: 'wet' as const }],
@@ -70,7 +102,7 @@ describe('report generator', () => {
     const midnight = startOfDay(new Date('2026-08-14T12:00:00.000Z'))
     const startIso = new Date(midnight.getTime() - 3600 * 1000).toISOString()
     const endIso = new Date(midnight.getTime() + 3600 * 1000).toISOString()
-    const records = {
+    const records: ReportRecords = { ...EMPTY_RECORDS,
       sleeps: [{ id: 's1', startTime: startIso, endTime: endIso }],
       feedings: [{ id: 'f1', time: endIso, type: 'bottle' as const, amount: 60, unit: 'ml' as const }],
       diapers: [],
@@ -89,7 +121,7 @@ describe('report generator', () => {
   it('excludes an ongoing sleep from duration and count', () => {
     const midnight = startOfDay(new Date('2026-08-14T12:00:00.000Z'))
     const sameDay = (hours: number) => new Date(midnight.getTime() + hours * 3600 * 1000).toISOString()
-    const records = {
+    const records: ReportRecords = { ...EMPTY_RECORDS,
       sleeps: [
         { id: 's1', startTime: sameDay(10), endTime: sameDay(11) },
         { id: 's2', startTime: sameDay(14), endTime: null },
@@ -106,7 +138,7 @@ describe('report generator', () => {
   it('reports a day containing only an ongoing sleep with count 0 and no duration', () => {
     const midnight = startOfDay(new Date('2026-08-14T12:00:00.000Z'))
     const startIso = new Date(midnight.getTime() + 10 * 3600 * 1000).toISOString()
-    const records = {
+    const records: ReportRecords = { ...EMPTY_RECORDS,
       sleeps: [{ id: 's1', startTime: startIso, endTime: null }],
       feedings: [],
       diapers: [],
@@ -122,7 +154,7 @@ describe('report generator', () => {
     const day1Midnight = startOfDay(new Date('2026-08-14T12:00:00.000Z'))
     const day2Midnight = startOfDay(new Date(day1Midnight.getTime() + 48 * 3600 * 1000))
     const at = (midnight: Date, hours: number) => new Date(midnight.getTime() + hours * 3600 * 1000).toISOString()
-    const records = {
+    const records: ReportRecords = { ...EMPTY_RECORDS,
       sleeps: [],
       feedings: [
         { id: 'b1', time: at(day1Midnight, 8), type: 'bottle' as const, amount: 200, unit: 'ml' as const },
@@ -154,7 +186,7 @@ describe('report generator', () => {
     const day1Midnight = startOfDay(new Date('2026-08-14T12:00:00.000Z'))
     const day2Midnight = startOfDay(new Date(day1Midnight.getTime() + 48 * 3600 * 1000))
     const at = (midnight: Date, hours: number) => new Date(midnight.getTime() + hours * 3600 * 1000).toISOString()
-    const records = {
+    const records: ReportRecords = { ...EMPTY_RECORDS,
       sleeps: [],
       feedings: [],
       diapers: [
@@ -177,7 +209,7 @@ describe('report generator', () => {
   })
 
   it('splits the summary sleep totals by night and nap', () => {
-    const records = {
+    const records: ReportRecords = { ...EMPTY_RECORDS,
       sleeps: [
         { id: 's1', startTime: '2026-08-14T21:00:00.000Z', endTime: '2026-08-14T23:00:00.000Z', kind: 'night' as const },
         { id: 's2', startTime: '2026-08-15T10:00:00.000Z', endTime: '2026-08-15T11:00:00.000Z', kind: 'nap' as const },
@@ -197,7 +229,7 @@ describe('report generator', () => {
   it('classifies legacy sleeps (no kind) by inference in the report summary', () => {
     const midnight = startOfDay(new Date('2026-08-14T12:00:00.000Z'))
     const at = (hours: number) => new Date(midnight.getTime() + hours * 3600 * 1000).toISOString()
-    const records = {
+    const records: ReportRecords = { ...EMPTY_RECORDS,
       sleeps: [
         { id: 'night', startTime: at(2), endTime: at(6) }, // 2am local -> night, 4h
         { id: 'nap', startTime: at(13), endTime: at(14) }, // 1pm local -> nap, 1h
@@ -217,7 +249,7 @@ describe('report generator', () => {
   it('splits daily sleep totals into night and nap, excluding ongoing sleeps', () => {
     const day1Midnight = startOfDay(new Date('2026-08-14T12:00:00.000Z'))
     const at = (hours: number) => new Date(day1Midnight.getTime() + hours * 3600 * 1000).toISOString()
-    const records = {
+    const records: ReportRecords = { ...EMPTY_RECORDS,
       sleeps: [
         { id: 'n1', startTime: at(1), endTime: at(8), kind: 'night' as const }, // 7h night
         { id: 'nap1', startTime: at(10), endTime: at(11), kind: 'nap' as const }, // 1h nap
@@ -242,7 +274,7 @@ describe('report generator', () => {
     const day1Midnight = startOfDay(new Date('2026-08-14T12:00:00.000Z'))
     const day2Midnight = startOfDay(new Date(day1Midnight.getTime() + 24 * 3600 * 1000))
     const at = (midnight: Date, hours: number) => new Date(midnight.getTime() + hours * 3600 * 1000).toISOString()
-    const records = {
+    const records: ReportRecords = { ...EMPTY_RECORDS,
       sleeps: [
         { id: 'd1night', startTime: at(day1Midnight, 19), endTime: at(day1Midnight, 23) }, // 19:00 local -> night (boundary), 4h
         { id: 'd1nap', startTime: at(day1Midnight, 9), endTime: at(day1Midnight, 10) }, // 09:00 local -> nap (boundary), 1h
@@ -273,7 +305,7 @@ describe('report generator', () => {
   })
 
   it('yields zero/placeholder-safe values for a day with no records in a category', () => {
-    const records = {
+    const records: ReportRecords = { ...EMPTY_RECORDS,
       sleeps: [],
       feedings: [
         { id: 'f1', time: '2026-08-14T08:00:00.000Z', type: 'solids' as const, foods: ['avocado'] },
@@ -299,7 +331,7 @@ describe('report generator', () => {
   it('merges records across all categories on the same local day into a single row', () => {
     const day1Midnight = startOfDay(new Date('2026-08-14T12:00:00.000Z'))
     const at = (hours: number) => new Date(day1Midnight.getTime() + hours * 3600 * 1000).toISOString()
-    const records = {
+    const records: ReportRecords = { ...EMPTY_RECORDS,
       sleeps: [{ id: 's1', startTime: at(2), endTime: at(4) }],
       feedings: [
         { id: 'f1', time: at(8), type: 'bottle' as const, amount: 120, unit: 'ml' as const },
@@ -329,7 +361,7 @@ describe('report generator', () => {
   })
 
   it('returns an empty array when there are no records', () => {
-    expect(buildDailyTotals({ sleeps: [], feedings: [], diapers: [] }, units)).toEqual([])
+    expect(buildDailyTotals(EMPTY_RECORDS, units)).toEqual([])
   })
 
   it('generates a valid PDF (starts with %PDF header)', () => {
@@ -337,7 +369,7 @@ describe('report generator', () => {
       { id: 'b1', name: 'Ciara', dob: '2025-10-30', notes: '' },
       new Date('2026-08-01'),
       new Date('2026-08-08'),
-      { sleeps: [], feedings: [], diapers: [] },
+      EMPTY_RECORDS,
       units,
     )
     const header = new TextDecoder().decode(new Uint8Array(bytes.slice(0, 4)))
@@ -349,7 +381,7 @@ describe('report generator', () => {
     const day1Midnight = startOfDay(new Date('2026-08-14T12:00:00.000Z'))
     const day2Midnight = startOfDay(new Date(day1Midnight.getTime() + 24 * 3600 * 1000))
     const at = (midnight: Date, hours: number) => new Date(midnight.getTime() + hours * 3600 * 1000).toISOString()
-    const records = {
+    const records: ReportRecords = { ...EMPTY_RECORDS,
       sleeps: [{ id: 's1', startTime: at(day1Midnight, 1), endTime: at(day1Midnight, 3) }],
       feedings: [
         { id: 'f1', time: at(day1Midnight, 8), type: 'bottle' as const, amount: 120, unit: 'ml' as const },
@@ -375,7 +407,7 @@ describe('report generator', () => {
   it('renders a valid PDF with a mixed nap/night day in the Night · Nap daily column', () => {
     const midnight = startOfDay(new Date('2026-08-14T12:00:00.000Z'))
     const at = (hours: number) => new Date(midnight.getTime() + hours * 3600 * 1000).toISOString()
-    const records = {
+    const records: ReportRecords = { ...EMPTY_RECORDS,
       sleeps: [
         { id: 'n1', startTime: at(1), endTime: at(8), kind: 'night' as const }, // 7h night
         { id: 'nap1', startTime: at(10), endTime: at(11), kind: 'nap' as const }, // 1h nap
@@ -402,45 +434,144 @@ describe('report section selection', () => {
   const baby = { id: 'b1', name: 'Ciara', dob: '2025-10-30', notes: '' }
   const start = new Date('2026-08-01')
   const end = new Date('2026-08-08')
-  const empty = { sleeps: [], feedings: [], diapers: [] }
+  const empty = EMPTY_RECORDS
 
-  it('defaults all five sections on', () => {
+  it('defaults all twelve sections on', () => {
     expect(DEFAULT_REPORT_SECTIONS).toEqual({
       summary: true,
       dailyTotals: true,
       sleep: true,
       feeding: true,
       diaper: true,
+      medication: true,
+      temperature: true,
+      weight: true,
+      headCircumference: true,
+      teeth: true,
+      teething: true,
+      milestones: true,
     })
   })
 
-  it('renders the four-page report when all sections are selected', () => {
+  it('renders the eleven-page report when all sections are selected', () => {
     const bytes = buildReportPdf(baby, start, end, empty, units)
-    expect(pageCount(bytes)).toBe(4)
+    expect(pageCount(bytes)).toBe(11)
     expect(new TextDecoder().decode(new Uint8Array(bytes.slice(0, 4)))).toBe('%PDF')
   })
 
   it('renders only the Sleep page when it is the sole selected section (no blank first page)', () => {
-    const sections: ReportSections = { summary: false, dailyTotals: false, sleep: true, feeding: false, diaper: false }
-    const bytes = buildReportPdf(baby, start, end, empty, units, sections)
+    const bytes = buildReportPdf(baby, start, end, empty, units, sections({ sleep: true }))
     expect(pageCount(bytes)).toBe(1)
   })
 
   it('renders the overview page without summary cards when only Daily totals is selected', () => {
-    const sections: ReportSections = { summary: false, dailyTotals: true, sleep: false, feeding: false, diaper: false }
-    const bytes = buildReportPdf(baby, start, end, empty, units, sections)
+    const bytes = buildReportPdf(baby, start, end, empty, units, sections({ dailyTotals: true }))
     expect(pageCount(bytes)).toBe(1)
   })
 
   it('renders Summary + Feeding as two pages when the rest are deselected', () => {
-    const sections: ReportSections = { summary: true, dailyTotals: false, sleep: false, feeding: true, diaper: false }
-    const bytes = buildReportPdf(baby, start, end, empty, units, sections)
+    const bytes = buildReportPdf(baby, start, end, empty, units, sections({ summary: true, feeding: true }))
     expect(pageCount(bytes)).toBe(2)
   })
 
   it('renders a single overview page when only Summary and Daily totals are selected', () => {
-    const sections: ReportSections = { summary: true, dailyTotals: true, sleep: false, feeding: false, diaper: false }
-    const bytes = buildReportPdf(baby, start, end, empty, units, sections)
+    const bytes = buildReportPdf(baby, start, end, empty, units, sections({ summary: true, dailyTotals: true }))
     expect(pageCount(bytes)).toBe(1)
+  })
+
+  it('renders each new health section on its own page when selected', () => {
+    const bytes = buildReportPdf(baby, start, end, empty, units, sections({ medication: true }))
+    expect(pageCount(bytes)).toBe(1)
+    const teethOnly = buildReportPdf(baby, start, end, empty, units, sections({ teeth: true }))
+    expect(pageCount(teethOnly)).toBe(1)
+    const milestonesOnly = buildReportPdf(baby, start, end, empty, units, sections({ milestones: true }))
+    expect(pageCount(milestonesOnly)).toBe(1)
+  })
+
+  it('renders a valid PDF with populated health records', () => {
+    const records: ReportRecords = {
+      ...EMPTY_RECORDS,
+      medications: [{ id: 'm1', time: '2026-08-02T08:00:00.000Z', name: 'Ibuprofen', amount: 200, unit: 'mg' }],
+      temperatures: [{ id: 't1', time: '2026-08-02T09:00:00.000Z', temp: 38.2, unit: 'c', location: 'ear' }],
+      weights: [{ id: 'w1', time: '2026-08-02T10:00:00.000Z', weight: 8.4, unit: 'kg' }],
+      headCircumferences: [{ id: 'h1', time: '2026-08-02T11:00:00.000Z', value: 42.5, unit: 'cm' }],
+      teeth: [{ id: 'tooth1', time: '2026-08-02T12:00:00.000Z', tooth: 'Lower central incisor' }],
+      teethingDays: [{ id: 'td1', day: '2026-08-02', symptoms: ['Drooling', 'Fussy'] }],
+      milestones: [{ id: 'ms1', time: '2026-08-02T13:00:00.000Z', milestone: 'Roll over' }],
+    }
+    const bytes = buildReportPdf(baby, start, end, records, units)
+    const header = new TextDecoder().decode(new Uint8Array(bytes.slice(0, 4)))
+    expect(header).toBe('%PDF')
+    expect(pageCount(bytes)).toBe(11)
+  })
+})
+
+describe('sectionsWithData', () => {
+  const empty = EMPTY_RECORDS
+
+  it('marks every section unavailable when the period has no records', () => {
+    const available = sectionsWithData(empty)
+    expect(available).toEqual({
+      summary: false,
+      dailyTotals: false,
+      sleep: false,
+      feeding: false,
+      diaper: false,
+      medication: false,
+      temperature: false,
+      weight: false,
+      headCircumference: false,
+      teeth: false,
+      teething: false,
+      milestones: false,
+    })
+  })
+
+  it('enables the core sections (summary, daily totals, sleep, feeding, diaper) from sleep/feeding/diaper records', () => {
+    const available = sectionsWithData({
+      ...empty,
+      sleeps: [{ id: 's1', startTime: '2026-08-05T10:00:00.000Z', endTime: null }],
+      feedings: [{ id: 'f1', time: '2026-08-05T11:00:00.000Z', type: 'bottle', amount: 120, unit: 'ml' }],
+      diapers: [{ id: 'd1', time: '2026-08-05T12:00:00.000Z', type: 'wet' }],
+    })
+    expect(available.summary).toBe(true)
+    expect(available.dailyTotals).toBe(true)
+    expect(available.sleep).toBe(true)
+    expect(available.feeding).toBe(true)
+    expect(available.diaper).toBe(true)
+    expect(available.medication).toBe(false)
+    expect(available.temperature).toBe(false)
+    expect(available.weight).toBe(false)
+    expect(available.headCircumference).toBe(false)
+    expect(available.teeth).toBe(false)
+    expect(available.teething).toBe(false)
+    expect(available.milestones).toBe(false)
+  })
+
+  it('enables a health section only when its own collection has records', () => {
+    const available = sectionsWithData({
+      ...empty,
+      weights: [{ id: 'w1', time: '2026-08-05T10:00:00.000Z', weight: 8.4, unit: 'kg' }],
+      medications: [{ id: 'm1', time: '2026-08-05T11:00:00.000Z', name: 'Paracetamol', amount: 200, unit: 'mg' }],
+      temperatures: [{ id: 't1', time: '2026-08-05T12:00:00.000Z', temp: 38.2, unit: 'c' }],
+    })
+    expect(available.weight).toBe(true)
+    expect(available.medication).toBe(true)
+    expect(available.temperature).toBe(true)
+    expect(available.sleep).toBe(false)
+    expect(available.teeth).toBe(false)
+    expect(available.teething).toBe(false)
+    expect(available.milestones).toBe(false)
+    expect(available.summary).toBe(false)
+    expect(available.dailyTotals).toBe(false)
+  })
+
+  it('keeps an ongoing sleep (no end time) as available data', () => {
+    const available = sectionsWithData({
+      ...empty,
+      sleeps: [{ id: 's1', startTime: '2026-08-05T10:00:00.000Z', endTime: null }],
+    })
+    expect(available.sleep).toBe(true)
+    expect(available.summary).toBe(true)
   })
 })
