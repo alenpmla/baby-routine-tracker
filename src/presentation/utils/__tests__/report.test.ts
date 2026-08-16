@@ -1,8 +1,15 @@
 import { describe, it, expect } from 'vitest'
-import { buildDailyTotals, buildReportPdf, buildReportSummary } from '../report'
+import { buildDailyTotals, buildReportPdf, buildReportSummary, DEFAULT_REPORT_SECTIONS } from '../report'
+import type { ReportSections } from '../reportSections'
 import { startOfDay, toInputDate } from '../time'
 
 const units = { bottle: 'ml', solids: 'g' } as const
+
+function pageCount(bytes: ArrayBuffer): number {
+  const s = new TextDecoder('latin1').decode(bytes)
+  const m = s.match(/\/Type \/Page\b/g)
+  return m ? m.length : 0
+}
 
 describe('report generator', () => {
   it('builds summary totals from records', () => {
@@ -388,5 +395,52 @@ describe('report generator', () => {
     const header = new TextDecoder().decode(new Uint8Array(bytes.slice(0, 4)))
     expect(header).toBe('%PDF')
     expect(bytes.byteLength).toBeGreaterThan(1000)
+  })
+})
+
+describe('report section selection', () => {
+  const baby = { id: 'b1', name: 'Ciara', dob: '2025-10-30', notes: '' }
+  const start = new Date('2026-08-01')
+  const end = new Date('2026-08-08')
+  const empty = { sleeps: [], feedings: [], diapers: [] }
+
+  it('defaults all five sections on', () => {
+    expect(DEFAULT_REPORT_SECTIONS).toEqual({
+      summary: true,
+      dailyTotals: true,
+      sleep: true,
+      feeding: true,
+      diaper: true,
+    })
+  })
+
+  it('renders the four-page report when all sections are selected', () => {
+    const bytes = buildReportPdf(baby, start, end, empty, units)
+    expect(pageCount(bytes)).toBe(4)
+    expect(new TextDecoder().decode(new Uint8Array(bytes.slice(0, 4)))).toBe('%PDF')
+  })
+
+  it('renders only the Sleep page when it is the sole selected section (no blank first page)', () => {
+    const sections: ReportSections = { summary: false, dailyTotals: false, sleep: true, feeding: false, diaper: false }
+    const bytes = buildReportPdf(baby, start, end, empty, units, sections)
+    expect(pageCount(bytes)).toBe(1)
+  })
+
+  it('renders the overview page without summary cards when only Daily totals is selected', () => {
+    const sections: ReportSections = { summary: false, dailyTotals: true, sleep: false, feeding: false, diaper: false }
+    const bytes = buildReportPdf(baby, start, end, empty, units, sections)
+    expect(pageCount(bytes)).toBe(1)
+  })
+
+  it('renders Summary + Feeding as two pages when the rest are deselected', () => {
+    const sections: ReportSections = { summary: true, dailyTotals: false, sleep: false, feeding: true, diaper: false }
+    const bytes = buildReportPdf(baby, start, end, empty, units, sections)
+    expect(pageCount(bytes)).toBe(2)
+  })
+
+  it('renders a single overview page when only Summary and Daily totals are selected', () => {
+    const sections: ReportSections = { summary: true, dailyTotals: true, sleep: false, feeding: false, diaper: false }
+    const bytes = buildReportPdf(baby, start, end, empty, units, sections)
+    expect(pageCount(bytes)).toBe(1)
   })
 })

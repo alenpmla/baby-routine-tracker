@@ -2947,6 +2947,44 @@ button.event-link:active {
   line-height: 1.5;
 }
 
+/* Report section picker — checkbox list inside the report dialog */
+.report-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 16px;
+}
+
+.report-section-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 40px;
+  padding: 0 4px;
+  cursor: pointer;
+  border-radius: var(--shape-md);
+}
+
+.report-section-option:hover {
+  background: color-mix(in srgb, var(--md-on-surface) 6%, transparent);
+}
+
+.report-section-option input[type='checkbox'] {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  accent-color: var(--md-primary);
+}
+
+.report-section-option span {
+  font-size: var(--type-body);
+  color: var(--md-on-surface);
+}
+
+.dialog-actions .btn:disabled {
+  color: color-mix(in srgb, var(--md-primary) 38%, transparent);
+}
+
 .dialog-actions .btn-danger-text {
   color: var(--md-error);
 }

@@ -7,6 +7,13 @@ export interface WhatNewEntry {
 /** Recent features, newest first. Update this when shipping user-visible changes. */
 export const WHATS_NEW: WhatNewEntry[] = [
   {
+    version: '0.1.9',
+    date: '2026-08-16',
+    items: [
+      'PDF report asks which sections to include (Summary, Daily totals, Sleep, Feeding, Diaper) and remembers your choice',
+    ],
+  },
+  {
     version: '0.1.8',
     date: '2026-08-13',
     items: [

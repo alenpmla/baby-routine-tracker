@@ -4,6 +4,36 @@ import { useSnapshotPrefs } from '../store/SnapshotPrefsProvider'
 import { useSnackbar } from '../store/SnackbarProvider'
 import { isValidBackup } from '../../data/repositories/RemoteRepositories'
 import { BackIcon } from '../components/icons'
+import Modal from '../components/Modal'
+import {
+  DEFAULT_REPORT_SECTIONS,
+  REPORT_SECTION_LABELS,
+  hasAnySection,
+  type ReportSections,
+} from '../utils/reportSections'
+
+const REPORT_SECTIONS_KEY = 'bt.reportSections'
+
+function readStoredSections(): ReportSections {
+  try {
+    const raw = window.localStorage.getItem(REPORT_SECTIONS_KEY)
+    if (raw !== null) {
+      const parsed = JSON.parse(raw) as Partial<ReportSections>
+      return { ...DEFAULT_REPORT_SECTIONS, ...parsed }
+    }
+  } catch {
+    /* ignore */
+  }
+  return DEFAULT_REPORT_SECTIONS
+}
+
+function storeSections(sections: ReportSections) {
+  try {
+    window.localStorage.setItem(REPORT_SECTIONS_KEY, JSON.stringify(sections))
+  } catch {
+    /* ignore */
+  }
+}
 
 export default function DataReportsScreen({ onBack }: { onBack: () => void }) {
   const { baby, exportData, importData, getPeriodRecords } = useTracker()
@@ -19,6 +49,8 @@ export default function DataReportsScreen({ onBack }: { onBack: () => void }) {
   const [periodEnd, setPeriodEnd] = useState('')
   const [reportStatus, setReportStatus] = useState<string | null>(null)
   const [reportError, setReportError] = useState<string | null>(null)
+  const [reportSections, setReportSections] = useState<ReportSections>(readStoredSections)
+  const [showSectionPicker, setShowSectionPicker] = useState(false)
 
   async function handleExport() {
     setDataError(null)
@@ -96,14 +128,28 @@ export default function DataReportsScreen({ onBack }: { onBack: () => void }) {
       setReportError('End date must be after start date')
       return
     }
+    setShowSectionPicker(true)
+  }
+
+  async function handleDownload(sections: ReportSections) {
+    setReportError(null)
+    setShowSectionPicker(false)
+    setReportSections(sections)
+    storeSections(sections)
+    const start = new Date(`${periodStart}T00:00:00`)
+    const end = new Date(`${periodEnd}T23:59:59`)
     try {
       const records = getPeriodRecords(start, end)
       const { downloadReportPdf } = await import('../utils/report')
-      downloadReportPdf(baby, start, end, records, reportUnits)
+      downloadReportPdf(baby, start, end, records, reportUnits, sections)
       setReportStatus('Report downloaded')
     } catch {
       setReportError('Could not generate the report')
     }
+  }
+
+  function toggleSection(key: keyof ReportSections) {
+    setReportSections((prev) => ({ ...prev, [key]: !prev[key] }))
   }
 
   return (
@@ -189,6 +235,40 @@ export default function DataReportsScreen({ onBack }: { onBack: () => void }) {
           </p>
         )}
       </div>
+
+      <Modal
+        open={showSectionPicker}
+        title="Report sections"
+        variant="dialog"
+        onClose={() => setShowSectionPicker(false)}
+      >
+        <p className="dialog-message">Choose what to include in the PDF.</p>
+        <div className="report-sections" role="group" aria-label="Report sections">
+          {REPORT_SECTION_LABELS.map(({ key, label }) => (
+            <label key={key} className="report-section-option">
+              <input
+                type="checkbox"
+                checked={reportSections[key]}
+                onChange={() => toggleSection(key)}
+              />
+              <span>{label}</span>
+            </label>
+          ))}
+        </div>
+        <div className="dialog-actions">
+          <button type="button" className="btn" onClick={() => setShowSectionPicker(false)}>
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="btn"
+            disabled={!hasAnySection(reportSections)}
+            onClick={() => void handleDownload(reportSections)}
+          >
+            Download
+          </button>
+        </div>
+      </Modal>
     </div>
   )
 }

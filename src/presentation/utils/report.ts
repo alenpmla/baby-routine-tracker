@@ -9,6 +9,7 @@ import { sleepKind } from '../../domain/model/SleepSession'
 import { sleepTotalsByKind } from '../../domain/usecase/sleep'
 import { formatDuration, startOfDay, toInputDate } from './time'
 import { describeBottleTotal, describeSolidsTotal, describeAmount, type SnapshotUnits } from './feeding'
+import { DEFAULT_REPORT_SECTIONS, type ReportSections } from './reportSections'
 
 const PRIMARY: [number, number, number] = [107, 92, 230]
 const INK: [number, number, number] = [43, 38, 34]
@@ -21,6 +22,9 @@ export interface ReportRecords {
   feedings: FeedingSession[]
   diapers: DiaperChange[]
 }
+
+export { DEFAULT_REPORT_SECTIONS, hasAnySection } from './reportSections'
+export type { ReportSections } from './reportSections'
 
 export interface ReportSummary {
   sleepCount: number
@@ -216,137 +220,174 @@ export function buildReportPdf(
   end: Date,
   records: ReportRecords,
   units: SnapshotUnits,
+  sections: ReportSections = DEFAULT_REPORT_SECTIONS,
 ): ArrayBuffer {
   const doc = new jsPDF()
   const summary = buildReportSummary(records, units)
   const periodLabel = `${start.toLocaleDateString([], { month: 'short', day: 'numeric' })} – ${end.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}`
   const name = baby?.name ?? 'Baby'
 
-  pageHeader(doc, 'Baby Tracker — Period Report', `${name}  ·  ${periodLabel}`)
-
-  doc.setTextColor(...INK)
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(14)
-  doc.text('Summary', 14, 42)
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(9)
-  doc.setTextColor(...MUTED)
-  doc.text(`Report generated on ${new Date().toLocaleDateString()}`, 14, 47.5)
+  let pageStarted = false
+  function beginPage() {
+    if (pageStarted) {
+      doc.addPage()
+    }
+    pageStarted = true
+  }
 
   const cw = 90
   const ch = 22
   const gap = 6
   const x0 = 14
   const y0 = 54
-  statCard(doc, x0, y0, cw, ch, summary.totalSleep, `Sleep · ${summary.sleepCount} session${summary.sleepCount === 1 ? '' : 's'}`)
-  statCard(doc, x0 + cw + gap, y0, cw, ch, String(summary.feedCount), 'Total feeds')
-  statCard(doc, x0, y0 + ch + gap, cw, ch, summary.bottleTotal || '—', `Bottle · ${summary.bottleCount}`)
-  statCard(doc, x0 + cw + gap, y0 + ch + gap, cw, ch, summary.solidsTotal || '—', `Solids · ${summary.solidsCount}`)
-  statCard(doc, x0, y0 + 2 * (ch + gap), cw, ch, String(summary.diaperCount), 'Diaper changes')
-  statCard(doc, x0 + cw + gap, y0 + 2 * (ch + gap), cw, ch, `${summary.wet} · ${summary.dirty} · ${summary.both}`, 'Wet · Dirty · Both')
 
-  doc.setFontSize(9)
-  doc.setTextColor(...MUTED)
-  doc.text('Detailed reports follow for Sleep, Feeding, and Diaper.', 14, y0 + 3 * (ch + gap) + 2)
+  const detailNames: string[] = []
+  if (sections.sleep) detailNames.push('Sleep')
+  if (sections.feeding) detailNames.push('Feeding')
+  if (sections.diaper) detailNames.push('Diaper')
 
-  const dailyTotals = buildDailyTotals(records, units)
-  doc.setFontSize(12)
-  doc.setTextColor(...INK)
-  doc.setFont('helvetica', 'bold')
-  doc.text('Daily totals', 14, y0 + 3 * (ch + gap) + 14)
-  const dailyRows = dailyTotals.length
-    ? dailyTotals.map((d) => [
-        fmtDate(d.date.toISOString()),
-        `${d.sleepCount} · ${d.sleepTotal}`,
-        `${d.nightSleep} · ${d.napSleep}`,
-        String(d.feedCount),
-        d.bottleTotal || '—',
-        d.solidsTotal || '—',
-        String(d.diaperCount),
-      ])
-    : [['—', '—', '—', '—', '—', '—', 'No records in period']]
-  autoTable(doc, {
-    startY: y0 + 3 * (ch + gap) + 20,
-    head: [['Day', 'Sleep', 'Night · Nap', 'Feeds', 'Bottle', 'Solids', 'Diapers']],
-    body: dailyRows,
-    theme: 'grid',
-    styles: { textColor: INK, fontSize: 9, cellPadding: 2.5 },
-    headStyles: { fillColor: PRIMARY, textColor: 255, fontStyle: 'bold' },
-    alternateRowStyles: { fillColor: ALT },
-    margin: { left: 14, right: 14 },
-  })
+  // ---- Overview page (Summary + Daily totals) ----
+  if (sections.summary || sections.dailyTotals) {
+    beginPage()
+    pageHeader(doc, 'Baby Tracker — Period Report', `${name}  ·  ${periodLabel}`)
+
+    if (sections.summary) {
+      doc.setTextColor(...INK)
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(14)
+      doc.text('Summary', 14, 42)
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(9)
+      doc.setTextColor(...MUTED)
+      doc.text(`Report generated on ${new Date().toLocaleDateString()}`, 14, 47.5)
+
+      statCard(doc, x0, y0, cw, ch, summary.totalSleep, `Sleep · ${summary.sleepCount} session${summary.sleepCount === 1 ? '' : 's'}`)
+      statCard(doc, x0 + cw + gap, y0, cw, ch, String(summary.feedCount), 'Total feeds')
+      statCard(doc, x0, y0 + ch + gap, cw, ch, summary.bottleTotal || '—', `Bottle · ${summary.bottleCount}`)
+      statCard(doc, x0 + cw + gap, y0 + ch + gap, cw, ch, summary.solidsTotal || '—', `Solids · ${summary.solidsCount}`)
+      statCard(doc, x0, y0 + 2 * (ch + gap), cw, ch, String(summary.diaperCount), 'Diaper changes')
+      statCard(doc, x0 + cw + gap, y0 + 2 * (ch + gap), cw, ch, `${summary.wet} · ${summary.dirty} · ${summary.both}`, 'Wet · Dirty · Both')
+
+      doc.setFontSize(9)
+      doc.setTextColor(...MUTED)
+      doc.text(
+        detailNames.length
+          ? `Detailed reports follow for ${detailNames.join(', ')}.`
+          : 'No detail sections selected.',
+        14,
+        y0 + 3 * (ch + gap) + 2,
+      )
+    }
+
+    if (sections.dailyTotals) {
+      const dailyTotals = buildDailyTotals(records, units)
+      const headingY = sections.summary ? y0 + 3 * (ch + gap) + 14 : 42
+      const tableY = sections.summary ? y0 + 3 * (ch + gap) + 20 : 48
+      doc.setFontSize(12)
+      doc.setTextColor(...INK)
+      doc.setFont('helvetica', 'bold')
+      doc.text('Daily totals', 14, headingY)
+      const dailyRows = dailyTotals.length
+        ? dailyTotals.map((d) => [
+            fmtDate(d.date.toISOString()),
+            `${d.sleepCount} · ${d.sleepTotal}`,
+            `${d.nightSleep} · ${d.napSleep}`,
+            String(d.feedCount),
+            d.bottleTotal || '—',
+            d.solidsTotal || '—',
+            String(d.diaperCount),
+          ])
+        : [['—', '—', '—', '—', '—', '—', 'No records in period']]
+      autoTable(doc, {
+        startY: tableY,
+        head: [['Day', 'Sleep', 'Night · Nap', 'Feeds', 'Bottle', 'Solids', 'Diapers']],
+        body: dailyRows,
+        theme: 'grid',
+        styles: { textColor: INK, fontSize: 9, cellPadding: 2.5 },
+        headStyles: { fillColor: PRIMARY, textColor: 255, fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: ALT },
+        margin: { left: 14, right: 14 },
+      })
+    }
+  }
 
   // ---- Sleep report (own page) ----
-  doc.addPage()
-  pageHeader(doc, 'Sleep Report', `${name}  ·  ${periodLabel}`)
-  doc.setFontSize(9)
-  doc.setTextColor(...MUTED)
-  doc.setFont('helvetica', 'normal')
-  doc.text(`Night ${summary.nightSleep} (${summary.nightCount}) · Naps ${summary.napSleep} (${summary.napCount})`, 14, 31)
-  const sleepRows = records.sleeps.map((s) => [
-    fmtDate(s.startTime),
-    fmtClock(s.startTime),
-    s.endTime ? fmtClock(s.endTime) : '—',
-    s.endTime ? formatDuration(new Date(s.endTime).getTime() - new Date(s.startTime).getTime()) : 'ongoing',
-    sleepKind(s) === 'night' ? 'Night' : 'Nap',
-  ])
-  autoTable(doc, {
-    startY: 35,
-    head: [['Date', 'Start', 'End', 'Duration', 'Kind']],
-    body: sleepRows.length ? sleepRows : [['—', '—', '—', '—', 'No sleep recorded']],
-    theme: 'grid',
-    styles: { textColor: INK, fontSize: 9, cellPadding: 2.5 },
-    headStyles: { fillColor: PRIMARY, textColor: 255, fontStyle: 'bold' },
-    alternateRowStyles: { fillColor: ALT },
-    margin: { left: 14, right: 14 },
-  })
+  if (sections.sleep) {
+    beginPage()
+    pageHeader(doc, 'Sleep Report', `${name}  ·  ${periodLabel}`)
+    doc.setFontSize(9)
+    doc.setTextColor(...MUTED)
+    doc.setFont('helvetica', 'normal')
+    doc.text(`Night ${summary.nightSleep} (${summary.nightCount}) · Naps ${summary.napSleep} (${summary.napCount})`, 14, 31)
+    const sleepRows = records.sleeps.map((s) => [
+      fmtDate(s.startTime),
+      fmtClock(s.startTime),
+      s.endTime ? fmtClock(s.endTime) : '—',
+      s.endTime ? formatDuration(new Date(s.endTime).getTime() - new Date(s.startTime).getTime()) : 'ongoing',
+      sleepKind(s) === 'night' ? 'Night' : 'Nap',
+    ])
+    autoTable(doc, {
+      startY: 35,
+      head: [['Date', 'Start', 'End', 'Duration', 'Kind']],
+      body: sleepRows.length ? sleepRows : [['—', '—', '—', '—', 'No sleep recorded']],
+      theme: 'grid',
+      styles: { textColor: INK, fontSize: 9, cellPadding: 2.5 },
+      headStyles: { fillColor: PRIMARY, textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: ALT },
+      margin: { left: 14, right: 14 },
+    })
+  }
 
   // ---- Feeding report (own, dedicated page) ----
-  doc.addPage()
-  pageHeader(doc, 'Feeding Report', `${name}  ·  ${periodLabel}`)
-  const feedingRows = records.feedings.map((f) => {
-    let details = ''
-    let amount = ''
-    if (f.type === 'solids') {
-      details = foodsOf(f).join(', ')
-      amount = f.amount !== undefined && f.unit ? describeAmount(f.amount, f.unit, units.solids) : ''
-    } else if (f.type === 'bottle') {
-      details = 'Bottle'
-      amount = f.amount !== undefined && f.unit ? describeAmount(f.amount, f.unit, units.bottle) : ''
-    } else {
-      details = 'Breast'
-      if (f.startTime && f.endTime) {
-        amount = formatDuration(new Date(f.endTime).getTime() - new Date(f.startTime).getTime())
+  if (sections.feeding) {
+    beginPage()
+    pageHeader(doc, 'Feeding Report', `${name}  ·  ${periodLabel}`)
+    const feedingRows = records.feedings.map((f) => {
+      let details = ''
+      let amount = ''
+      if (f.type === 'solids') {
+        details = foodsOf(f).join(', ')
+        amount = f.amount !== undefined && f.unit ? describeAmount(f.amount, f.unit, units.solids) : ''
+      } else if (f.type === 'bottle') {
+        details = 'Bottle'
+        amount = f.amount !== undefined && f.unit ? describeAmount(f.amount, f.unit, units.bottle) : ''
+      } else {
+        details = 'Breast'
+        if (f.startTime && f.endTime) {
+          amount = formatDuration(new Date(f.endTime).getTime() - new Date(f.startTime).getTime())
+        }
       }
-    }
-    return [fmtDateTime(f.time), f.type.charAt(0).toUpperCase() + f.type.slice(1), details, amount]
-  })
-  autoTable(doc, {
-    startY: 34,
-    head: [['Date & time', 'Type', 'Details', 'Amount']],
-    body: feedingRows.length ? feedingRows : [['—', '—', '—', 'No feeding recorded']],
-    theme: 'grid',
-    styles: { textColor: INK, fontSize: 9, cellPadding: 2.5 },
-    headStyles: { fillColor: PRIMARY, textColor: 255, fontStyle: 'bold' },
-    alternateRowStyles: { fillColor: ALT },
-    columnStyles: { 0: { cellWidth: 42 }, 2: { cellWidth: 60 } },
-    margin: { left: 14, right: 14 },
-  })
+      return [fmtDateTime(f.time), f.type.charAt(0).toUpperCase() + f.type.slice(1), details, amount]
+    })
+    autoTable(doc, {
+      startY: 34,
+      head: [['Date & time', 'Type', 'Details', 'Amount']],
+      body: feedingRows.length ? feedingRows : [['—', '—', '—', 'No feeding recorded']],
+      theme: 'grid',
+      styles: { textColor: INK, fontSize: 9, cellPadding: 2.5 },
+      headStyles: { fillColor: PRIMARY, textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: ALT },
+      columnStyles: { 0: { cellWidth: 42 }, 2: { cellWidth: 60 } },
+      margin: { left: 14, right: 14 },
+    })
+  }
 
   // ---- Diaper report (own page) ----
-  doc.addPage()
-  pageHeader(doc, 'Diaper Report', `${name}  ·  ${periodLabel}`)
-  const diaperRows = records.diapers.map((d) => [fmtDateTime(d.time), d.type.charAt(0).toUpperCase() + d.type.slice(1)])
-  autoTable(doc, {
-    startY: 34,
-    head: [['Date & time', 'Type']],
-    body: diaperRows.length ? diaperRows : [['—', 'No diaper changes recorded']],
-    theme: 'grid',
-    styles: { textColor: INK, fontSize: 9, cellPadding: 2.5 },
-    headStyles: { fillColor: PRIMARY, textColor: 255, fontStyle: 'bold' },
-    alternateRowStyles: { fillColor: ALT },
-    margin: { left: 14, right: 14 },
-  })
+  if (sections.diaper) {
+    beginPage()
+    pageHeader(doc, 'Diaper Report', `${name}  ·  ${periodLabel}`)
+    const diaperRows = records.diapers.map((d) => [fmtDateTime(d.time), d.type.charAt(0).toUpperCase() + d.type.slice(1)])
+    autoTable(doc, {
+      startY: 34,
+      head: [['Date & time', 'Type']],
+      body: diaperRows.length ? diaperRows : [['—', 'No diaper changes recorded']],
+      theme: 'grid',
+      styles: { textColor: INK, fontSize: 9, cellPadding: 2.5 },
+      headStyles: { fillColor: PRIMARY, textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: ALT },
+      margin: { left: 14, right: 14 },
+    })
+  }
 
   const out = doc.output('arraybuffer')
   return out as ArrayBuffer
@@ -358,8 +399,9 @@ export function downloadReportPdf(
   end: Date,
   records: ReportRecords,
   units: SnapshotUnits,
+  sections: ReportSections = DEFAULT_REPORT_SECTIONS,
 ) {
-  const bytes = buildReportPdf(baby, start, end, records, units)
+  const bytes = buildReportPdf(baby, start, end, records, units, sections)
   const blob = new Blob([bytes], { type: 'application/pdf' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
