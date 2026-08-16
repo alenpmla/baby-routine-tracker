@@ -27,6 +27,11 @@ interface GrowthChartZoomModalProps {
 const MONTH_MS = 2629746000 // average month (~30.44 days)
 const EXIT_MS = 220
 
+// Stable identity for the back overlay. DashboardScreen recreates the inline
+// onClose on every render (its 1s now tick), so without a stable id the
+// [open, onClose] effect would consume + re-push an overlay entry each tick.
+const ZOOM_OVERLAY_ID = 'zoom'
+
 const raf: (cb: () => void) => { cancel: () => void } = (cb) => {
   if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
     const id = window.requestAnimationFrame(cb)
@@ -51,6 +56,8 @@ export default function GrowthChartZoomModal({
   const [mounted, setMounted] = useState(open)
   const [entered, setEntered] = useState(false)
   const snapshot = useRef({ title })
+  const onCloseRef = useRef(onClose)
+  onCloseRef.current = onClose
   if (open) {
     snapshot.current = { title }
   }
@@ -68,25 +75,29 @@ export default function GrowthChartZoomModal({
 
   // Back navigation (browser/hardware back) closes the modal: push a history
   // entry when it opens and close on popstate. The X / Escape / backdrop paths
-  // restore the stack so the back button behaves predictably afterwards.
+  // restore the stack so the back button behaves predictably afterwards. The
+  // keyed-on-open effect runs only when `open` changes, so re-renders (the
+  // parent's now tick) swap nothing — the handler always calls the latest
+  // onClose via the ref, keeping the overlay entry count net-zero.
   useEffect(() => {
     if (!open) {
       return
     }
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose()
+        onCloseRef.current()
       }
     }
+    const handleBack = () => onCloseRef.current()
     // Let the app's back handler close this modal instead of navigating, and
     // without pushing raw history entries (which would corrupt the nav stack).
-    registerBackOverlay(onClose)
+    registerBackOverlay(handleBack, ZOOM_OVERLAY_ID)
     document.addEventListener('keydown', onKey)
     return () => {
       registerBackOverlay(null)
       document.removeEventListener('keydown', onKey)
     }
-  }, [open, onClose])
+  }, [open])
 
   const handleClose = () => {
     registerBackOverlay(null)

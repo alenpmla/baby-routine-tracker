@@ -4,6 +4,9 @@ import userEvent from '@testing-library/user-event'
 import App from './App'
 import { setupApi } from './test/setupApi'
 import type { MockApi } from './test/mockApi'
+import GrowthChartZoomModal from './presentation/components/GrowthChartZoomModal'
+import { WEIGHT_METRIC, type GrowthPoint } from './presentation/components/GrowthChart'
+import { useBackNav, registerBackOverlay } from './presentation/store/useBackNav'
 
 let api: MockApi
 
@@ -138,5 +141,65 @@ describe('Growth chart zoom modal', () => {
     // renders the tooltip on hover in real browsers (jsdom cannot reproduce
     // Recharts' pointer math for a synthetic hover).
     expect(screen.getByText(/hover a point for details/i)).toBeInTheDocument()
+  })
+})
+
+describe('Growth chart zoom modal overlay identity', () => {
+  function BackNavHarness() {
+    useBackNav()
+    return null
+  }
+
+  const flush = () => new Promise<void>((resolve) => setTimeout(resolve, 50))
+
+  // The first describe leaves the module-level overlay state and a stale
+  // {bt:'overlay'} `window.history.state` behind (jsdom's history.go() does not
+  // move state synchronously). Reset both so the reuse-on-open logic sees a clean
+  // nav state and pushes a fresh sentinel.
+  beforeEach(async () => {
+    await flush()
+    registerBackOverlay(null)
+    await flush()
+    window.history.replaceState({ bt: 'app' }, '')
+  })
+
+  function pressBack() {
+    act(() => {
+      window.dispatchEvent(new PopStateEvent('popstate'))
+    })
+  }
+
+  it('stays net-zero on history across re-renders and always closes exactly once on back', async () => {
+    const pushSpy = vi.spyOn(window.history, 'pushState')
+    const overlayPushes = () =>
+      pushSpy.mock.calls.filter((c) => c[0] && (c[0] as { bt?: string }).bt === 'overlay').length
+
+    render(<BackNavHarness />)
+    const onClose = vi.fn()
+    const props = {
+      open: true,
+      title: 'Weight progress',
+      dob: '2026-01-15',
+      points: [] as GrowthPoint[],
+      metric: WEIGHT_METRIC,
+      onClose,
+    }
+    const { rerender } = render(<GrowthChartZoomModal {...props} />)
+    expect(overlayPushes()).toBe(1)
+    expect(screen.getByRole('dialog', { name: /weight progress/i })).toBeInTheDocument()
+
+    // The parent's 1s now tick recreates the inline onClose identity every
+    // render; a re-render must swap the handler, never re-push an entry.
+    for (let i = 0; i < 3; i += 1) {
+      rerender(<GrowthChartZoomModal {...props} onClose={vi.fn()} />)
+    }
+    expect(overlayPushes()).toBe(1)
+
+    // The registered handler always delegates to the latest onClose, so back
+    // still closes the sheet once, consuming its entry without re-pushing.
+    rerender(<GrowthChartZoomModal {...props} onClose={onClose} />)
+    pressBack()
+    expect(onClose).toHaveBeenCalledTimes(1)
+    expect(overlayPushes()).toBe(1)
   })
 })

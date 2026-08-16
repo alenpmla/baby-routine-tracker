@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
+import { registerBackOverlay } from '../store/useBackNav'
 
 interface ModalProps {
   /** Controls visibility; Modal animates out before unmounting when it goes false. */
@@ -17,6 +18,20 @@ const EXIT_MS = 200
 /** Track open modals so Escape closes only the topmost sheet (nested pickers). */
 const openStack: Array<number> = []
 let nextModalId = 0
+
+/** Latest open state + onClose per modal instance; backs the topmost overlay recompute. */
+const backOverlayHandlers = new Map<number, { open: boolean; onClose: () => void }>()
+
+function syncBackOverlay() {
+  for (let i = openStack.length - 1; i >= 0; i -= 1) {
+    const entry = backOverlayHandlers.get(openStack[i])
+    if (entry && entry.open) {
+      registerBackOverlay(entry.onClose, openStack[i])
+      return
+    }
+  }
+  registerBackOverlay(null)
+}
 
 function scrollIntoView(el: HTMLElement | null) {
   try {
@@ -44,6 +59,13 @@ export default function Modal({ open, title, onClose, children, variant = 'sheet
   const bodyRef = useRef<HTMLDivElement | null>(null)
   const dragStartY = useRef<number | null>(null)
   const dragYRef = useRef(0)
+  const instanceId = useRef<number | null>(null)
+  // Stable identity for the back overlay. Hosts recreate their inline onClose on
+  // every render (e.g. a TrackerProvider 1s now tick while a sleep runs), so the
+  // latest handler is held here and the overlay effect never re-runs for a new
+  // onClose identity — keeping the overlay entry count net-zero under re-render.
+  const onCloseRef = useRef(onClose)
+  onCloseRef.current = onClose
   // Snapshot the last open content so the sheet keeps it visible during exit.
   const snapshot = useRef({ title, children })
 
@@ -64,15 +86,26 @@ export default function Modal({ open, title, onClose, children, variant = 'sheet
     return () => window.clearTimeout(id)
   }, [open])
 
+  // Allocate the instance id ONCE per mount and key the stack/overlay
+  // registration to it. `openStack` holds the ids of the mounted sheets so
+  // Escape closes only the topmost; re-registering with the same stable id
+  // swaps the handler instead of pushing a fresh overlay entry. Keying strictly
+  // on `mounted` (not `[mounted, onClose]`) means a host re-render with a fresh
+  // inline onClose updates only the ref + handler map below — never consume +
+  // re-push. `open`/`onClose` are deliberately NOT deps: including them would
+  // re-mint a new id every re-render and churn the history entry.
   useEffect(() => {
     if (!mounted) {
       return
     }
     const id = nextModalId++
+    instanceId.current = id
     openStack.push(id)
+    backOverlayHandlers.set(id, { open, onClose })
+    syncBackOverlay()
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && openStack[openStack.length - 1] === id) {
-        onClose()
+        onCloseRef.current()
       }
     }
     document.addEventListener('keydown', onKey)
@@ -81,9 +114,26 @@ export default function Modal({ open, title, onClose, children, variant = 'sheet
       if (idx >= 0) {
         openStack.splice(idx, 1)
       }
+      backOverlayHandlers.delete(id)
+      syncBackOverlay()
       document.removeEventListener('keydown', onKey)
     }
-  }, [mounted, onClose])
+  }, [mounted])
+
+  // Key the back overlay to `open` (released the instant the modal closes, even
+  // mid-exit-animation) while holding the latest onClose for this instance.
+  useEffect(() => {
+    const id = instanceId.current
+    if (id == null) {
+      return
+    }
+    const entry = backOverlayHandlers.get(id)
+    if (entry) {
+      entry.open = open
+      entry.onClose = onClose
+    }
+    syncBackOverlay()
+  }, [open, onClose])
 
   // Keep the focused field in view as the browser resizes for the keyboard,
   // without adding any artificial offset (which caused a gap above the keyboard).

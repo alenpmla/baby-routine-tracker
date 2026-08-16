@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import Modal from '../Modal'
+import { useBackNav } from '../../store/useBackNav'
 
 describe('Modal open/close lifecycle', () => {
   it('renders nothing when closed', () => {
@@ -223,5 +224,121 @@ describe('Modal drag-to-dismiss', () => {
     } finally {
       window.matchMedia = originalMatchMedia
     }
+  })
+})
+
+describe('Modal back overlay', () => {
+  function BackNavHarness() {
+    useBackNav()
+    return null
+  }
+
+  function pressBack() {
+    act(() => {
+      window.dispatchEvent(new PopStateEvent('popstate'))
+    })
+  }
+
+  it('browser back closes the open modal instead of navigating', () => {
+    render(<BackNavHarness />)
+    const onClose = vi.fn()
+    render(
+      <Modal open={true} title="Sheet" onClose={onClose}>
+        <p>Content</p>
+      </Modal>,
+    )
+    expect(screen.getByRole('dialog', { name: 'Sheet' })).toBeInTheDocument()
+    pressBack()
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  it('releases the back overlay once closed, so a later back navigates normally', () => {
+    render(<BackNavHarness />)
+    const onClose = vi.fn()
+    const { rerender } = render(
+      <Modal open={true} title="Sheet" onClose={onClose}>
+        <p>Content</p>
+      </Modal>,
+    )
+    pressBack()
+    expect(onClose).toHaveBeenCalledTimes(1)
+
+    rerender(
+      <Modal open={false} title="Sheet" onClose={onClose}>
+        <p>Content</p>
+      </Modal>,
+    )
+    // Overlay is released the moment open flips false (mid-exit-animation).
+    pressBack()
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  it('hands the overlay to the sheet beneath when a nested modal closes', () => {
+    render(<BackNavHarness />)
+    const closeSheet = vi.fn()
+    const closePicker = vi.fn()
+    render(
+      <Modal open={true} title="Sheet" onClose={closeSheet}>
+        <p>Sheet content</p>
+      </Modal>,
+    )
+    const picker = render(
+      <Modal open={true} title="Picker" onClose={closePicker}>
+        <p>Picker content</p>
+      </Modal>,
+    )
+
+    pressBack()
+    expect(closePicker).toHaveBeenCalledTimes(1)
+    expect(closeSheet).not.toHaveBeenCalled()
+
+    picker.rerender(
+      <Modal open={false} title="Picker" onClose={closePicker}>
+        <p>Picker content</p>
+      </Modal>,
+    )
+    pressBack()
+    expect(closePicker).toHaveBeenCalledTimes(1)
+    expect(closeSheet).toHaveBeenCalledTimes(1)
+  })
+
+  it('stays net-zero on history across re-renders (fresh onClose identity)', () => {
+    const pushSpy = vi.spyOn(window.history, 'pushState')
+    const overlayPushes = () =>
+      pushSpy.mock.calls.filter((c) => c[0] && (c[0] as { bt?: string }).bt === 'overlay').length
+
+    render(<BackNavHarness />)
+    const onClose = vi.fn()
+    const props = { open: true, title: 'Sheet', onClose }
+    const { rerender } = render(
+      <Modal {...props}>
+        <p>Content</p>
+      </Modal>,
+    )
+    expect(overlayPushes()).toBe(1)
+    expect(screen.getByRole('dialog', { name: 'Sheet' })).toBeInTheDocument()
+
+    // Hosts hosting a Modal (feeding/sleep/… screens) recreate the inline
+    // onClose on re-render (e.g. every 1s during an active sleep); a re-render
+    // must swap the handler via the ref, never consume + re-push an entry.
+    for (let i = 0; i < 3; i += 1) {
+      rerender(
+        <Modal {...props} onClose={vi.fn()}>
+          <p>Content</p>
+        </Modal>,
+      )
+    }
+    expect(overlayPushes()).toBe(1)
+
+    // The registered handler delegates to the latest onClose, so back still
+    // closes the sheet exactly once, consuming its entry without re-pushing.
+    rerender(
+      <Modal {...props} onClose={onClose}>
+        <p>Content</p>
+      </Modal>,
+    )
+    pressBack()
+    expect(onClose).toHaveBeenCalledTimes(1)
+    expect(overlayPushes()).toBe(1)
   })
 })
