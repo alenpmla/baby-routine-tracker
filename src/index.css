@@ -2181,22 +2181,6 @@ button.event-link:active {
   font-weight: 700;
 }
 
-.btn-small {
-  min-height: 32px;
-  padding: 0 14px;
-  font-size: var(--type-label);
-  background: var(--md-secondary-container);
-  color: var(--md-on-secondary-container);
-}
-
-.btn-small:hover {
-  background: color-mix(in srgb, var(--md-secondary-container) 85%, var(--md-on-secondary-container) 15%);
-}
-
-.btn-small:active {
-  background: color-mix(in srgb, var(--md-secondary-container) 75%, var(--md-on-secondary-container) 25%);
-}
-
 .solids-food-names {
   background: none;
   border: none;

@@ -382,6 +382,23 @@ describe('REST API', () => {
     expect(store.get().legacyCollection).toBeUndefined()
   })
 
+  it('accepts a legacy backup containing the removed napScheduleEvents key (key dropped, no error, data intact)', async () => {
+    const res = await request(server, 'POST', '/api/import', {
+      baby: { id: 'b1', name: 'Ciara', dob: '2025-10-30', notes: '' },
+      sleeps: [],
+      feedings: [],
+      diapers: [],
+      weights: [],
+      napScheduleEvents: [{ id: 'n1', time: 't', fromNaps: 3, toNaps: 2 }],
+      settings: { foodSuggestions: ['carrot'] },
+    })
+    expect(res.status).toBe(200)
+    expect(res.json.ok).toBe(true)
+    const state = store.get()
+    expect(state.napScheduleEvents).toBeUndefined()
+    expect(state.baby.name).toBe('Ciara')
+  })
+
   it('rejects an import with a malformed teeth field', async () => {
     const res = await request(server, 'POST', '/api/import', {
       baby: null,
