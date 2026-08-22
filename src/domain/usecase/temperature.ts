@@ -133,6 +133,36 @@ export function tempInC(temp: number, unit: TemperatureUnit): number {
 /** Fever threshold in °C (used for the Home temperature chart). */
 export const FEVER_THRESHOLD_C = 37.5
 
+/** Lower bound of the typical body-temperature range in °C. */
+export const TYPICAL_LOW_C = 36.0
+
+/** Upper bound of the typical body-temperature range in °C. */
+export const TYPICAL_HIGH_C = 37.5
+
+export type TempStatus = 'low' | 'in-range' | 'fever'
+
+/** Classify a °C temperature against the typical range and fever threshold. */
+export function describeTempStatus(tempC: number): TempStatus {
+  if (tempC >= FEVER_THRESHOLD_C) {
+    return 'fever'
+  }
+  if (tempC < TYPICAL_LOW_C) {
+    return 'low'
+  }
+  return 'in-range'
+}
+
+/** Human label for a temperature status. */
+export function tempStatusLabel(status: TempStatus): string {
+  if (status === 'fever') {
+    return 'Fever'
+  }
+  if (status === 'low') {
+    return 'Low temp'
+  }
+  return 'In range'
+}
+
 /**
  * Whether any temperature in the last `days` days (from `nowMs` back `days * 24h`) is at or
  * above the fever threshold (normalized to °C).

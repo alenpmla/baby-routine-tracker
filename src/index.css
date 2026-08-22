@@ -2052,6 +2052,35 @@ button.event-link:active {
   color: var(--md-on-surface-variant);
 }
 
+.temperature-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--type-label);
+  font-weight: 600;
+  color: var(--md-on-surface);
+  margin-bottom: 8px;
+}
+
+.temperature-status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  flex: none;
+}
+
+.temperature-status-in-range {
+  background: var(--accent-health-fg);
+}
+
+.temperature-status-fever {
+  background: var(--md-error);
+}
+
+.temperature-status-low {
+  background: var(--md-tertiary);
+}
+
 .event-list {
   list-style: none;
   margin: 0;

@@ -9,6 +9,7 @@ import { BottleIcon, CheckIcon, DiaperIcon, DirtyDiaperIcon, MoonIcon, PillIcon,
 import GrowthChart, { HEAD_CIRCUMFERENCE_METRIC, WEIGHT_METRIC } from '../components/GrowthChart'
 import GrowthChartZoomModal from '../components/GrowthChartZoomModal'
 import TemperatureChart from '../components/TemperatureChart'
+import TemperatureChartZoomModal from '../components/TemperatureChartZoomModal'
 import { hasFeverInWindow } from '../../domain/usecase/temperature'
 import type { TemperatureEntry } from '../../domain/model/TemperatureEntry'
 import InsightsSection from '../components/InsightsSection'
@@ -73,6 +74,7 @@ export default function DashboardScreen({
     points: GrowthPoint[]
     birthValue?: number
   } | null>(null)
+  const [tempZoomOpen, setTempZoomOpen] = useState(false)
 
   return (
     <div className="screen-content">
@@ -208,9 +210,15 @@ export default function DashboardScreen({
       {showTempChart && (
         <section className="growth">
           <h2 className="growth-title">Temperature (last 7 days)</h2>
-          <div className="card growth-card">
+          <button
+            type="button"
+            className="card growth-card growth-open"
+            aria-label="Open temperature chart zoom"
+            onClick={() => setTempZoomOpen(true)}
+          >
             <TemperatureChart entries={tempEntries} windowStart={tempWindowStart} windowEnd={tempWindowEnd} />
-          </div>
+            <span className="growth-open-hint" aria-hidden="true">Tap to zoom</span>
+          </button>
         </section>
       )}
 
@@ -307,6 +315,16 @@ export default function DashboardScreen({
           sex={baby.sex}
           birthValue={zoomModal.birthValue}
           onClose={() => setZoomModal(null)}
+        />
+      )}
+
+      {tempZoomOpen && (
+        <TemperatureChartZoomModal
+          open
+          entries={tempEntries}
+          windowStart={tempWindowStart}
+          windowEnd={tempWindowEnd}
+          onClose={() => setTempZoomOpen(false)}
         />
       )}
     </div>

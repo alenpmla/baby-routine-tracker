@@ -10,7 +10,7 @@ export const WHATS_NEW: WhatNewEntry[] = [
     version: '0.1.11',
     date: '2026-08-22',
     items: [
-      'Temperature: when a reading in the last 7 days is at or above 37.5 °C, the Home page shows a 7-day temperature chart with a fever reference line',
+      'Temperature: when a reading in the last 7 days is at or above 37.5 °C, the Home page shows a 7-day temperature chart with a typical-range band (36–37.5 °C), a status label, and a tap-to-zoom view',
     ],
   },
   {

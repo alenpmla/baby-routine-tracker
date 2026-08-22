@@ -40,6 +40,30 @@ describe('Home temperature chart', () => {
     expect(screen.getByRole('img', { name: /temperature over the last 7 days/i })).toBeInTheDocument()
   })
 
+  it('shows a status label derived from the most recent reading', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date())
+    api.state.temperatures.push(hoursAgo(20, 38.4, 'c'), hoursAgo(40, 37.0, 'c'))
+
+    const user = userEvent.setup()
+    await onboard(user)
+
+    const status = await screen.findByRole('status')
+    expect(status).toHaveTextContent('Fever')
+  })
+
+  it('opens the zoom view when the chart is tapped', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date())
+    api.state.temperatures.push(hoursAgo(20, 38.4, 'c'))
+
+    const user = userEvent.setup()
+    await onboard(user)
+
+    await user.click(await screen.findByRole('button', { name: /open temperature chart zoom/i }))
+    expect(screen.getByRole('dialog', { name: /temperature \(last 7 days\)/i })).toBeInTheDocument()
+  })
+
   it('shows the chart for a Fahrenheit reading equivalent to >= 37.5 °C', async () => {
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(new Date())

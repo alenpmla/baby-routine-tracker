@@ -8,6 +8,8 @@ import {
   hasFeverInWindow,
   tempInC,
   FEVER_THRESHOLD_C,
+  describeTempStatus,
+  tempStatusLabel,
   MAX_C,
   MIN_C,
   MIN_F,
@@ -109,5 +111,22 @@ describe('tempInC / hasFeverInWindow', () => {
 
   it('exposes the threshold constant', () => {
     expect(FEVER_THRESHOLD_C).toBe(37.5)
+  })
+})
+
+describe('describeTempStatus / tempStatusLabel', () => {
+  it('classifies readings against the typical range and fever threshold', () => {
+    expect(describeTempStatus(37.5)).toBe('fever')
+    expect(describeTempStatus(38.2)).toBe('fever')
+    expect(describeTempStatus(36.5)).toBe('in-range')
+    expect(describeTempStatus(37.0)).toBe('in-range')
+    expect(describeTempStatus(35.9)).toBe('low')
+    expect(describeTempStatus(36.0)).toBe('in-range')
+  })
+
+  it('labels statuses in human terms', () => {
+    expect(tempStatusLabel('fever')).toBe('Fever')
+    expect(tempStatusLabel('in-range')).toBe('In range')
+    expect(tempStatusLabel('low')).toBe('Low temp')
   })
 })
