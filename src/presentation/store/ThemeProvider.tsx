@@ -1,17 +1,14 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, type ReactNode } from 'react'
 import { useTracker } from './TrackerProvider'
-import type { ThemePreference, ThemeAccent } from '../../domain/model/AppSettings'
+import type { ThemePreference } from '../../domain/model/AppSettings'
 
-export type { ThemePreference, ThemeAccent } from '../../domain/model/AppSettings'
+export type { ThemePreference } from '../../domain/model/AppSettings'
 
 const THEME_KEY = 'theme'
-const ACCENT_KEY = 'themeAccent'
 
 interface ThemeContextValue {
   theme: ThemePreference
   setTheme: (theme: ThemePreference) => void
-  accent: ThemeAccent
-  setAccent: (accent: ThemeAccent) => void
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null)
@@ -40,15 +37,6 @@ function applyThemeAttributes(pref: ThemePreference) {
   }
 }
 
-function applyAccentAttribute(accent: ThemeAccent) {
-  const root = document.documentElement
-  if (accent === 'violet') {
-    root.removeAttribute('data-accent')
-  } else {
-    root.setAttribute('data-accent', accent)
-  }
-}
-
 function readLegacyTheme(): ThemePreference | null {
   try {
     const v = window.localStorage.getItem(`bt.${THEME_KEY}`)
@@ -64,9 +52,7 @@ function readLegacyTheme(): ThemePreference | null {
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const { ready, settings, updateSettings } = useTracker()
   const theme: ThemePreference = settings.theme ?? 'system'
-  const accent: ThemeAccent = settings.themeAccent ?? 'violet'
   const setTheme = useCallback((t: ThemePreference) => updateSettings({ theme: t }), [updateSettings])
-  const setAccent = useCallback((a: ThemeAccent) => updateSettings({ themeAccent: a }), [updateSettings])
 
   // Keep a localStorage cache so the pre-paint script avoids a theme flash.
   useEffect(() => {
@@ -78,20 +64,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, [theme])
 
   useEffect(() => {
-    try {
-      window.localStorage.setItem(`bt.${ACCENT_KEY}`, accent)
-    } catch {
-      /* ignore */
-    }
-  }, [accent])
-
-  useEffect(() => {
     applyThemeAttributes(theme)
   }, [theme])
-
-  useEffect(() => {
-    applyAccentAttribute(accent)
-  }, [accent])
 
   // One-time migration from the legacy per-device key into the synced settings.
   // Waits for the initial load so it never clobbers the freshly loaded settings.
@@ -105,7 +79,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
   }, [ready, settings.theme, updateSettings])
 
-  const value = useMemo(() => ({ theme, setTheme, accent, setAccent }), [theme, setTheme, accent, setAccent])
+  const value = useMemo(() => ({ theme, setTheme }), [theme, setTheme])
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
 }

@@ -1,4 +1,4 @@
-import { useTheme, type ThemePreference, type ThemeAccent } from '../store/ThemeProvider'
+import { useTheme, type ThemePreference } from '../store/ThemeProvider'
 import { useTracker } from '../store/TrackerProvider'
 import { useSnapshotPrefs, type AveragesDays } from '../store/SnapshotPrefsProvider'
 import type { HomeLogView } from '../../domain/model/AppSettings'
@@ -17,14 +17,6 @@ const THEME_OPTIONS: { id: ThemePreference; label: string }[] = [
   { id: 'dark', label: 'Dark' },
 ]
 
-const ACCENT_OPTIONS: { id: ThemeAccent; label: string }[] = [
-  { id: 'violet', label: 'Violet' },
-  { id: 'ocean', label: 'Ocean' },
-  { id: 'forest', label: 'Forest' },
-  { id: 'sunset', label: 'Sunset' },
-  { id: 'rose', label: 'Rose' },
-]
-
 export default function SettingsScreen({
   view,
   onOpenView,
@@ -34,7 +26,7 @@ export default function SettingsScreen({
   onOpenView: (view: SettingsView) => void
   onGoBack: () => void
 }) {
-  const { theme, setTheme, accent, setAccent } = useTheme()
+  const { theme, setTheme } = useTheme()
   const { baby, saveProfile, settings, updateSettings } = useTracker()
   const { averagesDays, setAveragesDays } = useSnapshotPrefs()
   const homeLogView: HomeLogView = settings.homeLogView ?? 'list'
@@ -100,23 +92,6 @@ export default function SettingsScreen({
               onClick={() => setTheme(id)}
             >
               {label}
-            </button>
-          ))}
-        </div>
-        <p className="settings-hint settings-hint-accent">Accent color</p>
-        <div className="accent-row" role="group" aria-label="Accent color">
-          {ACCENT_OPTIONS.map(({ id, label }) => (
-            <button
-              key={id}
-              type="button"
-              className={`accent-swatch${accent === id ? ' accent-swatch-selected' : ''}`}
-              aria-label={label}
-              aria-pressed={accent === id}
-              title={label}
-              onClick={() => setAccent(id)}
-            >
-              <span className={`accent-dot accent-${id}`} aria-hidden="true" />
-              <span className="accent-label">{label}</span>
             </button>
           ))}
         </div>
