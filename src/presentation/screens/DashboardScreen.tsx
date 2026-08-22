@@ -1,14 +1,16 @@
 import { useState } from 'react'
 import { useTracker } from '../store/TrackerProvider'
 import { useWakeStatus } from '../store/useWakeStatus'
+import { useMedicationReminders } from '../store/useMedicationReminders'
 import { describeAge, formatClock, formatDayLabel, formatDuration, isSameDay, shiftDays, startOfDay } from '../utils/time'
 import { describeFeedingMeta, describeFeedingTitle } from '../utils/feeding'
 import { timelineAccent, timelineTab, timelineWording } from '../utils/timeline'
-import { BottleIcon, DiaperIcon, DirtyDiaperIcon, MoonIcon, SettingsIcon } from '../components/icons'
+import { BottleIcon, CheckIcon, DiaperIcon, DirtyDiaperIcon, MoonIcon, PillIcon, SettingsIcon } from '../components/icons'
 import GrowthChart, { HEAD_CIRCUMFERENCE_METRIC, WEIGHT_METRIC } from '../components/GrowthChart'
 import GrowthChartZoomModal from '../components/GrowthChartZoomModal'
 import InsightsSection from '../components/InsightsSection'
 import DayNav from '../components/DayNav'
+import SwipeableMedReminder from '../components/SwipeableMedReminder'
 import type { Tab } from '../navigation'
 import type { TimelineEvent } from '../../domain/usecase/timeline'
 import type { GrowthMetric, GrowthPoint } from '../components/GrowthChart'
@@ -25,6 +27,7 @@ export default function DashboardScreen({
   const { baby, day, dayCounts, activeSleep, selectedDay, now, allWeights, allHeadCircumferences, settings, getPeriodRecords } =
     useTracker()
   const wake = useWakeStatus()
+  const medReminders = useMedicationReminders()
   const name = baby?.name.split(' ')[0] ?? 'there'
   const viewingToday = isSameDay(selectedDay, startOfDay(now))
   const dayLabel = formatDayLabel(selectedDay, startOfDay(now))
@@ -101,6 +104,44 @@ export default function DashboardScreen({
           </button>
         )}
       </header>
+
+      {medReminders.reminders.length > 0 && (
+        <section className="med-reminders" aria-label="Medication reminders">
+          {medReminders.reminders.map((r) => (
+            <SwipeableMedReminder
+              key={`${r.name}-${r.scheduledClock}`}
+              id={`med-reminder-${r.name}-${r.scheduledClock}`}
+              name={r.name}
+              onDismiss={() => medReminders.dismissForever(r.name)}
+            >
+              <span className="med-reminder-eyebrow" aria-hidden="true">
+                Reminder
+              </span>
+              <div className="med-reminder-head">
+                <span className="med-reminder-icon" aria-hidden="true">
+                  <PillIcon size={20} />
+                </span>
+                <div className="med-reminder-body">
+                  <p className="med-reminder-title">Give {r.name}</p>
+                  <p className="med-reminder-sub">
+                    {r.referenceEntry.amount !== undefined
+                      ? `${r.referenceEntry.amount} ${r.referenceEntry.unit} · at ${formatClock(r.referenceEntry.time)}`
+                      : `at ${formatClock(r.referenceEntry.time)}`}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="med-reminder-confirm"
+                  onClick={() => medReminders.confirm(r.name)}
+                >
+                  <CheckIcon size={16} />
+                  Yes, log it
+                </button>
+              </div>
+            </SwipeableMedReminder>
+          ))}
+        </section>
+      )}
 
       <div className="summary-grid">
         {cards.map(({ label, value, Icon, accent, tab }) => (

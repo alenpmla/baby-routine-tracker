@@ -3325,3 +3325,97 @@ button.event-link:active {
     gap: 28px;
   }
 }
+
+/* ---------- Medication reminders (stylish M3 info cards) ---------- */
+
+.med-reminders {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.med-reminder {
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+}
+
+.med-reminder .swipeable-row-content {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.med-reminder-eyebrow {
+  font-size: var(--type-caption, 0.72rem);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--md-primary);
+}
+
+.med-reminder-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.med-reminder-icon {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--shape-md);
+  background: var(--accent-health-bg);
+  color: var(--accent-health-fg);
+}
+
+.med-reminder-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.med-reminder-title {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--type-body, 1rem);
+  font-weight: 700;
+  color: var(--md-on-surface);
+}
+
+.med-reminder-sub {
+  margin: 0;
+  font-size: var(--type-label, 0.875rem);
+  color: var(--md-on-surface-variant);
+}
+
+.med-reminder-confirm {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  font-weight: 600;
+  padding: 8px 10px;
+  min-height: 40px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: var(--type-label, 0.875rem);
+  color: var(--accent-health-fg);
+}
+
+.med-reminder-confirm:hover {
+  background: color-mix(in srgb, var(--accent-health-fg) 10%, transparent);
+}
+
+.med-reminder-hide {
+  background: var(--md-surface-container-high);
+  color: var(--md-error);
+}

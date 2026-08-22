@@ -7,6 +7,13 @@ export interface WhatNewEntry {
 /** Recent features, newest first. Update this when shipping user-visible changes. */
 export const WHATS_NEW: WhatNewEntry[] = [
   {
+    version: '0.1.10',
+    date: '2026-08-22',
+    items: [
+      'Medication reminders: if you logged a dose yesterday, Home asks around the same time today whether you gave it again — tap "Yes, log it" to record the dose at that time, or "Don\'t show me again" to silence reminders for that medication until you log it again',
+    ],
+  },
+  {
     version: '0.1.9',
     date: '2026-08-16',
     items: [
