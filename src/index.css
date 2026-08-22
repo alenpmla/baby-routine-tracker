@@ -3400,7 +3400,7 @@ button.event-link:active {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: var(--accent-health-bg);
+  background: color-mix(in srgb, var(--accent-health-bg) 55%, var(--md-surface-container-low));
   border: none;
   font-weight: 600;
   padding: 8px 12px;
@@ -3412,7 +3412,7 @@ button.event-link:active {
 }
 
 .med-reminder-confirm:hover {
-  filter: brightness(0.96);
+  background: color-mix(in srgb, var(--accent-health-bg) 70%, var(--md-surface-container-low));
 }
 
 .med-reminder-hide {
