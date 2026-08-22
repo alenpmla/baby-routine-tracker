@@ -7,6 +7,13 @@ export interface WhatNewEntry {
 /** Recent features, newest first. Update this when shipping user-visible changes. */
 export const WHATS_NEW: WhatNewEntry[] = [
   {
+    version: '0.1.11',
+    date: '2026-08-22',
+    items: [
+      'Temperature: when a reading in the last 7 days is at or above 37.5 °C, the Home page shows a 7-day temperature chart with a fever reference line',
+    ],
+  },
+  {
     version: '0.1.10',
     date: '2026-08-22',
     items: [

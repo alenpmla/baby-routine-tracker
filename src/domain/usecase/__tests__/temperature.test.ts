@@ -5,14 +5,22 @@ import {
   listTemperaturesForDay,
   recordTemperature,
   updateTemperature,
+  hasFeverInWindow,
+  tempInC,
+  FEVER_THRESHOLD_C,
   MAX_C,
   MIN_C,
   MIN_F,
   MAX_F,
 } from '../temperature'
 import { MemoryTemperatureRepo } from '../../../test/memoryRepos'
+import type { TemperatureEntry } from '../../model/TemperatureEntry'
 
 const HOUR = 3600 * 1000
+
+function temp(id: string, hoursAgo: number, value: number, unit: 'c' | 'f'): TemperatureEntry {
+  return { id, time: new Date(Date.now() - hoursAgo * HOUR).toISOString(), temp: value, unit }
+}
 
 describe('temperature use cases', () => {
   it('records a temperature with unit and location', () => {
@@ -75,5 +83,31 @@ describe('temperature use cases', () => {
     expect(() => updateTemperature(repo, 'missing', {})).toThrow(/not found/i)
     const entry = recordTemperature(repo, 37.4, 'c', new Date())
     expect(() => updateTemperature(repo, entry.id, { temp: 50, unit: 'c' })).toThrow(/between/i)
+  })
+})
+
+describe('tempInC / hasFeverInWindow', () => {
+  it('normalizes Fahrenheit to Celsius', () => {
+    expect(tempInC(100.4, 'f')).toBeCloseTo(38, 5)
+    expect(tempInC(99.5, 'f')).toBeCloseTo(37.5, 5)
+    expect(tempInC(37, 'c')).toBe(37)
+  })
+
+  it('flags a fever when any reading in the window is at/above 37.5 °C', () => {
+    const now = Date.now()
+    expect(hasFeverInWindow([temp('a', 2, 38.1, 'c')], 7, now)).toBe(true)
+    expect(hasFeverInWindow([temp('b', 2, 99.5, 'f')], 7, now)).toBe(true) // 37.5 °C
+    expect(hasFeverInWindow([temp('c', 2, 98.6, 'f')], 7, now)).toBe(false) // 37 °C
+    expect(hasFeverInWindow([temp('d', 2, 37.4, 'c')], 7, now)).toBe(false)
+  })
+
+  it('ignores readings older than the window', () => {
+    const now = Date.now()
+    expect(hasFeverInWindow([temp('a', 8 * 24, 39, 'c')], 7, now)).toBe(false)
+    expect(hasFeverInWindow([temp('a', 8 * 24, 39, 'c'), temp('b', 2, 37.6, 'c')], 7, now)).toBe(true)
+  })
+
+  it('exposes the threshold constant', () => {
+    expect(FEVER_THRESHOLD_C).toBe(37.5)
   })
 })

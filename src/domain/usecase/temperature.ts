@@ -124,3 +124,27 @@ export function latestTemperature(repo: TemperatureRepository): TemperatureEntry
   }
   return all.reduce((a, b) => (new Date(b.time).getTime() > new Date(a.time).getTime() ? b : a))
 }
+
+/** Normalize a temperature reading to Celsius. */
+export function tempInC(temp: number, unit: TemperatureUnit): number {
+  return unit === 'c' ? temp : (temp - 32) * (5 / 9)
+}
+
+/** Fever threshold in °C (used for the Home temperature chart). */
+export const FEVER_THRESHOLD_C = 37.5
+
+/**
+ * Whether any temperature in the last `days` days (from `nowMs` back `days * 24h`) is at or
+ * above the fever threshold (normalized to °C).
+ */
+export function hasFeverInWindow(
+  entries: TemperatureEntry[],
+  days: number,
+  nowMs: number,
+): boolean {
+  const cutoff = nowMs - days * 24 * 60 * 60 * 1000
+  return entries.some((t) => {
+    const ms = new Date(t.time).getTime()
+    return ms >= cutoff && ms <= nowMs && tempInC(t.temp, t.unit) >= FEVER_THRESHOLD_C
+  })
+}

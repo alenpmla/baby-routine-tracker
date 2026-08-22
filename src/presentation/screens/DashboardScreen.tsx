@@ -8,6 +8,9 @@ import { timelineAccent, timelineTab, timelineWording } from '../utils/timeline'
 import { BottleIcon, CheckIcon, DiaperIcon, DirtyDiaperIcon, MoonIcon, PillIcon, SettingsIcon } from '../components/icons'
 import GrowthChart, { HEAD_CIRCUMFERENCE_METRIC, WEIGHT_METRIC } from '../components/GrowthChart'
 import GrowthChartZoomModal from '../components/GrowthChartZoomModal'
+import TemperatureChart from '../components/TemperatureChart'
+import { hasFeverInWindow } from '../../domain/usecase/temperature'
+import type { TemperatureEntry } from '../../domain/model/TemperatureEntry'
 import InsightsSection from '../components/InsightsSection'
 import DayNav from '../components/DayNav'
 import SwipeableMedReminder from '../components/SwipeableMedReminder'
@@ -34,6 +37,12 @@ export default function DashboardScreen({
   const weights = allWeights()
   const headCircumferences = allHeadCircumferences()
   const timelineMode = settings.homeLogView === 'timeline'
+
+  // 7-day temperature window: chart shows only when a fever (>37.5 °C) reading exists.
+  const tempWindowStart = startOfDay(shiftDays(now, -6))
+  const tempWindowEnd = now
+  const tempEntries: TemperatureEntry[] = getPeriodRecords(tempWindowStart, tempWindowEnd).temperatures
+  const showTempChart = hasFeverInWindow(tempEntries, 7, now.getTime())
 
   // Timeline-only: a night sleep that began in this day but ends after midnight
   // is attributed to the *next* day by `day.events` (end-based). Add a start-side
@@ -193,6 +202,15 @@ export default function DashboardScreen({
             <GrowthChart dob={baby.dob} points={headCircumferences} metric={HEAD_CIRCUMFERENCE_METRIC} sex={baby.sex} />
             <span className="growth-open-hint" aria-hidden="true">Tap to zoom</span>
           </button>
+        </section>
+      )}
+
+      {showTempChart && (
+        <section className="growth">
+          <h2 className="growth-title">Temperature (last 7 days)</h2>
+          <div className="card growth-card">
+            <TemperatureChart entries={tempEntries} windowStart={tempWindowStart} windowEnd={tempWindowEnd} />
+          </div>
         </section>
       )}
 
