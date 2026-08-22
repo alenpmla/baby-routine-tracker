@@ -7,6 +7,13 @@ export interface WhatNewEntry {
 /** Recent features, newest first. Update this when shipping user-visible changes. */
 export const WHATS_NEW: WhatNewEntry[] = [
   {
+    version: '0.1.11',
+    date: '2026-08-22',
+    items: [
+      'Themes: pick an accent color in Settings — Violet, Ocean, Forest, Sunset, or Rose — alongside the System/Light/Dark mode',
+    ],
+  },
+  {
     version: '0.1.10',
     date: '2026-08-22',
     items: [

@@ -22,9 +22,11 @@ describe('Food suggestions', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
     window.localStorage.removeItem('bt.theme')
+    window.localStorage.removeItem('bt.themeAccent')
     window.localStorage.removeItem('bt.snapshotUnits')
     window.localStorage.removeItem('bt.reportUnits')
     document.documentElement.removeAttribute('data-theme')
+    document.documentElement.removeAttribute('data-accent')
   })
 
   it('switches the theme between system, light and dark', async () => {
@@ -44,6 +46,24 @@ describe('Food suggestions', () => {
     await user.click(screen.getByRole('button', { name: 'System' }))
     expect(document.documentElement.hasAttribute('data-theme')).toBe(false)
     expect(window.localStorage.getItem('bt.theme')).toBe('system')
+  })
+
+  it('switches the accent color between the five options', async () => {
+    const user = userEvent.setup()
+    await onboard(user)
+    await user.click(screen.getByRole('button', { name: /settings/i }))
+
+    expect(screen.getByRole('group', { name: /accent color/i })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Ocean' }))
+    expect(document.documentElement.getAttribute('data-accent')).toBe('ocean')
+    expect(window.localStorage.getItem('bt.themeAccent')).toBe('ocean')
+
+    await user.click(screen.getByRole('button', { name: 'Rose' }))
+    expect(document.documentElement.getAttribute('data-accent')).toBe('rose')
+
+    await user.click(screen.getByRole('button', { name: 'Violet' }))
+    expect(document.documentElement.hasAttribute('data-accent')).toBe(false)
   })
 
   it('lets you choose the snapshot preferred units for bottle and solids', async () => {

@@ -1,4 +1,5 @@
 export type ThemePreference = 'system' | 'light' | 'dark'
+export type ThemeAccent = 'violet' | 'ocean' | 'forest' | 'sunset' | 'rose'
 export type BottleUnit = 'ml' | 'oz'
 export type SolidsUnit = 'g' | 'oz'
 export interface SnapshotUnits {
@@ -11,6 +12,7 @@ export type HomeLogView = 'list' | 'timeline'
 export interface AppSettings {
   foodSuggestions: string[]
   theme?: ThemePreference
+  themeAccent?: ThemeAccent
   snapshotUnits?: SnapshotUnits
   reportUnits?: SnapshotUnits
   averagesDays?: AveragesDays
