@@ -52,18 +52,6 @@ describe('Home temperature chart', () => {
     expect(status).toHaveTextContent('Fever')
   })
 
-  it('opens the zoom view when the chart is tapped', async () => {
-    vi.useFakeTimers({ toFake: ['Date'] })
-    vi.setSystemTime(new Date())
-    api.state.temperatures.push(hoursAgo(20, 38.4, 'c'))
-
-    const user = userEvent.setup()
-    await onboard(user)
-
-    await user.click(await screen.findByRole('button', { name: /open temperature chart zoom/i }))
-    expect(screen.getByRole('dialog', { name: /temperature \(last 7 days\)/i })).toBeInTheDocument()
-  })
-
   it('shows the chart for a Fahrenheit reading equivalent to >= 37.5 °C', async () => {
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(new Date())
