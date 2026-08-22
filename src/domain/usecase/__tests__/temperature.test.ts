@@ -120,8 +120,8 @@ describe('describeTempStatus / tempStatusLabel', () => {
     expect(describeTempStatus(38.2)).toBe('fever')
     expect(describeTempStatus(36.5)).toBe('in-range')
     expect(describeTempStatus(37.0)).toBe('in-range')
-    expect(describeTempStatus(35.9)).toBe('low')
-    expect(describeTempStatus(36.0)).toBe('in-range')
+    expect(describeTempStatus(36.4)).toBe('low')
+    expect(describeTempStatus(36.5)).toBe('in-range')
   })
 
   it('labels statuses in human terms', () => {

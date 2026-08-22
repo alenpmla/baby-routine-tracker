@@ -27,7 +27,7 @@ function toC(entry: TemperatureEntry): number {
 }
 
 /**
- * 7-day temperature line chart with a typical-range band (36–37.5 °C), a fever
+ * 7-day temperature line chart with a typical-range band (36.5–37.5 °C), a fever
  * reference line, and a status label ("In range" / "Fever" / "Low temp") based
  * on the most recent reading in the window. Readings at/above the threshold are
  * highlighted with the error accent.
@@ -100,7 +100,7 @@ export default function TemperatureChart({ entries, windowStart, windowEnd }: Te
           </text>
         ))}
 
-        {/* Typical range band 36–37.5 °C */}
+        {/* Typical range band 36.5–37.5 °C */}
         <rect x={PAD.l} y={highY} width={plotW} height={Math.max(0, lowY - highY)} fill="var(--accent-health-bg)" opacity="0.4" />
         <line x1={PAD.l} y1={lowY} x2={W - PAD.r} y2={lowY} stroke="var(--accent-health-fg)" strokeWidth="1.5" strokeDasharray="5 4" />
         <text x={PAD.l + 4} y={lowY - 4} fontSize="10" fill="var(--accent-health-fg)">

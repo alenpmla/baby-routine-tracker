@@ -134,7 +134,7 @@ export function tempInC(temp: number, unit: TemperatureUnit): number {
 export const FEVER_THRESHOLD_C = 37.5
 
 /** Lower bound of the typical body-temperature range in °C. */
-export const TYPICAL_LOW_C = 36.0
+export const TYPICAL_LOW_C = 36.5
 
 /** Upper bound of the typical body-temperature range in °C. */
 export const TYPICAL_HIGH_C = 37.5
